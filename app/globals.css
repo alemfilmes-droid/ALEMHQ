@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Além Filmes — tokens da marca (interface somente escura).
+  O vermelho #E5231B pertence exclusivamente ao "é" do logo e não aparece aqui.
+*/
+:root {
+  --background: #0a0a0a; /* Preto Absoluto */
+  --foreground: #f0f0f0; /* Branco Puro */
+  --surface: #111111;
+  --surface-raised: #161616;
+  --surface-hover: #1f1f1f;
+  --border: #2a2a2a;
+  --border-strong: #3a3a3a;
+  --subtle: #6b6b6b;
+  --muted-foreground: #a3a3a3;
+  --primary: #f0f0f0;
+  --primary-foreground: #0a0a0a;
+  --ring: #a3a3a3;
+  /*
+    Paleta semântica de status. Uso restrito a indicadores pequenos (ponto de
+    8px, barra de 3px, contorno de badge, texto de percentual) — nunca fundo
+    de botão/card, preenchimento de gráfico ou cor de título.
+  */
+  --status-success: #2e9e6b;
+  --status-warning: #d9a62e;
+  --status-alert: #d9782e;
+  --status-danger: #c4402e;
+  /* Superfície elevada dos cards da home: gradiente sutil de grafite + borda um tom mais clara. */
+  --surface-card-from: #141414;
+  --surface-card-to: #0a0a0a;
+  --border-card: #1f1f1f;
+  /* Brilho do logo: branco da marca em baixa opacidade. */
+  --brand-glow: rgb(240 240 240 / 0.14);
+  --brand-glow-core: rgb(240 240 240 / 0.08);
+  /* Colunas de fim de semana nos calendários: um tom neutro levemente diferente. */
+  --surface-weekend: #0d0d0d;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    background: var(--background);
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  /* Autofill do navegador sem tons azuis/amarelos. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--surface-raised) inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply font-display text-3xl font-black tracking-tight text-foreground sm:text-4xl;
+  }
+  .section-title {
+    @apply text-base font-bold text-foreground;
+  }
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.12em] text-subtle;
+  }
+  /* Grade de cards responsiva com alturas iguais por linha. min(100%, …): nunca mais larga que a tela (320px). */
+  .card-grid {
+    display: grid;
+    gap: 1rem;
+    grid-auto-rows: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  }
+  /* Mesma grade, cards um pouco maiores — usada na home. */
+  .card-grid-lg {
+    display: grid;
+    gap: 1rem;
+    grid-auto-rows: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+  /*
+    Card largo da home (2 colunas) — só quando a grade de fato tem 2 colunas. Com `col-span-2` fixo,
+    numa grade de uma coluna o card criava uma coluna implícita e vazava para a direita.
+    656px = 2 × 320px + 16px de espaço.
+  */
+  .card-grid-lg {
+    container-type: inline-size;
+  }
+  @container (min-width: 656px) {
+    .card-span-2 {
+      grid-column: span 2;
+    }
+  }
+  /* Superfície elevada: gradiente de grafite sutil + borda própria — profundidade, nunca cor. */
+  .card-elevated {
+    background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
+    border-color: var(--border-card);
+  }
+
+  /*
+    Indicadores (<MetricValue>, components/ui/metric-value.tsx). A caixa mede a própria coluna
+    (container-type) e o valor escala por ela: clamp(mínimo, largura ÷ caracteres, máximo).
+    O valor nunca quebra linha; abaixo do mínimo, reticências (o valor completo fica no title).
+  */
+  .metric-grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--metric-col-min, 9rem)), 1fr));
+  }
+  .metric-grid > * {
+    min-width: 0;
+  }
+  .metric-box {
+    display: block;
+    min-width: 0;
+    container-type: inline-size;
+  }
+  .metric-value {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+    font-size: var(--metric-max-size, 1.875rem);
+    font-size: clamp(0.875rem, calc(100cqi / (var(--metric-chars) * 0.62)), var(--metric-max-size, 1.875rem));
+  }
+
+  /* Brilho do logo da sidebar: sombra branca difusa e de baixa opacidade — nunca recolore o logo. */
+  .brand-glow {
+    filter: drop-shadow(0 0 14px var(--brand-glow)) drop-shadow(0 0 2px var(--brand-glow-core));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
