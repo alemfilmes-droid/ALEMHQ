@@ -1241,6 +1241,56 @@ export type Database = {
           },
         ]
       }
+      freelancers: {
+        Row: {
+          city: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          functions: Database["public"]["Enums"]["production_function"][]
+          id: string
+          is_active: boolean
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          functions?: Database["public"]["Enums"]["production_function"][]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          functions?: Database["public"]["Enums"]["production_function"][]
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freelancers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           access_role: Database["public"]["Enums"]["access_role"]
@@ -1541,6 +1591,7 @@ export type Database = {
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
+          freelancer_id: string | null
           id: string
           is_critical: boolean
           is_standalone: boolean
@@ -1577,6 +1628,7 @@ export type Database = {
           duration_minutes?: number | null
           equipment_notes?: string | null
           format?: string | null
+          freelancer_id?: string | null
           id?: string
           is_critical?: boolean
           is_standalone?: boolean
@@ -1613,6 +1665,7 @@ export type Database = {
           duration_minutes?: number | null
           equipment_notes?: string | null
           format?: string | null
+          freelancer_id?: string | null
           id?: string
           is_critical?: boolean
           is_standalone?: boolean
@@ -1685,6 +1738,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pautas_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "freelancers"
             referencedColumns: ["id"]
           },
           {
@@ -2776,6 +2836,9 @@ export type Database = {
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
+          freelancer_id: string | null
+          freelancer_name: string | null
+          freelancer_phone: string | null
           id: string | null
           is_critical: boolean | null
           is_standalone: boolean | null
@@ -2852,6 +2915,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pautas_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "freelancers"
             referencedColumns: ["id"]
           },
           {
@@ -3211,10 +3281,12 @@ export type Database = {
       announcements_unread_count: { Args: never; Returns: number }
       can_access_all_deals: { Args: never; Returns: boolean }
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
+      can_delete_project: { Args: { p_project_id: string }; Returns: boolean }
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       can_fully_manage_pauta: { Args: never; Returns: boolean }
       can_manage_company: { Args: never; Returns: boolean }
       can_manage_company_logos: { Args: never; Returns: boolean }
+      can_manage_freelancers: { Args: never; Returns: boolean }
       can_manage_pautas: { Args: never; Returns: boolean }
       can_manage_profile: { Args: { p_target_id: string }; Returns: boolean }
       can_read_companies: { Args: never; Returns: boolean }
@@ -3603,6 +3675,7 @@ export type Database = {
       is_head: { Args: never; Returns: boolean }
       is_leadership: { Args: never; Returns: boolean }
       is_master: { Args: never; Returns: boolean }
+      is_pauta_creator: { Args: { p_pauta_id: string }; Returns: boolean }
       is_squad_lead: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
@@ -3671,6 +3744,7 @@ export type Database = {
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
+          freelancer_id: string | null
           id: string
           is_critical: boolean
           is_standalone: boolean
@@ -3719,6 +3793,7 @@ export type Database = {
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
+          freelancer_id: string | null
           id: string
           is_critical: boolean
           is_standalone: boolean
@@ -3758,6 +3833,7 @@ export type Database = {
           em_andamento: number
         }[]
       }
+      project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
       publish_due_announcements: { Args: never; Returns: number }
       set_company_logo: {
         Args: { p_company_id: string; p_logo_url: string }

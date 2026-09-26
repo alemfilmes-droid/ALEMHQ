@@ -70,6 +70,7 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
       project_id: data.projectId,
       created_by: actor.id,
       squad: data.squad || undefined,
+      freelancer_id: data.freelancerId || null,
       title: data.title,
       briefing: nullIfEmpty(data.briefing),
       lead_id: data.leadId,
@@ -183,6 +184,7 @@ export async function updatePautaAction(id: string, values: UpdatePautaValues): 
   if (d.deliveryUrl !== undefined) patch.delivery_url = d.deliveryUrl;
   if (d.scriptUrl !== undefined) patch.script_url = d.scriptUrl;
   if (d.equipmentNotes !== undefined) patch.equipment_notes = d.equipmentNotes;
+  if (d.freelancerId !== undefined) patch.freelancer_id = d.freelancerId;
 
   if (Object.keys(patch).length === 0) return { ok: true };
 

@@ -25,6 +25,8 @@ export const createPautaSchema = z.object({
   /** Squad da pauta; vazio = o padrão do banco (audiovisual). */
   squad: z.enum(SQUADS).or(z.literal("")),
   members: z.array(pautaMemberInputSchema).max(20, "Use até 20 responsáveis."),
+  /** Freelancer com quem está a execução (opcional) — não é responsável; a equipe cobra. */
+  freelancerId: z.string().uuid().or(z.literal("")),
   title: z.string().trim().min(2, "Informe o título.").max(160, "Use até 160 caracteres."),
   briefing: z.string().trim().max(4000, "Use até 4000 caracteres."),
   leadId: z.string().uuid("Selecione o líder."),
@@ -77,6 +79,7 @@ export const updatePautaSchema = z.object({
   deliveryUrl: z.string().trim().max(500).nullable().optional(),
   scriptUrl: z.string().trim().max(500).nullable().optional(),
   equipmentNotes: z.string().trim().max(1000).nullable().optional(),
+  freelancerId: z.string().uuid().nullable().optional(),
 });
 
 export type UpdatePautaValues = z.infer<typeof updatePautaSchema>;

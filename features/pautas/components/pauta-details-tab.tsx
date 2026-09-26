@@ -62,6 +62,8 @@ function toFormValues(pauta: PautaWithDetails): FormValues {
   };
 }
 
+const NO_FREELANCER = "__sem_freelancer__";
+
 interface PautaDetailsTabProps {
   detail: PautaDetail;
   options: PautaFormOptions;
@@ -196,6 +198,49 @@ export function PautaDetailsTab({ detail, options, canManage, canEditOperational
           <dd className="mt-1 flex items-center gap-2 font-semibold">
             <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} profileId={pauta.current_assignee_id} className="size-6" />
             {pauta.assignee_name ?? "—"}
+          </dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="eyebrow">Freelancer</dt>
+          <dd className="mt-1">
+            {canEditOperationally && options.freelancers.length > 0 ? (
+              <Select
+                value={pauta.freelancer_id ?? NO_FREELANCER}
+                disabled={quickPending}
+                onValueChange={(value) => {
+                  const freelancerId = value === NO_FREELANCER ? null : value;
+                  const name = options.freelancers.find((item) => item.id === freelancerId)?.full_name ?? null;
+                  startQuickTransition(async () => {
+                    const result = await updatePautaAction(pauta.id!, { freelancerId });
+                    if (!result.ok) {
+                      toast.error(result.error);
+                      return;
+                    }
+                    toast.success(freelancerId ? "Freelancer definido." : "Freelancer removido.");
+                    onChanged({ ...pauta, freelancer_id: freelancerId, freelancer_name: name } as PautaWithDetails);
+                  });
+                }}
+              >
+                <SelectTrigger aria-label="Freelancer" className="sm:w-80">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_FREELANCER}>Sem freelancer</SelectItem>
+                  {options.freelancers.map((freelancer) => (
+                    <SelectItem key={freelancer.id} value={freelancer.id}>
+                      {freelancer.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="font-semibold">{pauta.freelancer_name ?? "—"}</span>
+            )}
+            {pauta.freelancer_id ? (
+              <span className="mt-1 block text-[12px] text-subtle">
+                Execução com o freelancer{pauta.freelancer_phone ? ` (${pauta.freelancer_phone})` : ""}. Quem cobra é o responsável: {pauta.assignee_name ?? pauta.lead_name ?? "—"}.
+              </span>
+            ) : null}
           </dd>
         </div>
         <div>

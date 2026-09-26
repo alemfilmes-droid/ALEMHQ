@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { ProjectClientLabel } from "@/components/projects/project-client-label";
+import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";
 import { ProjectMarginLine } from "@/components/projects/project-margin-line";
 import { getCompanySettings } from "@/features/settings/queries";
 import { ProjectOverviewEditor } from "@/components/projects/project-overview-editor";
@@ -13,7 +14,7 @@ import { ProjectFinanceTab } from "@/features/finance/components/project-finance
 import { getProjectProfitability } from "@/features/finance/queries";
 import { KanbanBoard } from "@/features/pautas/components/kanban-board";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
-import { canCreateProjectPauta, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
+import { canCreateProjectPauta, canDeleteProject, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS } from "@/lib/domain";
 import { createClient } from "@/lib/supabase/server";
@@ -63,7 +64,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
         leading={project.company && !project.is_internal ? <ClientAvatar name={project.company.name} logoUrl={project.company.logo_url} size="lg" /> : undefined}
         eyebrow="Projeto"
         title={project.name}
-        actions={<StageSelect projectId={project.id} stage={project.stage} disabled={!canManage} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {canDeleteProject(profile) ? <DeleteProjectDialog projectId={project.id} projectName={project.name} /> : null}
+            <StageSelect projectId={project.id} stage={project.stage} disabled={!canManage} />
+          </div>
+        }
       />
       <div className="-mt-4 mb-8 space-y-1.5">
         <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">

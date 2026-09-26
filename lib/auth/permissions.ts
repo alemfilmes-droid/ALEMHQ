@@ -207,6 +207,22 @@ export function canCreateProjectPauta(subject: Pick<Profile, "org_level">): bool
 }
 
 /**
+ * Cadastrar e editar freelancers (sem conta no sistema): admin, diretoria, master e heads — espelha
+ * can_manage_freelancers() no banco.
+ */
+export function canManageFreelancers(subject: Pick<Profile, "access_role" | "org_level"> & { squads: readonly Squad[] }): boolean {
+  return subject.access_role === "admin" || subject.squads.includes("diretoria") || canCreateProjectPauta(subject);
+}
+
+/**
+ * Apagar projetos: master, diretoria (nível ou squad) e heads — espelha can_delete_project() no banco,
+ * que ainda exige acesso ao financeiro quando o projeto já tem recebimentos/pagamentos.
+ */
+export function canDeleteProject(subject: Pick<Profile, "org_level"> & { squads: readonly Squad[] }): boolean {
+  return canCreateProjectPauta(subject) || subject.squads.includes("diretoria");
+}
+
+/**
  * Espelha can_fully_manage_pauta() no banco: gestão de verdade sobre pautas (criar, apagar,
  * trocar líder/prioridade, mover entre colunas livremente, reatribuir responsáveis à força) —
  * capability "managePautas" (acesso à rota) restrita ao squad que de fato produz pautas hoje.

@@ -6,6 +6,7 @@ import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { groupPautasByWeek } from "@/features/minhas-pautas/board";
+import { FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
 import { addDays, dayMonthShort, isWeekend, startOfWeek, timeInAppZone, todayInAppZone, weekRangeLabel, weekdayShort } from "@/lib/calendar";
 import { isPautaOverdue } from "@/lib/pautas";
@@ -71,7 +72,12 @@ function CalendarItem({ pauta, onOpen, showSquad }: { pauta: PautaWithDetails; o
           />
         ) : null}
       </span>
-      {pauta.priority === "alta" || pauta.priority === "urgente" ? <PautaPriorityBadge priority={pauta.priority} /> : null}
+      {pauta.priority === "alta" || pauta.priority === "urgente" || pauta.freelancer_name ? (
+        <span className="flex flex-wrap gap-1">
+          {pauta.priority === "alta" || pauta.priority === "urgente" ? <PautaPriorityBadge priority={pauta.priority} /> : null}
+          {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
+        </span>
+      ) : null}
     </button>
   );
 }

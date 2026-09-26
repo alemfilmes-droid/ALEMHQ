@@ -42,8 +42,16 @@ export interface PautaOptionCompany {
   logo_url: string | null;
 }
 
-/** Listas usadas pelos formulários (cliente, projeto, pessoas, contatos). Sem dados financeiros. */
+export interface PautaOptionFreelancer {
+  id: string;
+  full_name: string;
+  functions: ProductionFunction[];
+}
+
+/** Listas usadas pelos formulários (cliente, projeto, pessoas, contatos, freelancers). Sem dados financeiros. */
 export interface PautaFormOptions {
+  /** Freelancers ativos (sem conta): só sinalizam com quem está a execução. */
+  freelancers: PautaOptionFreelancer[];
   companies: PautaOptionCompany[];
   projects: PautaOptionProject[];
   members: PautaOptionMember[];

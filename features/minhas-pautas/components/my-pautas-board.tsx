@@ -140,8 +140,10 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
     depois: withOverrides(board.depois),
     acompanhando: withOverrides(board.acompanhando),
     devolvidas: withOverrides(board.devolvidas),
+    entregues: withOverrides(board.entregues),
   };
-  const allMine = [...all.atrasadas, ...all.hoje, ...all.estaSemana, ...all.depois, ...all.acompanhando];
+  // Quadro e calendário mostram também as entregues (coluna "Entregue"); a lista as separa no rodapé.
+  const allMine = [...all.atrasadas, ...all.hoje, ...all.estaSemana, ...all.depois, ...all.acompanhando, ...all.entregues];
 
   const filters = { squad: activeSquad, search };
   const only = (list: PautaWithDetails[]) => list.filter((pauta) => matchesFilters(pauta, filters));
@@ -152,6 +154,7 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
     depois: only(all.depois),
     acompanhando: only(all.acompanhando),
     devolvidas: only(all.devolvidas),
+    entregues: only(all.entregues),
   };
   const filteredMine = only(allMine);
   const hasFilters = Boolean(activeSquad || search.trim());

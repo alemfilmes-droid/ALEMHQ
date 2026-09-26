@@ -87,3 +87,4 @@ export type Announcement = Tables["announcements"]["Row"];
 export type CompanySettings = Tables["company_settings"]["Row"];
 export type UserSettings = Tables["user_settings"]["Row"];
 export type CostScope = Database["public"]["Enums"]["cost_scope"];
+export type Freelancer = Tables["freelancers"]["Row"];

@@ -7,6 +7,7 @@ import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Badge } from "@/components/ui/badge";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
+import { FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
 import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
@@ -99,6 +100,7 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
       <div className="flex flex-wrap items-center gap-1.5">
         {pauta.status ? <PautaStatusBadge status={pauta.status} /> : null}
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
+        {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
       </div>
 
       <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">

@@ -14,6 +14,7 @@ import {
 import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
+import { FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
 import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
@@ -125,6 +126,7 @@ export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardPr
       <div className="flex flex-wrap items-center gap-1.5">
         <PautaStatusBadge status={pauta.status!} />
         <PautaPriorityBadge priority={pauta.priority!} />
+        {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
       </div>
 
       <div className="flex items-center justify-between gap-2">

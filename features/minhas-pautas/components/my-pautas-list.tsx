@@ -32,7 +32,11 @@ export function MyPautasList({ board, currentUserId, onOpen, showSquad = false, 
     { key: "depois", label: "Depois", tone: "neutral", pautas: board.depois },
   ];
 
-  const isEmpty = sections.every((section) => section.pautas.length === 0) && board.acompanhando.length === 0 && board.devolvidas.length === 0;
+  const isEmpty =
+    sections.every((section) => section.pautas.length === 0) &&
+    board.acompanhando.length === 0 &&
+    board.devolvidas.length === 0 &&
+    board.entregues.length === 0;
 
   if (isEmpty && filtered) {
     return (
@@ -86,6 +90,20 @@ export function MyPautasList({ board, currentUserId, onOpen, showSquad = false, 
           <div className="space-y-2 border-t border-border p-3">
             {board.acompanhando.map((pauta) => (
               <MyPautaRow key={pauta.id} pauta={pauta} currentUserId={currentUserId} onOpen={() => onOpen(pauta.id!)} showSquad={showSquad} />
+            ))}
+          </div>
+        </details>
+      ) : null}
+
+      {board.entregues.length > 0 ? (
+        <details className="group rounded-lg border border-border">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-bold">
+            <span>ENTREGUES ({board.entregues.length})</span>
+            <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="space-y-2 border-t border-border p-3">
+            {board.entregues.map((pauta) => (
+              <MyPautaRow key={pauta.id} pauta={pauta} currentUserId={currentUserId} onOpen={() => onOpen(pauta.id!)} showSquad={showSquad} muted />
             ))}
           </div>
         </details>

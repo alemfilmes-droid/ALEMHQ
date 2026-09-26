@@ -42,6 +42,7 @@ type Kind = "projeto" | "interna";
 const INTERNAL_CLIENT = "__interno__";
 const NO_CONTACT = "none";
 const DEFAULT_SQUAD = "__padrao__";
+const NO_FREELANCER = "__sem_freelancer__";
 
 export interface PautaCreateDialogProps {
   options: PautaFormOptions;
@@ -155,6 +156,7 @@ function emptyProjectValues(props: PautaCreateDialogProps): CreatePautaValues {
     projectId: props.lockedProjectId ?? "",
     squad: "",
     members: [],
+    freelancerId: "",
     title: "",
     briefing: "",
     leadId: props.currentUser.id,
@@ -452,6 +454,35 @@ function ProjectPautaForm(props: PautaCreateDialogProps & { onDone: () => void }
         )}
         {errors.members ? <p className="text-[13px] font-semibold">Escolha a pessoa de cada responsável.</p> : null}
       </fieldset>
+
+      {options.freelancers.length > 0 ? (
+        <FormField
+          id="pauta-freelancer"
+          label="Freelancer (opcional)"
+          hint="Só sinaliza com quem está a execução. O líder e os responsáveis da equipe continuam cobrando a entrega."
+        >
+          <Controller
+            control={control}
+            name="freelancerId"
+            render={({ field }) => (
+              <Select value={field.value || NO_FREELANCER} onValueChange={(value) => field.onChange(value === NO_FREELANCER ? "" : value)}>
+                <SelectTrigger id="pauta-freelancer">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_FREELANCER}>Sem freelancer</SelectItem>
+                  {options.freelancers.map((freelancer) => (
+                    <SelectItem key={freelancer.id} value={freelancer.id}>
+                      {freelancer.full_name}
+                      {freelancer.functions.length ? ` · ${freelancer.functions.map((fn) => FUNCTION_LABELS[fn]).join(", ")}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </FormField>
+      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-3">
         <FormField id="pauta-due" label="Prazo" error={errors.dueDate?.message}>

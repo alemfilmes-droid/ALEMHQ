@@ -10,6 +10,8 @@ export interface MyPautasBoard {
   acompanhando: PautaWithDetails[];
   /** Passou adiante nos últimos 7 dias — só leitura. */
   devolvidas: PautaWithDetails[];
+  /** Já entregues/aprovadas: fora dos grupos de prazo (nunca "atrasadas"). As mais recentes primeiro. */
+  entregues: PautaWithDetails[];
 }
 
 export interface MyPautasSummary {

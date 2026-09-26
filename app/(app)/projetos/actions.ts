@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authorizeCapability, getCurrentProfile } from "@/lib/auth/session";
-import { hasCapability } from "@/lib/auth/permissions";
+import { canDeleteProject, hasCapability } from "@/lib/auth/permissions";
 import { nullIfEmpty } from "@/lib/validations/company";
 import {
   financialsSchema,
@@ -223,4 +223,83 @@ export async function createQuickProjectAction(input: { name: string; companyId:
   await supabase.from("project_members").insert({ project_id: project.id, profile_id: actor.id });
   revalidatePath("/projetos");
   return { ok: true, message: "Projeto criado.", project };
+}
+
+export interface ProjectDeleteSummary {
+  pautas: number;
+  members: number;
+  commitments: number;
+  hasFinanceRecords: boolean;
+  /** Só vêm preenchidos para quem tem acesso ao financeiro. */
+  receivables: number | null;
+  payables: number | null;
+  canDelete: boolean;
+}
+
+const deleteSummarySchema = z.object({
+  pautas: z.number(),
+  members: z.number(),
+  commitments: z.number(),
+  has_finance_records: z.boolean(),
+  receivables: z.number().nullable(),
+  payables: z.number().nullable(),
+  can_delete: z.boolean(),
+});
+
+/** O que vai junto com o projeto — para a confirmação antes de apagar. */
+export async function getProjectDeleteSummaryAction(id: string): Promise<ProjectDeleteSummary | null> {
+  if (!z.string().uuid().safeParse(id).success) return null;
+  const actor = await getCurrentProfile();
+  if (!actor) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("project_delete_summary", { p_project_id: id });
+  if (error || data == null) return null;
+  const parsed = deleteSummarySchema.safeParse(data);
+  if (!parsed.success) return null;
+  const row = parsed.data;
+  return {
+    pautas: row.pautas,
+    members: row.members,
+    commitments: row.commitments,
+    hasFinanceRecords: row.has_finance_records,
+    receivables: row.receivables,
+    payables: row.payables,
+    canDelete: row.can_delete,
+  };
+}
+
+/**
+ * Apaga o projeto (master, diretoria e heads — policy projects_delete_managers). A pessoa digita o
+ * nome do projeto para confirmar. Pautas, equipe e contrato saem em cascata; recebimentos,
+ * pagamentos e compromissos ficam, sem projeto. O log de atividades registra quem apagou.
+ */
+export async function deleteProjectAction(input: { id: string; confirmName: string }): Promise<ActionResult> {
+  const parsed = z.object({ id: z.string().uuid(), confirmName: z.string() }).safeParse(input);
+  if (!parsed.success) return INVALID;
+  const actor = await getCurrentProfile();
+  if (!actor) return { ok: false, error: "Sessão expirada. Entre novamente." };
+  if (!canDeleteProject(actor)) return { ok: false, error: "Só master, diretoria e heads apagam projetos." };
+
+  const supabase = await createClient();
+  const { data: project } = await supabase.from("projects").select("name").eq("id", parsed.data.id).maybeSingle();
+  if (!project) return { ok: false, error: "Projeto não encontrado." };
+  const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
+  if (normalize(parsed.data.confirmName) !== normalize(project.name)) {
+    return { ok: false, error: "O nome digitado não confere com o nome do projeto." };
+  }
+
+  const { error, count } = await supabase.from("projects").delete({ count: "exact" }).eq("id", parsed.data.id);
+  if (error) return { ok: false, error: "Não foi possível apagar o projeto." };
+  if (!count) {
+    return {
+      ok: false,
+      error: "Você não pode apagar este projeto. Se ele já tem recebimentos ou pagamentos, só quem tem acesso ao financeiro apaga.",
+    };
+  }
+
+  revalidatePath("/projetos");
+  revalidatePath("/pautas");
+  revalidatePath("/minhas-pautas");
+  revalidatePath("/clientes", "layout");
+  return { ok: true, message: `Projeto "${project.name}" apagado.` };
 }

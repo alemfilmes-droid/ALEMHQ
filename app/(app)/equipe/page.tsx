@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AlertCircle, Eye, Users } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { FreelancerDialog } from "@/components/team/freelancer-dialog";
+import { FreelancerList } from "@/components/team/freelancer-list";
 import { InviteDialog } from "@/components/team/invite-dialog";
+import { listFreelancers } from "@/features/team/queries";
 import { MemberList } from "@/components/team/member-list";
 import { PendingInvitations } from "@/components/team/pending-invitations";
 import { SquadBoard } from "@/components/team/squad-board";
 import { TeamFilters } from "@/components/team/team-filters";
 import { TransferMasterDialog } from "@/components/team/transfer-master-dialog";
-import { can, hasCapability } from "@/lib/auth/permissions";
+import { can, canManageFreelancers, hasCapability } from "@/lib/auth/permissions";
 import { ACCESS_ROLES, PRODUCTION_FUNCTIONS } from "@/lib/auth/roles";
 import { requireProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -32,9 +35,11 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
   if (role) membersQuery = membersQuery.eq("access_role", role);
   if (fn) membersQuery = membersQuery.contains("functions", [fn]);
 
-  const [membersResult, invitationsResult] = await Promise.all([
+  const canManageFl = canManageFreelancers(current);
+  const [membersResult, invitationsResult, freelancers] = await Promise.all([
     membersQuery,
     supabase.from("invitations").select("*").in("status", ["pending", "expired"]).order("created_at", { ascending: false }),
+    listFreelancers(),
   ]);
 
   const invitations = invitationsResult.data ?? [];
@@ -55,7 +60,7 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
         panel="/equipe"
         eyebrow="Empresa"
         title="Equipe."
-        description="Squads, cargos e atuação de quem acessa o Além HQ."
+        description="Squads, cargos e atuação de quem acessa o Além HQ — e os freelancers parceiros."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {current.org_level === "master" ? <TransferMasterDialog candidates={members.filter((m) => m.id !== current.id && m.is_active && m.full_name.trim() !== "")} /> : null}
@@ -108,6 +113,19 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
             viewerHasFinance={hasCapability(current, "finance")}
           />
         )}
+      </section>
+
+      <section aria-labelledby="freelancers-title" className="mt-12 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="freelancers-title" className="section-title">
+              Freelancers
+            </h2>
+            <p className="text-[13px] text-muted-foreground">Sem acesso ao sistema. Nas pautas, sinalizam com quem está a execução.</p>
+          </div>
+          {canManageFl ? <FreelancerDialog /> : null}
+        </div>
+        <FreelancerList freelancers={freelancers} canManage={canManageFl} />
       </section>
 
       {isAdmin ? (

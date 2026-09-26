@@ -35,9 +35,22 @@ export async function getMyPautasBoard(profileId: string): Promise<MyPautasBoard
     if (row.id) byId.set(row.id, row);
   }
 
-  const board: MyPautasBoard = { atrasadas: [], hoje: [], estaSemana: [], depois: [], acompanhando: [], devolvidas: devolvidasResult.data ?? [] };
+  const board: MyPautasBoard = {
+    atrasadas: [],
+    hoje: [],
+    estaSemana: [],
+    depois: [],
+    acompanhando: [],
+    devolvidas: devolvidasResult.data ?? [],
+    entregues: [],
+  };
 
   for (const pauta of byId.values()) {
+    // Entregue/aprovada já terminou: nunca entra em "atrasadas", "hoje" etc., só no grupo próprio.
+    if (pauta.board_column === "entregue" || pauta.status === "aprovado") {
+      board.entregues.push(pauta);
+      continue;
+    }
     if (pauta.lead_id === profileId && pauta.current_assignee_id !== profileId) {
       board.acompanhando.push(pauta);
       continue;
@@ -62,6 +75,8 @@ export async function getMyPautasBoard(profileId: string): Promise<MyPautasBoard
   board.estaSemana = sortByDueDate(board.estaSemana);
   board.depois = sortByDueDate(board.depois);
   board.acompanhando = sortByDueDate(board.acompanhando);
+  // As 50 entregues mais recentes bastam para consulta rápida; o histórico completo está no projeto.
+  board.entregues = [...board.entregues].sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? "")).slice(0, 50);
   board.devolvidas = [...board.devolvidas].sort((a, b) => (b.returned_at ?? "").localeCompare(a.returned_at ?? ""));
 
   return board;
