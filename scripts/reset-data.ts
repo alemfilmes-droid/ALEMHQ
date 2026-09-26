@@ -9,16 +9,16 @@
  *   --keep-email=<e-mail>   Obrigatório. A conta admin que fica (precisa existir e ser admin).
  *   --dry-run               Só conta o que seria apagado. Não grava nada.
  *   --confirm=APAGAR-TUDO   Obrigatório para apagar de verdade (texto exato).
- *   --remove-other-users    Também apaga as contas REAIS que não são a mantida. Sem esta flag, só as
- *                           contas de demonstração (@alemdemo.invalid) são removidas; as demais
- *                           ficam e são listadas no fim.
+ *   --remove-demo-users     Opcional. Também apaga as contas de demonstração (@alemdemo.invalid) do
+ *                           Auth. SEM esta flag, nada em auth.users é tocado: os profiles de
+ *                           demonstração continuam existindo (sem nenhum dado operacional).
  *
  * APAGA (nesta ordem, respeitando as chaves estrangeiras):
  *   avisos e leituras → compromissos da agenda → CRM (atividades, interações, reuniões, negociações,
  *   propostas, qualificação) → pautas (comentários, membros, histórico) → recebimentos e pagamentos →
- *   equipe, financeiro e projetos → negócios → contatos e empresas → banco de horas (registros) →
- *   contadores de código (pautas e CRM recomeçam do 1) → notificações e log de atividades → logos
- *   de clientes no Storage → contas de demonstração (e, com a flag, outras contas).
+ *   links, equipe, financeiro e projetos → negócios → contatos e empresas → banco de horas (registros
+ *   e jornadas, exceto a da conta mantida) → contadores de código (pautas e CRM recomeçam do 1) →
+ *   notificações e log de atividades → logos de clientes no Storage.
  *
  * MANTÉM: a estrutura do banco (tabelas, funções, RLS), company_settings, commission_rules,
  * deal_stage_probabilities, a conta admin informada (profile, squads, jornada, preferências) e os
@@ -58,7 +58,7 @@ const hasFlag = (name: string) => process.argv.slice(2).includes(`--${name}`);
 const keepEmail = z.string().email().safeParse(flag("keep-email")?.trim().toLowerCase());
 const dryRun = hasFlag("dry-run");
 const confirmed = flag("confirm") === CONFIRM_PHRASE;
-const removeOtherUsers = hasFlag("remove-other-users");
+const removeDemoUsers = hasFlag("remove-demo-users");
 
 if (!keepEmail.success) {
   console.error("Informe a conta que fica: --keep-email=voce@alemfilmes.com");
@@ -77,7 +77,7 @@ const supabase = createClient<Database>(env.data.NEXT_PUBLIC_SUPABASE_URL, env.d
  * Tabelas operacionais, na ordem de exclusão (filhas antes das mães). `column` é uma coluna sempre
  * preenchida, usada só porque o PostgREST exige um filtro em DELETE.
  */
-const STEPS: { table: TableName; column: string; label: string }[] = [
+const STEPS: { table: TableName | "project_links"; column: string; label: string; exceptKeeper?: boolean }[] = [
   { table: "announcement_reads", column: "announcement_id", label: "Leituras de avisos" },
   { table: "announcements", column: "id", label: "Avisos" },
   { table: "commitments", column: "id", label: "Compromissos da agenda" },
@@ -93,6 +93,8 @@ const STEPS: { table: TableName; column: string; label: string }[] = [
   { table: "pautas", column: "id", label: "Pautas e tarefas avulsas" },
   { table: "receivables", column: "id", label: "Recebimentos" },
   { table: "payables", column: "id", label: "Pagamentos" },
+  // Não existe nesta base (os links ficam em colunas de projects); se um dia existir, entra aqui.
+  { table: "project_links", column: "id", label: "Projetos — links" },
   { table: "project_members", column: "project_id", label: "Projetos — equipe" },
   { table: "project_financials", column: "project_id", label: "Projetos — financeiro" },
   { table: "projects", column: "id", label: "Projetos" },
@@ -100,6 +102,7 @@ const STEPS: { table: TableName; column: string; label: string }[] = [
   { table: "contacts", column: "id", label: "Contatos" },
   { table: "companies", column: "id", label: "Empresas (clientes e prospects)" },
   { table: "time_entries", column: "id", label: "Banco de horas — registros de ponto" },
+  { table: "work_schedules", column: "profile_id", label: "Jornadas (exceto a sua)", exceptKeeper: true },
   { table: "pauta_code_counters", column: "year", label: "Contador de códigos de pauta" },
   { table: "crm_code_counters", column: "year", label: "Contador de códigos do CRM" },
   // Por último: alguns gatilhos registram atividade/notificação ao mexer nas tabelas acima.
@@ -110,7 +113,6 @@ const STEPS: { table: TableName; column: string; label: string }[] = [
 const KEPT_TABLES: { table: TableName; label: string }[] = [
   { table: "profiles", label: "Contas (profiles)" },
   { table: "profile_squads", label: "Squads das contas" },
-  { table: "work_schedules", label: "Jornadas" },
   { table: "user_settings", label: "Preferências de notificação" },
   { table: "company_settings", label: "Configurações da empresa" },
   { table: "commission_rules", label: "Regras de comissão" },
@@ -122,15 +124,26 @@ function isMissingTable(error: { code?: string; message: string } | null) {
   return Boolean(error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|Could not find the table/i.test(error.message)));
 }
 
-async function count(table: TableName): Promise<number | null> {
-  const { count: total, error } = await supabase.from(table).select("*", { count: "exact", head: true });
+// Cliente sem o tipo gerado: as etapas são dinâmicas e "project_links" pode nem existir.
+const untyped = createClient(env.data.NEXT_PUBLIC_SUPABASE_URL, env.data.SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+const anyTable = (table: string) => untyped.from(table);
+
+async function count(table: string, exceptProfileId?: string): Promise<number | null> {
+  // GET com limit(0) em vez de HEAD: HEAD numa tabela inexistente volta sem erro legível.
+  let query = anyTable(table).select("*", { count: "exact" }).limit(0);
+  if (exceptProfileId) query = query.neq("profile_id", exceptProfileId);
+  const { count: total, error } = await query;
   if (isMissingTable(error)) return null;
   if (error) throw new Error(`contar ${table}: ${error.message}`);
   return total ?? 0;
 }
 
-async function wipe(step: (typeof STEPS)[number]): Promise<number | null> {
-  const { count: deleted, error } = await supabase.from(step.table).delete({ count: "exact" }).not(step.column, "is", null);
+async function wipe(step: (typeof STEPS)[number], keeperId: string): Promise<number | null> {
+  let query = anyTable(step.table).delete({ count: "exact" }).not(step.column, "is", null);
+  if (step.exceptKeeper) query = query.neq("profile_id", keeperId);
+  const { count: deleted, error } = await query;
   if (isMissingTable(error)) return null;
   if (error) throw new Error(`apagar ${step.table}: ${error.message}`);
   return deleted ?? 0;
@@ -194,8 +207,7 @@ async function main() {
   const authUsers = await listAuthUsers();
   const others = authUsers.filter((user) => user.id !== keeper.id);
   const demoUsers = others.filter((user) => user.email.endsWith(DEMO_EMAIL_DOMAIN));
-  const realOthers = others.filter((user) => !user.email.endsWith(DEMO_EMAIL_DOMAIN));
-  const usersToRemove = removeOtherUsers ? others : demoUsers;
+  const usersToRemove = removeDemoUsers ? demoUsers : [];
 
   // 3. Arquivos no Storage.
   const logoFiles = await listStorageFiles(LOGO_BUCKET);
@@ -204,14 +216,11 @@ async function main() {
   if (dryRun) {
     console.log("Seria apagado:");
     for (const step of STEPS) {
-      const total = await count(step.table);
-      console.log(`  ${pad(step.label)} ${total === null ? "tabela não existe (migração não aplicada)" : total}`);
+      const total = await count(step.table, step.exceptKeeper ? keeper.id : undefined);
+      console.log(`  ${pad(step.label)} ${total === null ? "tabela não existe" : total}`);
     }
     console.log(`  ${pad("Logos de clientes (Storage)")} ${logoFiles.length} arquivo(s)`);
-    console.log(`  ${pad("Contas removidas")} ${usersToRemove.length} (${usersToRemove.map((user) => user.email).join(", ") || "nenhuma"})`);
-    if (!removeOtherUsers && realOthers.length > 0) {
-      console.log(`\nContas reais que FICARIAM (use --remove-other-users para apagar): ${realOthers.map((user) => user.email).join(", ")}`);
-    }
+    console.log(`  ${pad("Contas no Auth")} ${usersToRemove.length ? `${usersToRemove.length} removidas` : "nenhuma (auth.users não é tocado)"}`);
     console.log(`\nNada foi apagado. Para executar: --confirm=${CONFIRM_PHRASE}`);
     return;
   }
@@ -220,8 +229,8 @@ async function main() {
   console.log("Apagado:");
   const summary: { label: string; result: string }[] = [];
   for (const step of STEPS) {
-    const deleted = await wipe(step);
-    const result = deleted === null ? "tabela não existe (migração não aplicada)" : String(deleted);
+    const deleted = await wipe(step, keeper.id);
+    const result = deleted === null ? "tabela não existe" : String(deleted);
     summary.push({ label: step.label, result });
     console.log(`  ${pad(step.label)} ${result}`);
   }
@@ -236,7 +245,7 @@ async function main() {
     const { error } = await supabase.auth.admin.deleteUser(user.id);
     if (error) throw new Error(`apagar conta ${user.email}: ${error.message}`);
   }
-  console.log(`  ${pad("Contas removidas")} ${usersToRemove.length}${usersToRemove.length ? ` (${usersToRemove.map((user) => user.email).join(", ")})` : ""}`);
+  console.log(`  ${pad("Contas no Auth")} ${usersToRemove.length ? `${usersToRemove.length} removidas` : "nenhuma (auth.users não é tocado)"}`);
 
   // 7. A conta mantida vira master (o master de demonstração pode ter saído) e fica na diretoria.
   const { data: currentMaster } = await supabase.from("profiles").select("id").eq("org_level", "master").maybeSingle();
@@ -250,15 +259,25 @@ async function main() {
     .upsert({ profile_id: keeper.id, squad: "diretoria", is_lead: false }, { onConflict: "profile_id,squad", ignoreDuplicates: true });
   if (squadError) throw new Error(`garantir squad diretoria: ${squadError.message}`);
 
-  // 8. O que ficou.
-  console.log("\nFicou:");
+  // 8. Conferência: tudo que foi apagado precisa estar em zero.
+  console.log("\nConferência (linhas restantes nas tabelas apagadas — tudo deve ser 0):");
+  let leftovers = 0;
+  for (const step of STEPS) {
+    const total = await count(step.table, step.exceptKeeper ? keeper.id : undefined);
+    if (total) leftovers += total;
+    console.log(`  ${pad(step.label)} ${total === null ? "tabela não existe" : total}`);
+  }
+  console.log("\nMantido:");
   for (const kept of KEPT_TABLES) {
     const total = await count(kept.table);
-    console.log(`  ${pad(kept.label)} ${total === null ? "tabela não existe (migração não aplicada)" : total}`);
+    console.log(`  ${pad(kept.label)} ${total === null ? "tabela não existe" : total}`);
   }
-  if (!removeOtherUsers && realOthers.length > 0) {
-    console.log(`\nContas reais mantidas (use --remove-other-users para apagar): ${realOthers.map((user) => user.email).join(", ")}`);
+  const { count: keeperSchedules } = await supabase.from("work_schedules").select("*", { count: "exact", head: true }).eq("profile_id", keeper.id);
+  console.log(`  ${pad("Sua jornada")} ${keeperSchedules ?? 0}`);
+  if (!removeDemoUsers && demoUsers.length > 0) {
+    console.log(`\n${demoUsers.length} profiles de demonstração continuam (auth.users não foi tocado). Para removê-los: --remove-demo-users.`);
   }
+  if (leftovers > 0) console.log(`\nATENÇÃO: sobraram ${leftovers} linha(s) nas tabelas apagadas.`);
   console.log("\nPronto. Estrutura, configurações e a conta admin foram preservadas.");
 }
 

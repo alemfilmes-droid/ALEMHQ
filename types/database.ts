@@ -1,3 +1,6 @@
+// AJUSTE MANUAL após `npm run db:types`: em Functions.generate_installments.Args, marque
+// p_project_id, p_company_id e p_payment_method como `| null` (a função aceita NULL, mas o gerador
+// não indica). Ver README → Migrações.
 export type Json =
   | string
   | number
@@ -367,44 +370,6 @@ export type Database = {
           },
         ]
       }
-      company_settings: {
-        Row: {
-          attention_margin_pct: number
-          default_daily_hours: number
-          default_workdays: number[]
-          healthy_margin_pct: number
-          id: boolean
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          attention_margin_pct?: number
-          default_daily_hours?: number
-          default_workdays?: number[]
-          healthy_margin_pct?: number
-          id?: boolean
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          attention_margin_pct?: number
-          default_daily_hours?: number
-          default_workdays?: number[]
-          healthy_margin_pct?: number
-          id?: boolean
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_settings_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       companies: {
         Row: {
           became_client_at: string | null
@@ -483,6 +448,44 @@ export type Database = {
           {
             foreignKeyName: "companies_health_updated_by_fkey"
             columns: ["health_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_settings: {
+        Row: {
+          attention_margin_pct: number
+          default_daily_hours: number
+          default_workdays: number[]
+          healthy_margin_pct: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          attention_margin_pct?: number
+          default_daily_hours?: number
+          default_workdays?: number[]
+          healthy_margin_pct?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          attention_margin_pct?: number
+          default_daily_hours?: number
+          default_workdays?: number[]
+          healthy_margin_pct?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2391,7 +2394,7 @@ export type Database = {
           {
             foreignKeyName: "user_settings_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3149,18 +3152,6 @@ export type Database = {
       }
     }
     Functions: {
-      announcements_unread_count: { Args: never; Returns: number }
-      can_manage_company: { Args: never; Returns: boolean }
-      company_contract_ranking: {
-        Args: never
-        Returns: {
-          company_id: string
-          rank: number
-          total_value: number | null
-        }[]
-      }
-      margin_status_for: { Args: { p_pct: number }; Returns: string }
-      publish_due_announcements: { Args: never; Returns: number }
       accept_invitation: { Args: never; Returns: undefined }
       agenda_conflicts: {
         Args: {
@@ -3216,10 +3207,12 @@ export type Database = {
           visibility: Database["public"]["Enums"]["commitment_visibility"]
         }[]
       }
+      announcements_unread_count: { Args: never; Returns: number }
       can_access_all_deals: { Args: never; Returns: boolean }
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       can_fully_manage_pauta: { Args: never; Returns: boolean }
+      can_manage_company: { Args: never; Returns: boolean }
       can_manage_company_logos: { Args: never; Returns: boolean }
       can_manage_pautas: { Args: never; Returns: boolean }
       can_manage_profile: { Args: { p_target_id: string }; Returns: boolean }
@@ -3286,6 +3279,14 @@ export type Database = {
         }
       }
       close_stale_time_sessions: { Args: never; Returns: undefined }
+      company_contract_ranking: {
+        Args: never
+        Returns: {
+          company_id: string
+          rank: number
+          total_value: number
+        }[]
+      }
       company_overview: { Args: { p_company_id: string }; Returns: Json }
       company_timeline: {
         Args: { p_company_id: string; p_limit?: number }
@@ -3469,13 +3470,13 @@ export type Database = {
       }
       generate_installments: {
         Args: {
-          p_company_id?: string
+          p_company_id?: string | null
           p_description?: string
           p_first_due_date: string
           p_installments: number
           p_interval_days?: number
-          p_payment_method?: Database["public"]["Enums"]["payment_method"]
-          p_project_id: string
+          p_payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          p_project_id: string | null
           p_total_amount: number
         }
         Returns: {
@@ -3515,6 +3516,7 @@ export type Database = {
           cancelled_at: string | null
           category: Database["public"]["Enums"]["payable_category"]
           company_id: string | null
+          cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
           created_by: string | null
           description: string
@@ -3546,6 +3548,13 @@ export type Database = {
       }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_announcement_audience: {
+        Args: {
+          p_levels: Database["public"]["Enums"]["org_level"][]
+          p_squads: Database["public"]["Enums"]["squad"][]
+        }
+        Returns: boolean
+      }
       is_director: { Args: never; Returns: boolean }
       is_head: { Args: never; Returns: boolean }
       is_leadership: { Args: never; Returns: boolean }
@@ -3567,6 +3576,8 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["squad"][]
       }
+      margin_status_for: { Args: { p_pct: number }; Returns: string }
+      notification_category: { Args: { p_type: string }; Returns: string }
       notify: {
         Args: {
           p_body: string
@@ -3703,6 +3714,7 @@ export type Database = {
           em_andamento: number
         }[]
       }
+      publish_due_announcements: { Args: never; Returns: number }
       set_company_logo: {
         Args: { p_company_id: string; p_logo_url: string }
         Returns: undefined
@@ -3730,7 +3742,6 @@ export type Database = {
       client_health: "ativo" | "atencao" | "tensao" | "churn"
       client_tier: "low_ticket" | "mid_ticket" | "high_ticket"
       commission_kind: "padrao" | "reaquecido"
-      cost_scope: "empresa" | "projeto"
       commitment_kind: "reuniao_comercial" | "captacao" | "entrega" | "interno"
       commitment_status:
         | "agendado"
@@ -3749,6 +3760,7 @@ export type Database = {
         | "evento"
         | "prospeccao_ativa"
         | "outro"
+      cost_scope: "empresa" | "projeto"
       deal_interaction_channel:
         | "email"
         | "whatsapp"
@@ -4035,7 +4047,6 @@ export const Constants = {
       client_health: ["ativo", "atencao", "tensao", "churn"],
       client_tier: ["low_ticket", "mid_ticket", "high_ticket"],
       commission_kind: ["padrao", "reaquecido"],
-      cost_scope: ["empresa", "projeto"],
       commitment_kind: ["reuniao_comercial", "captacao", "entrega", "interno"],
       commitment_status: [
         "agendado",
@@ -4056,6 +4067,7 @@ export const Constants = {
         "prospeccao_ativa",
         "outro",
       ],
+      cost_scope: ["empresa", "projeto"],
       deal_interaction_channel: [
         "email",
         "whatsapp",
