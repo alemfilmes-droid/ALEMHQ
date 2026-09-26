@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PrivacyCardToggle } from "@/components/privacy/privacy-mode";
 import { Metric, MetricGrid } from "@/components/ui/metric-value";
 import type { ClientOverview } from "@/features/clients/types";
 import { INTERACTION_CHANNEL_LABELS } from "@/features/crm/labels";
@@ -7,10 +8,13 @@ import { SOURCE_LABELS } from "@/lib/domain";
 import { formatDateShort } from "@/lib/format";
 import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE } from "@/lib/status";
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+function Group({ title, sensitive = false, children }: { title: string; sensitive?: boolean; children: ReactNode }) {
   return (
     <section aria-label={title} className="card-surface rounded-lg p-5">
-      <h3 className="eyebrow mb-4">{title}</h3>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h3 className="eyebrow">{title}</h3>
+        {sensitive ? <PrivacyCardToggle className="-mr-1" /> : null}
+      </div>
       <MetricGrid min="8.5rem">{children}</MetricGrid>
     </section>
   );
@@ -55,7 +59,9 @@ export function ClientMetrics({ overview, finance }: { overview: ClientOverview;
           <Metric label="Negócios ganhos" value={crm.won} tone={crm.won > 0 ? "success" : undefined} />
           <Metric label="Negócios perdidos" value={crm.lost} tone={crm.lost > 0 ? "danger" : undefined} />
           <Metric label="Taxa de conversão" value={crm.conversionRate} format="percent" note="Ganhos ÷ (ganhos + perdidos)" />
-          <Metric label="Valor em negociação" value={crm.negotiationValue} format="cents" tone={crm.negotiationValue > 0 ? "warning" : undefined} />
+          {crm.negotiationValue != null ? (
+            <Metric label="Valor em negociação" value={crm.negotiationValue} format="cents" tone={crm.negotiationValue > 0 ? "warning" : undefined} />
+          ) : null}
           <Metric
             label="Última interação comercial"
             value={crm.lastInteractionAt ? dateOnly(crm.lastInteractionAt) : null}
@@ -67,7 +73,7 @@ export function ClientMetrics({ overview, finance }: { overview: ClientOverview;
       ) : null}
 
       {finance ? (
-        <Group title="Financeiro">
+        <Group title="Financeiro" sensitive>
           <Metric label="Faturamento total" value={finance.billed} format="cents" />
           <Metric label="Recebido" value={finance.received} format="cents" tone="success" />
           <Metric label="Em aberto" value={finance.open} format="cents" tone={finance.open > 0 ? "warning" : undefined} />
@@ -76,6 +82,7 @@ export function ClientMetrics({ overview, finance }: { overview: ClientOverview;
             label="Margem média"
             value={finance.marginPct}
             format="percent"
+            sensitive
             tone={finance.marginStatus ? MARGIN_STATUS_TONE[finance.marginStatus] : undefined}
             note={finance.marginStatus ? MARGIN_STATUS_LABELS[finance.marginStatus] : undefined}
           />

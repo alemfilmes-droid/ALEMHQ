@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Menu, Search } from "lucide-react";
 import { UserMenu } from "@/components/layout/user-menu";
+import { PrivacyToggle } from "@/components/privacy/privacy-mode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NotificationsBell } from "@/features/notifications/components/notifications-bell";
@@ -15,10 +16,12 @@ interface TopbarProps {
   profile: Profile;
   notifications: NotificationsSnapshot;
   canSeeSettings: boolean;
+  /** Só quem vê valores tem o que ocultar: o olho do modo privacidade aparece para essas pessoas. */
+  canSeeMoney: boolean;
   onOpenMenu: () => void;
 }
 
-export function Topbar({ profile, notifications, canSeeSettings, onOpenMenu }: TopbarProps) {
+export function Topbar({ profile, notifications, canSeeSettings, canSeeMoney, onOpenMenu }: TopbarProps) {
   const pathname = usePathname();
   const title = getPageTitle(pathname);
 
@@ -47,6 +50,7 @@ export function Topbar({ profile, notifications, canSeeSettings, onOpenMenu }: T
         <Input type="search" aria-label="Busca global" placeholder="Buscar projetos, clientes, pessoas" className="pl-9" />
       </div>
 
+      {canSeeMoney ? <PrivacyToggle /> : null}
       <NotificationsBell initial={notifications} />
       <UserMenu profile={profile} canSeeSettings={canSeeSettings} />
     </header>

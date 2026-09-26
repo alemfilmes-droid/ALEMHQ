@@ -14,8 +14,17 @@ const optionalUrl = z
   .refine((value) => value === "" || /^https?:\/\//i.test(value), "Use um link começando com http:// ou https://")
   .or(z.literal(""));
 
+/** Responsável adicional da pauta, com a função de produção dele. */
+export const pautaMemberInputSchema = z.object({
+  profileId: z.string().uuid(),
+  productionFunction: z.enum(PRODUCTION_FUNCTIONS),
+});
+
 export const createPautaSchema = z.object({
   projectId: z.string().uuid("Selecione o projeto."),
+  /** Squad da pauta; vazio = o padrão do banco (audiovisual). */
+  squad: z.enum(SQUADS).or(z.literal("")),
+  members: z.array(pautaMemberInputSchema).max(20, "Use até 20 responsáveis."),
   title: z.string().trim().min(2, "Informe o título.").max(160, "Use até 160 caracteres."),
   briefing: z.string().trim().max(4000, "Use até 4000 caracteres."),
   leadId: z.string().uuid("Selecione o líder."),

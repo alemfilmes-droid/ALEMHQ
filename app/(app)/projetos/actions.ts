@@ -191,3 +191,36 @@ export async function saveFinancialsAction(projectId: string, values: Financials
   revalidatePath(`/projetos/${projectId}`);
   return { ok: true, message: "Financeiro salvo." };
 }
+
+const quickProjectSchema = z.object({
+  name: z.string().trim().min(2, "Informe o nome do projeto.").max(140, "Use até 140 caracteres."),
+  /** null = projeto interno da Além Filmes (sem cliente). */
+  companyId: z.string().uuid().nullable(),
+});
+
+/**
+ * Atalho "Criar projeto" do diálogo de nova pauta, quando o cliente escolhido ainda não tem projeto:
+ * só o nome — o resto (modelo, prazos, financeiro) se completa depois na página do projeto. Mesma
+ * permissão do cadastro completo (capability manageProjects + RLS de projects).
+ */
+export async function createQuickProjectAction(input: { name: string; companyId: string | null }): Promise<
+  ActionResult & { project?: { id: string; name: string; company_id: string | null; is_internal: boolean } }
+> {
+  const actor = await authorizeCapability("manageProjects");
+  if (!actor) return FORBIDDEN;
+  const parsed = quickProjectSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revise o nome do projeto." };
+
+  const isInternal = parsed.data.companyId === null;
+  const supabase = await createClient();
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({ name: parsed.data.name, company_id: parsed.data.companyId, is_internal: isInternal, owner_id: actor.id })
+    .select("id, name, company_id, is_internal")
+    .single();
+  if (error) return { ok: false, error: "Não foi possível criar o projeto." };
+
+  await supabase.from("project_members").insert({ project_id: project.id, profile_id: actor.id });
+  revalidatePath("/projetos");
+  return { ok: true, message: "Projeto criado.", project };
+}

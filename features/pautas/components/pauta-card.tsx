@@ -1,8 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { AlertTriangle, MessageSquare } from "lucide-react";
+import { AlertTriangle, Archive, MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
@@ -13,10 +21,14 @@ import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
 
+export type PautaCardMenu = { canDelete: boolean; canArchive: boolean; onRemove: (mode: "delete" | "archive") => void };
+
 interface PautaCardProps {
   pauta: PautaWithDetails;
   onOpen: () => void;
   dragging?: boolean;
+  /** Menu de contexto (botão "⋯" e clique direito): arquivar e, para quem criou, apagar. */
+  menu?: PautaCardMenu;
 }
 
 /**
@@ -25,7 +37,9 @@ interface PautaCardProps {
  * hora — e barra lateral de 3px na cor do squad de quem atribuiu/é dono (o líder). Sem squad
  * conhecido, superfície neutra.
  */
-export function PautaCard({ pauta, onOpen, dragging = false }: PautaCardProps) {
+export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasMenu = Boolean(menu && (menu.canDelete || menu.canArchive));
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: pauta.id! });
   const overdue = pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
   const assigneeSquad = usePrimarySquad(pauta.current_assignee_id ?? pauta.lead_id) ?? pauta.squad;
@@ -44,6 +58,11 @@ export function PautaCard({ pauta, onOpen, dragging = false }: PautaCardProps) {
       role="button"
       tabIndex={0}
       onClick={onOpen}
+      onContextMenu={(event) => {
+        if (!hasMenu) return;
+        event.preventDefault();
+        setMenuOpen(true);
+      }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -67,7 +86,40 @@ export function PautaCard({ pauta, onOpen, dragging = false }: PautaCardProps) {
           />
           <span className="truncate">{pauta.project_is_internal ? "Interno — Além Filmes" : (pauta.company_name ?? "—")}</span>
         </p>
-        <p className="line-clamp-2 text-sm font-semibold leading-snug">{pauta.title}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="line-clamp-2 text-sm font-semibold leading-snug">{pauta.title}</p>
+          {hasMenu && menu ? (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger
+                aria-label={`Ações da pauta ${pauta.title}`}
+                className="-mr-1 -mt-0.5 shrink-0 rounded-sm p-0.5 text-subtle transition-colors hover:bg-surface-hover hover:text-foreground"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                <DropdownMenuItem onSelect={onOpen}>Abrir</DropdownMenuItem>
+                {menu.canArchive ? (
+                  <DropdownMenuItem onSelect={() => menu.onRemove("archive")}>
+                    <Archive aria-hidden />
+                    Arquivar
+                  </DropdownMenuItem>
+                ) : null}
+                {menu.canDelete ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => menu.onRemove("delete")}>
+                      <Trash2 aria-hidden />
+                      Apagar pauta
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">

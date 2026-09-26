@@ -1,4 +1,5 @@
-import { formatCents, parseMoneyToCents, sumCents } from "@/features/finance/money";
+import { Money } from "@/components/ui/money";
+import { parseMoneyToCents, sumCents } from "@/features/finance/money";
 import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE, toneColor } from "@/lib/status";
 import { DEFAULT_MARGIN_THRESHOLDS, marginStatusFor, type MarginThresholds } from "@/lib/margin";
 
@@ -21,7 +22,7 @@ export function MarginPreview({ contractValue, costAmounts, thresholds = DEFAULT
 
   return (
     <p className="rounded-md border border-border bg-surface-raised p-3 text-[13px] text-muted-foreground">
-      Margem prevista: {formatCents(marginCents)} —{" "}
+      Margem prevista: <Money cents={marginCents} /> —{" "}
       <span className="font-bold" style={{ color: toneColor(MARGIN_STATUS_TONE[status]) }}>
         {String(percent).replace(".", ",")}%
       </span>{" "}

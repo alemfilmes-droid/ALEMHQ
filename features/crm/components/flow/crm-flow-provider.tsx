@@ -47,6 +47,8 @@ export interface CrmFlow {
   lose: (deal: DealWithDetails) => void;
   reheat: (deal: DealWithDetails) => void;
   canManageAll: boolean;
+  /** Acesso ao financeiro: sem ele, o banco nem devolve valores — a UI só esconde as colunas vazias. */
+  canSeeFinance: boolean;
   currentUserId: string;
 }
 
@@ -142,9 +144,10 @@ export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentU
       lose: (deal) => setActive({ type: "loss", deal }),
       reheat: (deal) => setActive({ type: "reheat", deal }),
       canManageAll,
+      canSeeFinance,
       currentUserId,
     }),
-    [version, requestStage, canManageAll, currentUserId],
+    [version, requestStage, canManageAll, canSeeFinance, currentUserId],
   );
 
   const close = (next: boolean) => {

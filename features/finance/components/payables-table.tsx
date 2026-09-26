@@ -139,7 +139,7 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
                   )}
                 </td>
               )}
-              <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.amount)}</td>
+              <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.amount)}</td>
               <td className="px-4 py-3">
                 <StatusBadge status={item.status} />
                 {item.paidAt ? <span className="mt-1 block text-[12px] text-muted-foreground">em {formatDate(item.paidAt)}</span> : null}

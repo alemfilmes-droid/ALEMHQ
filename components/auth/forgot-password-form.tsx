@@ -30,7 +30,8 @@ export function ForgotPasswordForm() {
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5">
+    // method="post": se o JavaScript não carregar, o navegador nunca manda e-mail e senha na URL.
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-5">
       {result ? <Alert variant={result.ok ? "success" : "error"}>{result.text}</Alert> : null}
 
       <FormField id="email" label="E-mail" error={errors.email?.message}>

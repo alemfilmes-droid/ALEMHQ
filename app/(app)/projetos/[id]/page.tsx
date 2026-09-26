@@ -13,7 +13,7 @@ import { ProjectFinanceTab } from "@/features/finance/components/project-finance
 import { getProjectProfitability } from "@/features/finance/queries";
 import { KanbanBoard } from "@/features/pautas/components/kanban-board";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
-import { canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
+import { canCreateProjectPauta, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS } from "@/lib/domain";
 import { createClient } from "@/lib/supabase/server";
@@ -87,10 +87,11 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
                 initialPautas={pautasResult}
                 options={pautaOptionsResult}
                 canManage={canFullyManagePauta(profile)}
+                canCreate={canCreateProjectPauta(profile)}
+                canCreateProjects={canManage}
                 lockedProjectId={project.id}
-                defaultOwnerId={project.owner_id}
                 initialOpenId={pauta}
-                currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url }}
+                currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, squads: profile.squads }}
               />
             </div>
           ) : null

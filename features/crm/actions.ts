@@ -180,10 +180,12 @@ export async function updateDealAction(id: string, values: UpdateDealValues): Pr
   const d = parsed.data;
 
   const patch: Tables["deals"]["Update"] = {};
+  const canSeeFinance = hasCapability(actor, "finance");
   if (d.primaryContactId !== undefined) patch.primary_contact_id = orNull(d.primaryContactId);
   if (d.ownerId !== undefined) patch.owner_id = d.ownerId;
   if (d.goals !== undefined) patch.prospection_goals = d.goals;
-  if (d.estimatedValue !== undefined) patch.estimated_value = moneyOrNull(d.estimatedValue);
+  // Sem acesso ao financeiro o formulário nem recebe o valor atual — nunca sobrescreve com vazio.
+  if (d.estimatedValue !== undefined && canSeeFinance) patch.estimated_value = moneyOrNull(d.estimatedValue);
   if (d.expectedCloseDate !== undefined) patch.expected_close_date = orNull(d.expectedCloseDate);
   if (d.source !== undefined) patch.source = d.source === "" ? null : d.source;
   if (d.nextAction !== undefined) patch.next_action = d.nextAction;

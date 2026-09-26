@@ -5,7 +5,7 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type Dra
 import { toast } from "sonner";
 import { KanbanLane } from "@/components/kanban/kanban-lane";
 import { laneKeyOf, lanesFor, priorityRank, type KanbanDimension } from "@/features/minhas-pautas/board";
-import { PautaCard } from "@/features/pautas/components/pauta-card";
+import { PautaCard, type PautaCardMenu } from "@/features/pautas/components/pauta-card";
 import { movePautaColumnAction, updatePautaAction } from "@/features/pautas/actions";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
 import { PRIORITIES } from "@/lib/domain";
@@ -20,6 +20,8 @@ interface MyPautasKanbanProps {
   canManage: boolean;
   onOpen: (id: string) => void;
   onChanged: (pauta: PautaWithDetails) => void;
+  /** Menu do card (arquivar / apagar para quem criou). */
+  menuFor?: (pauta: PautaWithDetails) => PautaCardMenu | undefined;
 }
 
 const BLOCKED_SQUAD = "Pautas não mudam de squad pelo quadro — cada uma pertence ao squad que a criou.";
@@ -38,7 +40,7 @@ function isColumn(value: string): value is PautaColumn {
  * uma rolando por dentro. Arrastar só muda o que a pessoa pode mudar: prioridade (gestão ou dono da
  * tarefa avulsa) ou status (quem edita a pauta — o banco confere de novo). Entre squads, nunca.
  */
-export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged }: MyPautasKanbanProps) {
+export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged, menuFor }: MyPautasKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -131,7 +133,7 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
               blockedLabel={dimension === "squad" ? "Não muda de squad" : "Sem permissão para mudar"}
             >
               {items.map((pauta) => (
-                <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} />
+                <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} menu={menuFor?.(pauta)} />
               ))}
             </KanbanLane>
           );

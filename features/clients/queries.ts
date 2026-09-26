@@ -22,7 +22,8 @@ const overviewSchema = z.object({
       won: z.number(),
       lost: z.number(),
       open: z.number(),
-      negotiation_value: z.number(),
+      // Nulo para quem não tem acesso ao financeiro (a função nem calcula).
+      negotiation_value: z.number().nullable(),
       last_interaction_at: z.string().optional(),
       last_interaction_channel: z.enum(DEAL_CHANNELS).nullable().optional(),
     })
@@ -57,7 +58,7 @@ export async function getClientOverview(companyId: string): Promise<ClientOvervi
           won: row.crm.won,
           lost: row.crm.lost,
           conversionRate: row.crm.won + row.crm.lost > 0 ? Math.round((row.crm.won / (row.crm.won + row.crm.lost)) * 1000) / 10 : null,
-          negotiationValue: Math.round(row.crm.negotiation_value * 100),
+          negotiationValue: row.crm.negotiation_value == null ? null : Math.round(row.crm.negotiation_value * 100),
           lastInteractionAt: row.crm.last_interaction_at ?? null,
           lastInteractionChannel: row.crm.last_interaction_channel ?? null,
         }

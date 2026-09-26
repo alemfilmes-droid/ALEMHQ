@@ -1,7 +1,7 @@
+import { Money } from "@/components/ui/money";
 import { CalendarClock } from "lucide-react";
 import { DirectionIcon } from "@/features/finance/components/status-badge";
 import { EmptyState } from "@/features/finance/components/table-shell";
-import { formatCents } from "@/features/finance/money";
 import type { UpcomingItem } from "@/features/finance/types";
 import { formatDate } from "@/lib/format";
 
@@ -25,7 +25,7 @@ export function UpcomingList({ items }: { items: UpcomingItem[] }) {
           <span className="text-sm font-bold tabular-nums">
             <span className="sr-only">{item.direction === "in" ? "Entrada de " : "Saída de "}</span>
             {item.direction === "in" ? "+ " : "− "}
-            {formatCents(item.amount)}
+            <Money cents={item.amount} />
           </span>
         </li>
       ))}

@@ -27,7 +27,7 @@ export function SummaryCards({ summary }: { summary: PeriodSummary }) {
     <section aria-label="Resumo do período" className="card-grid">
       {cards.map(({ title, icon: Icon, value, note }) => (
         <Card key={title}>
-          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" />
+          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" sensitive />
           <CardContent>
             <MetricValue value={value} format="cents" />
             {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}

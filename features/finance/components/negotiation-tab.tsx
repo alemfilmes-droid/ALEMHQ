@@ -71,14 +71,14 @@ export async function NegotiationTab({ canEditProbabilities }: { canEditProbabil
                   <DealStageBadge stage={item.stage} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{item.ownerName}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.proposalAmount)}</td>
+                <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.proposalAmount)}</td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {PROPOSAL_STATUS_LABELS[item.proposalStatus]}
                   <span className="block text-[12px]">enviada em {formatDate(item.proposalSentAt)}</span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.expectedCloseDate ? formatDate(item.expectedCloseDate) : "—"}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{Math.round(item.probability * 100)}%</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.weightedAmount)}</td>
+                <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.weightedAmount)}</td>
               </tr>
             ))}
           </tbody>

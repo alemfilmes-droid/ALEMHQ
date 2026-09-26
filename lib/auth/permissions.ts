@@ -198,6 +198,15 @@ export function managedSquads(subject: HierarchySubject): readonly Squad[] {
 }
 
 /**
+ * Criar "Pauta de projeto" e atribuir outras pessoas: espelha a policy pautas_insert (can_manage_pautas()
+ * no banco) — master, diretoria e heads. Quem não pode só cria "Tarefa interna" para si. Vale SÓ para
+ * pautas: SDR/BDR continuam criando empresas, contatos e negócios no CRM normalmente.
+ */
+export function canCreateProjectPauta(subject: Pick<Profile, "org_level">): boolean {
+  return subject.org_level === "master" || subject.org_level === "diretoria" || subject.org_level === "head";
+}
+
+/**
  * Espelha can_fully_manage_pauta() no banco: gestão de verdade sobre pautas (criar, apagar,
  * trocar líder/prioridade, mover entre colunas livremente, reatribuir responsáveis à força) —
  * capability "managePautas" (acesso à rota) restrita ao squad que de fato produz pautas hoje.

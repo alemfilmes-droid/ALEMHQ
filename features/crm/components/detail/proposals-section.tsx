@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { ExternalLink as LinkIcon, FileText } from "lucide-react";
 import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { INTERACTION_CHANNEL_LABELS, PROPOSAL_CHANNEL_LABELS, PROPOSAL_STATUS_LABELS } from "@/features/crm/labels";
@@ -47,7 +48,13 @@ export function ProposalsSection({ deal, proposals, negotiations, closed }: Prop
           {proposals.map((proposal) => (
             <li key={proposal.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-bold">{formatCents(toCents(proposal.amount))}</p>
+                {proposal.amount != null ? (
+                  <p className="text-sm font-bold">
+                    <Money cents={toCents(proposal.amount)} />
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold">Proposta</p>
+                )}
                 <Badge variant="outline">{PROPOSAL_STATUS_LABELS[proposal.status]}</Badge>
               </div>
               <p className="mt-1 text-[13px] text-muted-foreground">
@@ -77,9 +84,9 @@ export function ProposalsSection({ deal, proposals, negotiations, closed }: Prop
             {negotiations.map((item) => (
               <li key={item.id} className="rounded-md border border-border p-3 text-sm">
                 <p className="flex flex-wrap gap-x-4 gap-y-1 font-semibold">
-                  {item.client_counter_amount != null ? <span>Cliente: {formatCents(toCents(item.client_counter_amount))}</span> : null}
-                  {item.our_counter_amount != null ? <span>Nós: {formatCents(toCents(item.our_counter_amount))}</span> : null}
-                  {item.agreed_amount != null ? <span>Acordado: {formatCents(toCents(item.agreed_amount))}</span> : null}
+                  {item.client_counter_amount != null ? <span data-sensitive>Cliente: {formatCents(toCents(item.client_counter_amount))}</span> : null}
+                  {item.our_counter_amount != null ? <span data-sensitive>Nós: {formatCents(toCents(item.our_counter_amount))}</span> : null}
+                  {item.agreed_amount != null ? <span data-sensitive>Acordado: {formatCents(toCents(item.agreed_amount))}</span> : null}
                 </p>
                 <p className="mt-1 text-[13px] text-muted-foreground">
                   {formatDateTime(item.created_at)}

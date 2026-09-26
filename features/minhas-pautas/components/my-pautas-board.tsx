@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CalendarDays, KanbanSquare, List, Search, X } from "lucide-react";
+import { CalendarDays, KanbanSquare, List, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PautaDetailModal } from "@/features/pautas/components/pauta-detail-modal";
@@ -20,7 +20,8 @@ import { MyPautasCalendar } from "@/features/minhas-pautas/components/my-pautas-
 import { MyPautasKanban } from "@/features/minhas-pautas/components/my-pautas-kanban";
 import { MyPautasList } from "@/features/minhas-pautas/components/my-pautas-list";
 import { MyPautasSummaryStrip } from "@/features/minhas-pautas/components/my-pautas-summary";
-import { NewTaskDialog } from "@/features/minhas-pautas/components/new-task-dialog";
+import { PautaCreateDialog } from "@/features/pautas/components/pauta-create-dialog";
+import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import type { MyPautasBoard as MyPautasBoardData } from "@/features/minhas-pautas/types";
 import type { PautaFormOptions } from "@/features/pautas/types";
 import { SQUADS, SQUAD_LABELS } from "@/lib/auth/squads";
@@ -32,6 +33,9 @@ interface MyPautasBoardProps {
   board: MyPautasBoardData;
   options: PautaFormOptions;
   canManage: boolean;
+  /** Criar "Pauta de projeto" (master, diretoria, heads); os demais só criam tarefa interna. */
+  canCreateProjectPauta: boolean;
+  canCreateProjects: boolean;
   initialOpenId?: string;
   currentUser: { id: string; full_name: string; avatar_url: string | null };
   mySquads: Squad[];
@@ -82,12 +86,23 @@ function Segmented<T extends string>({
  * filtros e o mesmo modal de pauta. Visão, agrupamento, semana e squad ficam na URL — trocar de
  * visão não recarrega dados do servidor (history.replaceState, que o Next sincroniza com useSearchParams).
  */
-export function MyPautasBoard({ board, options, canManage, initialOpenId, currentUser, mySquads }: MyPautasBoardProps) {
+export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta, canCreateProjects, initialOpenId, currentUser, mySquads }: MyPautasBoardProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
   const [rows, setRows] = useState<Record<string, PautaWithDetails>>({});
   const [search, setSearch] = useState("");
+  const [removed, setRemoved] = useState<Set<string>>(() => new Set());
+  const [removal, setRemoval] = useState<PautaRemoval | null>(null);
+
+  function menuFor(pauta: PautaWithDetails) {
+    const isCreator = pauta.created_by === currentUser.id;
+    return {
+      canDelete: isCreator,
+      canArchive: canManage || isCreator,
+      onRemove: (mode: "delete" | "archive") => setRemoval({ mode, id: pauta.id!, title: pauta.title ?? "" }),
+    };
+  }
 
   const multiSquad = mySquads.length > 1;
   const view = parseView(searchParams.get("visao"));
@@ -113,7 +128,9 @@ export function MyPautasBoard({ board, options, canManage, initialOpenId, curren
   // Junta as edições otimistas (modal, arrasto) aos dados do servidor, para refletir na hora em
   // todas as visões sem esperar o próximo carregamento (revalidatePath cobre o próximo acesso).
   function withOverrides(list: PautaWithDetails[]): PautaWithDetails[] {
-    return list.map((pauta) => (pauta.id && rows[pauta.id] ? { ...pauta, ...rows[pauta.id] } : pauta));
+    return list
+      .filter((pauta) => !pauta.id || !removed.has(pauta.id))
+      .map((pauta) => (pauta.id && rows[pauta.id] ? { ...pauta, ...rows[pauta.id] } : pauta));
   }
 
   const all: MyPautasBoardData = {
@@ -156,7 +173,18 @@ export function MyPautasBoard({ board, options, canManage, initialOpenId, curren
           onSquadToggle={(squad) => setParams({ squad: activeSquad === squad ? null : squad })}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <NewTaskDialog squads={mySquads} />
+          <PautaCreateDialog
+            options={options}
+            currentUser={{ id: currentUser.id, squads: mySquads }}
+            canCreateProjectPauta={canCreateProjectPauta}
+            canCreateProjects={canCreateProjects}
+            trigger={
+              <Button size="sm">
+                <Plus aria-hidden />
+                {canCreateProjectPauta ? "Nova pauta" : "Nova tarefa"}
+              </Button>
+            }
+          />
           <Segmented
             label="Visão"
             value={view}
@@ -215,6 +243,7 @@ export function MyPautasBoard({ board, options, canManage, initialOpenId, curren
           canManage={canManage}
           onOpen={setOpenId}
           onChanged={handleChanged}
+          menuFor={menuFor}
         />
       ) : (
         <MyPautasCalendar
@@ -235,6 +264,15 @@ export function MyPautasBoard({ board, options, canManage, initialOpenId, curren
           open
           onOpenChange={(next) => !next && setOpenId(null)}
           onChanged={handleChanged}
+          onRemoved={(id) => setRemoved((current) => new Set(current).add(id))}
+        />
+      ) : null}
+
+      {removal ? (
+        <PautaRemoveDialog
+          removal={removal}
+          onOpenChange={(next) => !next && setRemoval(null)}
+          onDone={(id) => setRemoved((current) => new Set(current).add(id))}
         />
       ) : null}
     </div>

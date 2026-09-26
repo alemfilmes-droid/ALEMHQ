@@ -1,8 +1,10 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { canFullyManagePauta } from "@/lib/auth/permissions";
+import { canCreateProjectPauta, canFullyManagePauta } from "@/lib/auth/permissions";
+import { appZoneToIso } from "@/lib/calendar";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { nullIfEmpty } from "@/lib/validations/company";
 import {
@@ -38,24 +40,36 @@ export async function getPautaDetailAction(id: string): Promise<PautaDetail | nu
   return getPautaDetail(id);
 }
 
+/**
+ * "Pauta de projeto": só quem gerencia pautas (master, diretoria, heads — can_manage_pautas() na
+ * policy pautas_insert). Cria a pauta e, em seguida, os responsáveis adicionais; se os responsáveis
+ * falharem, a pauta é desfeita (quem criou pode apagar) para não sobrar pela metade.
+ */
 export async function createPautaAction(values: CreatePautaValues): Promise<ActionResult & { id?: string }> {
   const actor = await getCurrentProfile();
-  if (!actor || !canFullyManagePauta(actor)) return FORBIDDEN;
+  if (!actor) return UNAUTHENTICATED;
+  if (!canCreateProjectPauta(actor)) return { ok: false, error: "Só diretoria, master e heads criam pautas de projeto. Crie uma tarefa interna." };
   const parsed = createPautaSchema.safeParse(values);
   if (!parsed.success) return INVALID;
   const data = parsed.data;
 
-  const scheduledAt =
-    data.scheduledDate && data.scheduledTime ? new Date(`${data.scheduledDate}T${data.scheduledTime}:00`).toISOString() : null;
+  // Data e hora digitadas em Fortaleza (o servidor roda em UTC).
+  const scheduledAt = data.scheduledDate && data.scheduledTime ? appZoneToIso(data.scheduledDate, data.scheduledTime) : null;
 
   const supabase = await createClient();
-  const { data: pauta, error } = await supabase
+  // O id nasce aqui: o insert não depende de ler a linha de volta (RETURNING), que passa pela
+  // policy de SELECT — ver a migração 20260928100000_fix_pautas_select_policy.sql.
+  const pauta = { id: randomUUID() };
+  const { error } = await supabase
     .from("pautas")
     // board_column e status são NOT NULL sem default no SQL — o trigger before-insert calcula
     // um a partir do outro quando só um dos dois vem preenchido. O cast cobre esse caso (o tipo
     // gerado não sabe do trigger e exige os dois).
     .insert({
+      id: pauta.id,
       project_id: data.projectId,
+      created_by: actor.id,
+      squad: data.squad || undefined,
       title: data.title,
       briefing: nullIfEmpty(data.briefing),
       lead_id: data.leadId,
@@ -76,17 +90,68 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
       drive_folder_url: nullIfEmpty(data.driveFolderUrl),
       script_url: nullIfEmpty(data.scriptUrl),
       equipment_notes: nullIfEmpty(data.equipmentNotes),
-    } as Tables["pautas"]["Insert"])
-    .select("id")
-    .single();
+    } as Tables["pautas"]["Insert"]);
 
   if (error) {
+    if (error.code === "42501") return { ok: false, error: "Você não tem permissão para criar pautas de projeto." };
     const mismatch = error.code === "23514";
     return { ok: false, error: mismatch ? "O contato não pertence ao cliente deste projeto." : "Não foi possível criar a pauta." };
   }
 
+  const members = data.members.filter(
+    (member, index, list) =>
+      list.findIndex((other) => other.profileId === member.profileId && other.productionFunction === member.productionFunction) === index,
+  );
+  if (members.length > 0) {
+    const { error: membersError } = await supabase.from("pauta_members").insert(
+      members.map((member) => ({ pauta_id: pauta.id, profile_id: member.profileId, production_function: member.productionFunction })),
+    );
+    if (membersError) {
+      await supabase.from("pautas").delete().eq("id", pauta.id);
+      return { ok: false, error: "Não foi possível salvar os responsáveis. A pauta não foi criada." };
+    }
+  }
+
   refresh(data.projectId);
   return { ok: true, message: "Pauta criada.", id: pauta.id };
+}
+
+/**
+ * Apagar pauta: SÓ quem a criou (policy pautas_delete_creator: created_by = auth.uid()). Membros,
+ * comentários e histórico saem em cascata; o log de atividades registra a exclusão (gatilho).
+ */
+export async function deletePautaAction(id: string): Promise<ActionResult> {
+  if (!z.string().uuid().safeParse(id).success) return INVALID;
+  const actor = await getCurrentProfile();
+  if (!actor) return UNAUTHENTICATED;
+
+  const supabase = await createClient();
+  const { data: deleted, error } = await supabase.from("pautas").delete().eq("id", id).select("id, project_id").maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível apagar a pauta." };
+  if (!deleted) return { ok: false, error: "Só quem criou a pauta pode apagá-la. Você pode arquivá-la." };
+
+  refresh(deleted.project_id);
+  return { ok: true, message: "Pauta apagada." };
+}
+
+/** Arquivar: some dos quadros, mas continua no banco (histórico). Gestão de pautas ou quem criou. */
+export async function archivePautaAction(id: string): Promise<ActionResult> {
+  if (!z.string().uuid().safeParse(id).success) return INVALID;
+  const actor = await getCurrentProfile();
+  if (!actor) return UNAUTHENTICATED;
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("pautas")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("project_id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.code === "42501" ? "Você não tem permissão para arquivar esta pauta." : "Não foi possível arquivar a pauta." };
+  if (!updated) return { ok: false, error: "Você não tem permissão para arquivar esta pauta." };
+
+  refresh(updated.project_id);
+  return { ok: true, message: "Pauta arquivada." };
 }
 
 /** Edição pontual do briefing da pauta. A RLS (can_edit_pauta) decide quem pode salvar. */

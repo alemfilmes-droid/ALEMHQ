@@ -13,7 +13,7 @@ export async function HomeFinanceCard() {
 
   return (
     <Link href="/financeiro" className={CARD_LINK_CLASS}>
-      <CardHeading icon={Landmark} tone="success" title="Financeiro" />
+      <CardHeading icon={Landmark} tone="success" title="Financeiro" sensitive />
       <CardContent>
         <MetricGrid min="10rem">
           <Metric

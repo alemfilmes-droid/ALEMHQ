@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Flame, MessageCircle, MessageSquareReply } from "lucide-react";
@@ -15,7 +16,7 @@ import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { QualificationForm } from "@/features/crm/components/qualification-form";
 import { DEAL_STAGES, DEAL_STAGE_LABELS, TEMPERATURE_LABELS, type Temperature } from "@/features/crm/labels";
 import type { DealDetail, DealFormOptions } from "@/features/crm/types";
-import { formatCents, toCents } from "@/features/finance/money";
+import { toCents } from "@/features/finance/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -151,7 +152,7 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
           <div>
             <dt className="eyebrow">{isOwner ? "Sua comissão" : "Comissão do SDR"}</dt>
             <dd className="mt-1 font-semibold">
-              {formatCents(toCents(deal.commission_amount))} ({String(deal.commission_percent).replace(".", ",").replace(/,00$/, "")}%)
+              <Money cents={toCents(deal.commission_amount)} /> ({String(deal.commission_percent).replace(".", ",").replace(/,00$/, "")}%)
             </dd>
           </div>
         ) : null}

@@ -41,12 +41,13 @@ export function ProfitabilityTable({ rows }: { rows: ProfitabilityItem[] }) {
               </span>
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{row.dueDate ? formatDate(row.dueDate) : dash}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{row.contractValue != null ? formatCents(row.contractValue) : dash}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalReceived)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.receivablePending)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.payablesTotal)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{row.plannedMargin != null ? formatCents(row.plannedMargin) : dash}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{row.contractValue != null ? formatCents(row.contractValue) : dash}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalReceived)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.receivablePending)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.payablesTotal)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{row.plannedMargin != null ? formatCents(row.plannedMargin) : dash}</td>
             <td
+              data-sensitive="percent"
               className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums"
               style={row.marginStatus ? { color: toneColor(MARGIN_STATUS_TONE[row.marginStatus]) } : undefined}
             >

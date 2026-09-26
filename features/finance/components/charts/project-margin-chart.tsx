@@ -47,7 +47,7 @@ export function ProjectMarginChart({ data, target }: { data: ProfitabilityItem[]
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={items} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART_GRID} horizontal={false} />
-          <XAxis
+          <XAxis className="sensitive-axis"
             type="number"
             tickFormatter={(value: number) => `${value}%`}
             tick={CHART_AXIS_TICK}

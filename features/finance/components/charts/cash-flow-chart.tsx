@@ -1,8 +1,9 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { Area, CartesianGrid, ComposedChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard } from "@/features/finance/components/charts/chart-card";
-import { formatCents, formatCentsCompact } from "@/features/finance/money";
+import { formatCentsCompact } from "@/features/finance/money";
 import type { CashFlowDay } from "@/features/finance/types";
 import { CHART_AXIS_TICK, CHART_EXPENSE, CHART_GRID, CHART_INCOME, CHART_TOOLTIP_STYLE } from "@/lib/chart-colors";
 import { formatDayShort } from "@/lib/format";
@@ -22,7 +23,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   return (
     <div style={CHART_TOOLTIP_STYLE}>
       <p className="mb-1 font-bold">{formatDayShort(label ?? "")}</p>
-      <p style={{ color: value >= 0 ? CHART_INCOME : CHART_EXPENSE }}>Saldo acumulado: {formatCents(value)}</p>
+      <p style={{ color: value >= 0 ? CHART_INCOME : CHART_EXPENSE }}>Saldo acumulado: <Money cents={value} /></p>
     </div>
   );
 }
@@ -36,7 +37,7 @@ export function CashFlowChart({ data }: { data: CashFlowDay[] }) {
         <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART_GRID} vertical={false} />
           <XAxis dataKey="day" tickFormatter={formatDayShort} tick={CHART_AXIS_TICK} axisLine={{ stroke: CHART_GRID }} tickLine={false} interval={9} />
-          <YAxis tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+          <YAxis className="sensitive-axis" tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} width={64} />
           <Tooltip content={<ChartTooltip />} />
           <ReferenceLine y={0} stroke="var(--border-strong)" strokeWidth={1.5} />
           <Area type="monotone" dataKey="positive" name="Saldo positivo" stroke={CHART_INCOME} strokeWidth={2} fill={CHART_INCOME} fillOpacity={0.16} connectNulls={false} />

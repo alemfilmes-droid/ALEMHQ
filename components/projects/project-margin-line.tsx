@@ -16,7 +16,7 @@ export function ProjectMarginLine({ marginPct, marginStatus, target }: ProjectMa
   return (
     <p className="text-sm text-muted-foreground">
       Margem prevista:{" "}
-      <span className="font-bold" style={{ color: toneColor(MARGIN_STATUS_TONE[marginStatus]) }}>
+      <span className="font-bold" data-sensitive="percent" style={{ color: toneColor(MARGIN_STATUS_TONE[marginStatus]) }}>
         {String(marginPct).replace(".", ",")}%
       </span>{" "}
       — {MARGIN_STATUS_LABELS[marginStatus]} (meta: {formatPercent(target)})

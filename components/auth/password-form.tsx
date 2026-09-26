@@ -41,7 +41,8 @@ export function PasswordForm({ mode }: PasswordFormProps) {
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5">
+    // method="post": se o JavaScript não carregar, o navegador nunca manda e-mail e senha na URL.
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-5">
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {isInvite ? (

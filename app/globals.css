@@ -382,6 +382,59 @@
   }
 }
 
+/*
+  Modo privacidade (components/privacy/privacy-mode.tsx). Mascara todo [data-sensitive] quando o
+  <html> tem data-privacy="on" — ou quando o card ([data-privacy-scope]) foi escondido pelo próprio
+  olho — e mostra de volta só o card marcado como "shown". O layout não muda: o texto fica
+  transparente e um "R$ ••••••" é desenhado por cima. Gráficos: some o número dos eixos marcados com
+  .sensitive-axis e o tooltip.
+*/
+[data-sensitive] {
+  position: relative;
+}
+html[data-privacy="on"] [data-sensitive]:not([data-privacy-card="shown"] [data-sensitive]),
+[data-privacy-card="hidden"] [data-sensitive] {
+  color: transparent !important;
+  user-select: none;
+}
+html[data-privacy="on"] [data-sensitive]:not([data-privacy-card="shown"] [data-sensitive])::after,
+[data-privacy-card="hidden"] [data-sensitive]::after {
+  content: "R$ ••••••";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--subtle);
+  font-size: 0.9em;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+html[data-privacy="on"] [data-sensitive="percent"]:not([data-privacy-card="shown"] [data-sensitive])::after,
+[data-privacy-card="hidden"] [data-sensitive="percent"]::after {
+  content: "•• %";
+}
+/* Colunas numéricas das tabelas: máscara alinhada à direita, dentro do padding da célula. */
+html[data-privacy="on"] td[data-sensitive]:not([data-privacy-card="shown"] [data-sensitive])::after,
+[data-privacy-card="hidden"] td[data-sensitive]::after {
+  justify-content: flex-end;
+  padding-inline: 1rem;
+}
+/* Um marcado dentro de outro: só o de fora desenha a máscara. */
+[data-sensitive] [data-sensitive]::after {
+  content: none !important;
+}
+
+html[data-privacy="on"] .recharts-tooltip-wrapper:not([data-privacy-card="shown"] *),
+[data-privacy-card="hidden"] .recharts-tooltip-wrapper {
+  visibility: hidden !important;
+}
+html[data-privacy="on"] .sensitive-axis .recharts-cartesian-axis-tick-value:not([data-privacy-card="shown"] *),
+[data-privacy-card="hidden"] .sensitive-axis .recharts-cartesian-axis-tick-value {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cine-beam,
   .cine-flare,

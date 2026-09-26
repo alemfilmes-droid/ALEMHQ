@@ -3,7 +3,7 @@
 import { Plus } from "lucide-react";
 import { KanbanLane } from "@/components/kanban/kanban-lane";
 import { Button } from "@/components/ui/button";
-import { PautaCard } from "@/features/pautas/components/pauta-card";
+import { PautaCard, type PautaCardMenu } from "@/features/pautas/components/pauta-card";
 import { PAUTA_COLUMN_LABELS } from "@/lib/pautas";
 import { PAUTA_COLUMN_TONE } from "@/lib/status";
 import type { PautaColumn, PautaWithDetails } from "@/types";
@@ -12,12 +12,14 @@ interface KanbanColumnProps {
   column: PautaColumn;
   pautas: PautaWithDetails[];
   onOpenPauta: (id: string) => void;
+  /** Menu de cada card (arquivar/apagar) — calculado por pauta no quadro. */
+  menuFor?: (pauta: PautaWithDetails) => PautaCardMenu | undefined;
   onCreate?: () => void;
   canCreate: boolean;
 }
 
 /** Coluna do quadro de pautas por etapa — a casca (rolagem, droppable, cabeçalho) é o KanbanLane. */
-export function KanbanColumn({ column, pautas, onOpenPauta, onCreate, canCreate }: KanbanColumnProps) {
+export function KanbanColumn({ column, pautas, onOpenPauta, onCreate, canCreate, menuFor }: KanbanColumnProps) {
   return (
     <KanbanLane
       id={column}
@@ -34,7 +36,7 @@ export function KanbanColumn({ column, pautas, onOpenPauta, onCreate, canCreate 
       }
     >
       {pautas.map((pauta) => (
-        <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpenPauta(pauta.id!)} />
+        <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpenPauta(pauta.id!)} menu={menuFor?.(pauta)} />
       ))}
     </KanbanLane>
   );

@@ -2465,6 +2465,7 @@ export type Database = {
           company_lifecycle:
             | Database["public"]["Enums"]["company_lifecycle"]
             | null
+          company_logo_url: string | null
           company_name: string | null
           created_at: string | null
           created_by: string | null
@@ -3393,6 +3394,45 @@ export type Database = {
         }
         Returns: undefined
       }
+      deal_money: {
+        Args: { p_deal_id: string }
+        Returns: {
+          commission_amount: number
+          commission_percent: number
+          estimated_value: number
+          latest_proposal_amount: number
+        }[]
+      }
+      deal_negotiations_list: {
+        Args: { p_deal_id: string }
+        Returns: {
+          agreed_amount: number
+          channel: Database["public"]["Enums"]["deal_interaction_channel"]
+          client_counter_amount: number
+          created_at: string
+          created_by: string
+          deal_id: string
+          id: string
+          notes: string
+          our_counter_amount: number
+          proposal_id: string
+        }[]
+      }
+      deal_proposals_list: {
+        Args: { p_deal_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          deal_id: string
+          document_url: string
+          id: string
+          scope_notes: string
+          sent_at: string
+          sent_by: string
+          sent_channel: Database["public"]["Enums"]["proposal_channel"]
+          status: Database["public"]["Enums"]["proposal_status"]
+        }[]
+      }
       deal_register_meeting_outcome: {
         Args: {
           p_meeting_id: string
@@ -3553,6 +3593,10 @@ export type Database = {
           p_levels: Database["public"]["Enums"]["org_level"][]
           p_squads: Database["public"]["Enums"]["squad"][]
         }
+        Returns: boolean
+      }
+      is_company_logo_path: {
+        Args: { p_object_name: string }
         Returns: boolean
       }
       is_director: { Args: never; Returns: boolean }

@@ -76,11 +76,12 @@ export function ClientFinanceTable({ rows }: { rows: ClientFinanceRow[] }) {
                 {row.companyName}
               </Link>
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalBilled)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalReceived)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalPending)}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalCosts)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalBilled)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalReceived)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalPending)}</td>
+            <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{formatCents(row.totalCosts)}</td>
             <td
+              data-sensitive="percent"
               className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums"
               style={row.marginStatus ? { color: toneColor(MARGIN_STATUS_TONE[row.marginStatus]) } : undefined}
             >

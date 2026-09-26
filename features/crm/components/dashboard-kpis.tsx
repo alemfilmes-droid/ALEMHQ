@@ -24,8 +24,8 @@ function crmHref(period: Period, extra: Record<string, string>) {
 }
 
 /** Cartões compactos de mesma altura; a cor mora no valor, nunca no fundo. Cada um é um link (drill-down). */
-export function CrmDashboardKpiRow({ kpis, period }: { kpis: DashboardKpis; period: Period }) {
-  const items: Kpi[] = [
+export function CrmDashboardKpiRow({ kpis, period, canSeeFinance }: { kpis: DashboardKpis; period: Period; canSeeFinance: boolean }) {
+  const all: Kpi[] = [
     {
       title: "Leads abertos",
       icon: Target,
@@ -77,6 +77,9 @@ export function CrmDashboardKpiRow({ kpis, period }: { kpis: DashboardKpis; peri
     },
   ];
 
+  // Sem acesso ao financeiro, os cartões de valor nem aparecem (o banco já devolve valor nulo).
+  const items = canSeeFinance ? all : all.filter((item) => item.format !== "cents");
+
   return (
     <section aria-label="Indicadores do CRM" className="card-grid">
       {items.map(({ title, icon: Icon, value, format, note, tone, href }) => (
@@ -85,7 +88,7 @@ export function CrmDashboardKpiRow({ kpis, period }: { kpis: DashboardKpis; peri
           href={href}
           className={CARD_LINK_CLASS}
         >
-          <CardHeading icon={Icon} tone="alert" title={title} className="pb-2" />
+          <CardHeading icon={Icon} tone="alert" title={title} className="pb-2" sensitive={format === "cents"} />
           <CardContent>
             <MetricValue value={value} format={format} tone={tone} />
             {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}

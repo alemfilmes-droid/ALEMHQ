@@ -14,6 +14,8 @@ interface Kpi {
   value: number | string | null;
   format?: MetricFormat;
   note?: string;
+  /** A nota traz valores (ex.: previsão ponderada) — mascarada no modo privacidade. */
+  noteSensitive?: boolean;
   tone?: StatusTone;
   href: string;
 }
@@ -83,6 +85,7 @@ export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: Dashboard
       value: negotiation.total,
       format: "cents",
       note: `${negotiation.count} ${negotiation.count === 1 ? "negócio" : "negócios"} · previsão ponderada ${formatCents(negotiation.weighted)}`,
+      noteSensitive: true,
       href: financeHref(period, { aba: "em-negociacao" }),
     },
     {
@@ -98,16 +101,21 @@ export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: Dashboard
 
   return (
     <section aria-label="Indicadores do período" className="card-grid">
-      {items.map(({ title, icon: Icon, value, format, note, tone, href }) => (
+      {items.map(({ title, icon: Icon, value, format, note, noteSensitive, tone, href }) => (
         <Link
           key={title}
           href={href}
           className={CARD_LINK_CLASS}
         >
-          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" />
+          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" sensitive={format === "cents" || format === "percent"} />
           <CardContent>
-            <MetricValue value={value} format={format} tone={tone} />
-            {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}
+            {/* No financeiro, o percentual é margem — também sensível. */}
+            <MetricValue value={value} format={format} tone={tone} sensitive={format === "cents" || format === "percent"} />
+            {note ? (
+              <p className="mt-1 text-xs text-subtle" data-sensitive={noteSensitive || undefined}>
+                {note}
+              </p>
+            ) : null}
           </CardContent>
         </Link>
       ))}

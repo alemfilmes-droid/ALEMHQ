@@ -12,9 +12,5 @@ export const profileSchema = z.object({
 
 export type ProfileValues = z.infer<typeof profileSchema>;
 
-export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
-export const AVATAR_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+// Limites de imagem: fonte única em lib/uploads.ts (5 MB, JPG/PNG/WebP).
+export { IMAGE_MAX_BYTES as AVATAR_MAX_BYTES, IMAGE_TYPES as AVATAR_TYPES } from "@/lib/uploads";

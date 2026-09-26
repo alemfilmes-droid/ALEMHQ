@@ -1,7 +1,7 @@
+import { Money } from "@/components/ui/money";
 import { AlertTriangle } from "lucide-react";
 import { CashFlowChart } from "@/features/finance/components/charts/cash-flow-chart";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
-import { formatCents } from "@/features/finance/money";
 import { getCashFlowProjection } from "@/features/finance/queries";
 import type { CashFlowDay } from "@/features/finance/types";
 import { formatDate } from "@/lib/format";
@@ -54,16 +54,16 @@ export async function CashFlowTab() {
                   {formatDate(week.start)} – {formatDate(week.end)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums" style={{ color: toneColor("success") }}>
-                  {formatCents(week.inflow)}
+                  <Money cents={week.inflow} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums" style={{ color: toneColor("danger") }}>
-                  {formatCents(week.outflow)}
+                  <Money cents={week.outflow} />
                 </td>
                 <td
                   className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums"
                   style={{ color: toneColor(week.endBalance >= 0 ? "success" : "danger") }}
                 >
-                  {formatCents(week.endBalance)}
+                  <Money cents={week.endBalance} />
                 </td>
                 <td className="px-4 py-3">
                   {week.wentNegative ? (

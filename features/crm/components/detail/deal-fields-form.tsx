@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { updateDealAction } from "@/features/crm/actions";
 import { PROSPECTION_GOALS, PROSPECTION_GOAL_LABELS } from "@/features/crm/labels";
 import type { DealFormOptions } from "@/features/crm/types";
@@ -32,6 +33,7 @@ interface FieldsValues {
 
 export function DealFieldsForm({ deal, options, canManageAll, onSaved }: DealFieldsFormProps) {
   const [pending, startTransition] = useTransition();
+  const { canSeeFinance } = useCrmFlow();
   const companyContacts = options.contacts.filter((contact) => contact.company_id === deal.company_id);
   // O valor acompanha a proposta mais recente (regra do banco): só se edita à mão antes de haver proposta.
   const valueLocked = deal.latest_proposal_amount != null;
@@ -56,7 +58,7 @@ export function DealFieldsForm({ deal, options, canManageAll, onSaved }: DealFie
       const result = await updateDealAction(deal.id!, {
         primaryContactId: values.primaryContactId,
         ownerId: canManageAll ? values.ownerId : undefined,
-        estimatedValue: valueLocked ? undefined : values.estimatedValue,
+        estimatedValue: valueLocked || !canSeeFinance ? undefined : values.estimatedValue,
         expectedCloseDate: values.expectedCloseDate,
         goals: values.goals.length > 0 ? values.goals : undefined,
       });
@@ -97,9 +99,11 @@ export function DealFieldsForm({ deal, options, canManageAll, onSaved }: DealFie
         )}
       </FormField>
 
-      <FormField id="deal-value" label="Valor estimado (R$)" hint={valueLocked ? "Acompanha a proposta mais recente." : undefined}>
-        <Input id="deal-value" inputMode="decimal" placeholder="0,00" readOnly={valueLocked} {...register("estimatedValue")} />
-      </FormField>
+      {canSeeFinance ? (
+        <FormField id="deal-value" label="Valor estimado (R$)" hint={valueLocked ? "Acompanha a proposta mais recente." : undefined}>
+          <Input id="deal-value" inputMode="decimal" placeholder="0,00" readOnly={valueLocked} {...register("estimatedValue")} />
+        </FormField>
+      ) : null}
 
       <FormField id="deal-close-date" label="Previsão de fechamento">
         <Input id="deal-close-date" type="date" {...register("expectedCloseDate")} />

@@ -71,7 +71,7 @@ export default async function CrmPage({ searchParams }: { searchParams: SearchPa
       ) : tab === "atividades" ? (
         <AtividadesTab params={params} options={options} />
       ) : (
-        <PainelTab params={params} canEditRules={hasCapability(profile, "crmOverview")} />
+        <PainelTab params={params} canEditRules={hasCapability(profile, "crmOverview")} canSeeFinance={canSeeFinance} />
       )}
     </CrmFlowProvider>
   );
@@ -117,7 +117,7 @@ async function AtividadesTab({ params, options }: { params: Params; options: Opt
   );
 }
 
-async function PainelTab({ params, canEditRules }: { params: Params; canEditRules: boolean }) {
+async function PainelTab({ params, canEditRules, canSeeFinance }: { params: Params; canEditRules: boolean; canSeeFinance: boolean }) {
   const period = resolvePeriod(params.periodo, params.de, params.ate, todayISO());
 
   return (
@@ -125,7 +125,7 @@ async function PainelTab({ params, canEditRules }: { params: Params; canEditRule
       <Suspense>
         <PeriodSelector period={period} />
       </Suspense>
-      <CrmDashboardTab period={period} canEditRules={canEditRules} />
+      <CrmDashboardTab period={period} canEditRules={canEditRules} canSeeFinance={canSeeFinance} />
     </div>
   );
 }

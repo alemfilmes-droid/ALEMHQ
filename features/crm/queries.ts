@@ -117,8 +117,9 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
         )
         .eq("deal_id", id)
         .order("scheduled_at", { ascending: false }),
-      supabase.from("deal_proposals").select("*").eq("deal_id", id).order("sent_at", { ascending: false }),
-      supabase.from("deal_negotiations").select("*").eq("deal_id", id).order("created_at", { ascending: false }),
+      // Valores só chegam para quem tem acesso ao financeiro (as RPCs conferem no banco).
+      supabase.rpc("deal_proposals_list", { p_deal_id: id }),
+      supabase.rpc("deal_negotiations_list", { p_deal_id: id }),
       supabase
         .from("deal_activities")
         .select("id, body, occurred_at, author:profiles(full_name)")

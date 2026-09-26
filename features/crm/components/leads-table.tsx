@@ -64,8 +64,7 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
     "Objetivo",
     "SDR",
     "Responsável atual",
-    "Valor estimado",
-    "Comissão",
+    ...(flow.canSeeFinance ? ["Valor estimado", "Comissão"] : []),
     "Temperatura",
     "Previsão de fechamento",
     "Próxima ação",
@@ -78,8 +77,12 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
     (deal.prospection_goals ?? []).map((goal) => PROSPECTION_GOAL_LABELS[goal]).join(", "),
     deal.owner_name ?? "",
     deal.responsible_name ?? "",
-    deal.estimated_value != null ? centsToInput(toCents(deal.estimated_value)) : "",
-    deal.commission_amount != null && deal.stage !== "perdido" ? centsToInput(toCents(deal.commission_amount)) : "",
+    ...(flow.canSeeFinance
+      ? [
+          deal.estimated_value != null ? centsToInput(toCents(deal.estimated_value)) : "",
+          deal.commission_amount != null && deal.stage !== "perdido" ? centsToInput(toCents(deal.commission_amount)) : "",
+        ]
+      : []),
     TEMPERATURE_LABELS[(deal.temperature ?? "neutral") as Temperature],
     deal.expected_close_date ? formatDate(deal.expected_close_date) : "",
     deal.next_action ?? "",
@@ -121,8 +124,8 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
             <Th>Etapa</Th>
             <Th>SDR</Th>
             <Th>Com a bola</Th>
-            <Th align="right">Valor estimado</Th>
-            <Th align="right">Comissão</Th>
+            {flow.canSeeFinance ? <Th align="right">Valor estimado</Th> : null}
+            {flow.canSeeFinance ? <Th align="right">Comissão</Th> : null}
             <Th>Próxima ação</Th>
           </tr>
         </thead>
@@ -161,12 +164,16 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{deal.responsible_name ?? "—"}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">
-                  {deal.estimated_value != null ? formatCents(toCents(deal.estimated_value)) : "—"}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-muted-foreground">
-                  {deal.commission_amount != null && deal.stage !== "perdido" ? formatCents(toCents(deal.commission_amount)) : "—"}
-                </td>
+                {flow.canSeeFinance ? (
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums" data-sensitive>
+                    {deal.estimated_value != null ? formatCents(toCents(deal.estimated_value)) : "—"}
+                  </td>
+                ) : null}
+                {flow.canSeeFinance ? (
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-muted-foreground" data-sensitive>
+                    {deal.commission_amount != null && deal.stage !== "perdido" ? formatCents(toCents(deal.commission_amount)) : "—"}
+                  </td>
+                ) : null}
                 <td className="px-4 py-3 text-muted-foreground">
                   {open ? (
                     <>

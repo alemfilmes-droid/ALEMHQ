@@ -17,15 +17,15 @@ const CATEGORY_LABELS: Record<WorkdayItem["category"], string> = {
 };
 
 /** Visão gerencial (diretoria/master): o comercial em números, clicável para o CRM. */
-export async function DirectorCommercialCard() {
+export async function DirectorCommercialCard({ canSeeFinance }: { canSeeFinance: boolean }) {
   const summary = await getDirectorHomeSummary();
 
   return (
     <Link href="/crm" className={CARD_LINK_CLASS}>
-      <CardHeading icon={TrendingUp} tone="alert" title="Comercial" />
+      <CardHeading icon={TrendingUp} tone="alert" title="Comercial" sensitive={canSeeFinance} />
       <CardContent>
         <MetricGrid min="8.5rem">
-          <Metric label="Em negociação" icon={Wallet} value={summary.valueInNegotiation} format="cents" tone="warning" />
+          {canSeeFinance ? <Metric label="Em negociação" icon={Wallet} value={summary.valueInNegotiation} format="cents" tone="warning" /> : null}
           <Metric label="Propostas aguardando resposta" value={summary.proposalsAwaiting} />
           <Metric label="Reuniões hoje" icon={CalendarCheck2} value={summary.meetingsToday} />
           <Metric
@@ -33,7 +33,7 @@ export async function DirectorCommercialCard() {
             icon={Handshake}
             value={summary.wonMonthCount}
             tone="success"
-            note={formatCents(summary.wonMonthValue)}
+            note={canSeeFinance ? <span data-sensitive>{formatCents(summary.wonMonthValue)}</span> : undefined}
           />
         </MetricGrid>
       </CardContent>

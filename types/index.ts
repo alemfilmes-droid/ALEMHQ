@@ -58,8 +58,9 @@ export type DealQualification = Tables["deal_qualification"]["Row"];
 export type DealActivity = Tables["deal_activities"]["Row"];
 export type DealMeeting = Tables["deal_meetings"]["Row"];
 export type DealInteraction = Tables["deal_interactions"]["Row"];
-export type DealProposal = Tables["deal_proposals"]["Row"];
-export type DealNegotiation = Tables["deal_negotiations"]["Row"];
+/** Propostas e negociações vêm de RPCs que só devolvem valores para quem tem acesso ao financeiro. */
+export type DealProposal = Database["public"]["Functions"]["deal_proposals_list"]["Returns"][number];
+export type DealNegotiation = Database["public"]["Functions"]["deal_negotiations_list"]["Returns"][number];
 export type Commitment = Tables["commitments"]["Row"];
 export type CommissionRule = Tables["commission_rules"]["Row"];
 export type DealStageProbability = Tables["deal_stage_probabilities"]["Row"];

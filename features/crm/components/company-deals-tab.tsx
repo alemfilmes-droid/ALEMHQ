@@ -4,7 +4,7 @@ import { formatCents, toCents } from "@/features/finance/money";
 import { formatDate } from "@/lib/format";
 
 /** Histórico comercial da empresa (aba "Comercial" da página de cliente) — ganhos, perdidos e em aberto. */
-export async function CompanyDealsTab({ companyId }: { companyId: string }) {
+export async function CompanyDealsTab({ companyId, canSeeFinance }: { companyId: string; canSeeFinance: boolean }) {
   const deals = await listDealsByCompany(companyId);
 
   if (deals.length === 0) {
@@ -20,7 +20,11 @@ export async function CompanyDealsTab({ companyId }: { companyId: string }) {
           </span>
           <DealStageBadge stage={deal.stage!} />
           <span className="text-[13px] text-muted-foreground">{deal.owner_name}</span>
-          <span className="text-[13px] font-semibold tabular-nums">{deal.estimated_value != null ? formatCents(toCents(deal.estimated_value)) : "—"}</span>
+          {canSeeFinance ? (
+            <span className="text-[13px] font-semibold tabular-nums" data-sensitive>
+              {deal.estimated_value != null ? formatCents(toCents(deal.estimated_value)) : "—"}
+            </span>
+          ) : null}
           <span className="text-[13px] text-muted-foreground">{formatDate(deal.created_at!)}</span>
         </li>
       ))}

@@ -1,9 +1,10 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard } from "@/features/finance/components/charts/chart-card";
-import { formatCents, formatCentsCompact } from "@/features/finance/money";
+import { formatCentsCompact } from "@/features/finance/money";
 import type { MonthlySummaryItem } from "@/features/finance/types";
 import { CHART_AXIS_TICK, CHART_EXPENSE, CHART_GRID, CHART_INCOME, CHART_NEUTRAL, CHART_TOOLTIP_STYLE } from "@/lib/chart-colors";
 import { formatMonthShort } from "@/lib/format";
@@ -21,7 +22,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       <p className="mb-1 font-bold">{formatMonthShort(label ?? "")}</p>
       {payload.map((item) => (
         <p key={item.name} style={{ color: item.color }}>
-          {item.name}: {formatCents(item.value ?? 0)}
+          {item.name}: <Money cents={item.value ?? 0} />
         </p>
       ))}
     </div>
@@ -48,7 +49,7 @@ export function IncomeExpenseChart({ data }: { data: MonthlySummaryItem[] }) {
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART_GRID} vertical={false} />
           <XAxis dataKey="monthStart" tickFormatter={formatMonthShort} tick={CHART_AXIS_TICK} axisLine={{ stroke: CHART_GRID }} tickLine={false} />
-          <YAxis tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+          <YAxis className="sensitive-axis" tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} width={64} />
           <Tooltip content={<ChartTooltip />} />
           <Legend wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }} />
           <Bar

@@ -128,7 +128,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
       {financeTab ? (
         <CompanyFinanceTab companyId={company.id} />
       ) : commercialTab ? (
-        <CompanyDealsTab companyId={company.id} />
+        <CompanyDealsTab companyId={company.id} canSeeFinance={canSeeFinance} />
       ) : (
         <>
           {overview ? <ClientMetrics overview={overview} finance={financeSummary} /> : null}

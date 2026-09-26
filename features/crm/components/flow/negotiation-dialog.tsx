@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +11,7 @@ import { FlowDialog } from "@/features/crm/components/flow/flow-dialog";
 import { NextActionFields } from "@/features/crm/components/flow/fields";
 import { INTERACTION_CHANNELS, INTERACTION_CHANNEL_LABELS } from "@/features/crm/labels";
 import { negotiationSchema, type NegotiationValues } from "@/features/crm/schemas";
-import { formatCents, toCents } from "@/features/finance/money";
+import { toCents } from "@/features/finance/money";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
@@ -113,7 +114,7 @@ export function NegotiationDialog({ deal, open, onOpenChange, onDone, onNeedsRes
         <Alert variant="info">Este negócio ainda não tem proposta registrada. Registre a proposta primeiro.</Alert>
       ) : (
         <Alert variant={responded ? "success" : "info"}>
-          Proposta de {formatCents(toCents(proposal.amount))}.{" "}
+          Proposta de <Money cents={toCents(proposal.amount)} />.{" "}
           {responded ? "O cliente já respondeu — pode registrar a negociação." : "O cliente ainda não respondeu: registre a resposta dele antes de negociar."}
         </Alert>
       )}

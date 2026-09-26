@@ -5,23 +5,28 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type Dra
 import { toast } from "sonner";
 import { movePautaColumnAction } from "@/features/pautas/actions";
 import { KanbanColumn } from "@/features/pautas/components/kanban-column";
-import { NewPautaDialog } from "@/features/pautas/components/new-pauta-dialog";
+import { PautaCreateDialog } from "@/features/pautas/components/pauta-create-dialog";
 import { PautaCard } from "@/features/pautas/components/pauta-card";
 import { PautaDetailModal } from "@/features/pautas/components/pauta-detail-modal";
+import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import { groupPautasByColumn } from "@/features/pautas/board";
 import type { PautaFormOptions } from "@/features/pautas/types";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
-import type { PautaColumn, PautaWithDetails } from "@/types";
+import type { PautaColumn, PautaWithDetails, Squad } from "@/types";
 
 interface KanbanBoardProps {
   initialPautas: PautaWithDetails[];
   options: PautaFormOptions;
+  /** Gestão plena (título, líder, prioridade, arrastar livre) — can_fully_manage_pauta(). */
   canManage: boolean;
+  /** Criar pauta de projeto pelos "+" das colunas — can_manage_pautas() (master, diretoria, heads). */
+  canCreate: boolean;
+  /** Atalho "Criar projeto" no diálogo. */
+  canCreateProjects: boolean;
   /** Fixa o projeto (aba Pautas do projeto) e some com o rótulo de cliente repetido nos cards. */
   lockedProjectId?: string;
-  defaultOwnerId: string;
   initialOpenId?: string;
-  currentUser: { id: string; full_name: string; avatar_url: string | null };
+  currentUser: { id: string; full_name: string; avatar_url: string | null; squads: Squad[] };
 }
 
 /** Permite que o botão "Nova pauta" da barra de ferramentas (fora deste componente) abra o diálogo. */
@@ -31,13 +36,30 @@ export interface KanbanBoardHandle {
 
 /** Quadro reaproveitado por /pautas e pela aba "Pautas" do projeto. A página não rola — só cada coluna. */
 export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(function KanbanBoard(
-  { initialPautas, options, canManage, lockedProjectId, defaultOwnerId, initialOpenId, currentUser },
+  { initialPautas, options, canManage, canCreate, canCreateProjects, lockedProjectId, initialOpenId, currentUser },
   ref,
 ) {
   const [pautas, setPautas] = useState(initialPautas);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
   const [createColumn, setCreateColumn] = useState<PautaColumn | null>(null);
+  const [removal, setRemoval] = useState<PautaRemoval | null>(null);
+
+  // Apagar: só quem criou (a policy do banco exige created_by = auth.uid()). Arquivar: gestão plena
+  // ou quem criou — a diretoria arquiva o que não criou em vez de apagar.
+  function menuFor(pauta: PautaWithDetails) {
+    const isCreator = pauta.created_by === currentUser.id;
+    return {
+      canDelete: isCreator,
+      canArchive: canManage || isCreator,
+      onRemove: (mode: "delete" | "archive") => setRemoval({ mode, id: pauta.id!, title: pauta.title ?? "" }),
+    };
+  }
+
+  function removeLocally(id: string) {
+    setPautas((rows) => rows.filter((row) => row.id !== id));
+    setOpenId((current) => (current === id ? null : current));
+  }
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useImperativeHandle(ref, () => ({ openCreate: (column = "sprint_backlog") => setCreateColumn(column) }), []);
@@ -91,8 +113,9 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
               column={column}
               pautas={board[column]}
               onOpenPauta={setOpenId}
-              canCreate={canManage}
+              canCreate={canCreate}
               onCreate={() => setCreateColumn(column)}
+              menuFor={menuFor}
             />
           ))}
         </div>
@@ -100,9 +123,11 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
       </DndContext>
 
       {createColumn ? (
-        <NewPautaDialog
+        <PautaCreateDialog
           options={options}
-          defaultOwnerId={defaultOwnerId}
+          currentUser={{ id: currentUser.id, squads: currentUser.squads }}
+          canCreateProjectPauta={canCreate}
+          canCreateProjects={canCreateProjects}
           defaultColumn={createColumn}
           lockedProjectId={lockedProjectId}
           open
@@ -120,8 +145,11 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
           open
           onOpenChange={(next) => !next && setOpenId(null)}
           onChanged={(updated) => setPautas((rows) => rows.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)))}
+          onRemoved={removeLocally}
         />
       ) : null}
+
+      {removal ? <PautaRemoveDialog removal={removal} onOpenChange={(next) => !next && setRemoval(null)} onDone={removeLocally} /> : null}
     </div>
   );
 });

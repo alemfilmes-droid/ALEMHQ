@@ -1,7 +1,7 @@
+import { Money } from "@/components/ui/money";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { DirectionIcon } from "@/features/finance/components/status-badge";
-import { formatCents } from "@/features/finance/money";
 import type { AttentionItem } from "@/features/finance/types";
 import { formatDate } from "@/lib/format";
 import { toneColor } from "@/lib/status";
@@ -34,7 +34,7 @@ export function AttentionList({ items }: { items: AttentionItem[] }) {
               {item.daysOverdue} {item.daysOverdue === 1 ? "dia" : "dias"} em atraso
             </span>
             <span className="text-sm font-bold tabular-nums" style={{ color: toneColor("danger") }}>
-              {formatCents(item.amount)}
+              <Money cents={item.amount} />
             </span>
           </Link>
         </li>

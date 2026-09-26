@@ -1,3 +1,4 @@
+import { Money } from "@/components/ui/money";
 import { Suspense } from "react";
 import { Building, Code2, Layers, Megaphone, Percent, Receipt, Shapes, Users, Wallet, type LucideIcon } from "lucide-react";
 import { FilterPopover } from "@/components/filters/filter-popover";
@@ -85,7 +86,11 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
             format="percent"
             size="lg"
             tone={shareTone(data.fixedShare)}
-            note={`Faturamento do mês: ${formatCents(data.revenue)}`}
+            note={
+              <>
+                Faturamento do mês: <Money cents={data.revenue} />
+              </>
+            }
           />
         </Card>
       </MetricGrid>
@@ -103,7 +108,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
               </div>
               <MetricValue value={group.total} format="cents" size="md" />
               <p className="text-xs text-subtle">
-                Fixo {formatCents(group.fixed)} · Variável {formatCents(group.variable)}
+                Fixo <Money cents={group.fixed} /> · Variável <Money cents={group.variable} />
               </p>
             </Card>
           ))}
@@ -127,7 +132,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
                   <li key={person.profileId} className="flex items-center gap-3 py-2.5">
                     <UserAvatar name={person.name} src={person.avatarUrl} profileId={person.profileId} className="size-8" />
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">{person.name}</span>
-                    <span className="whitespace-nowrap text-sm font-bold tabular-nums">{formatCents(person.total)}</span>
+                    <span className="whitespace-nowrap text-sm font-bold tabular-nums"><Money cents={person.total} /></span>
                   </li>
                 ))}
               </ul>
@@ -168,7 +173,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
                           </span>
                         </td>
                         <td className="whitespace-nowrap py-2.5 pr-3 text-muted-foreground">{formatDate(line.dueDate)}</td>
-                        <td className="whitespace-nowrap py-2.5 text-right font-bold tabular-nums">{formatCents(line.amount)}</td>
+                        <td data-sensitive className="whitespace-nowrap py-2.5 text-right font-bold tabular-nums">{formatCents(line.amount)}</td>
                       </tr>
                     ))}
                   </tbody>

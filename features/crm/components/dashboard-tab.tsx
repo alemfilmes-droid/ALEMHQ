@@ -16,11 +16,11 @@ import {
 } from "@/features/crm/queries";
 import type { Period } from "@/features/finance/period";
 
-export async function CrmDashboardTab({ period, canEditRules }: { period: Period; canEditRules: boolean }) {
+export async function CrmDashboardTab({ period, canEditRules, canSeeFinance }: { period: Period; canEditRules: boolean; canSeeFinance: boolean }) {
   const [kpis, stageConversion, monthlyWon, lossReasons, ownerPerformance, attention, rules] = await Promise.all([
     getDashboardKpis(period),
     getStageConversion(),
-    getMonthlyWonValue(),
+    canSeeFinance ? getMonthlyWonValue() : Promise.resolve(null),
     getLossReasons(period),
     getOwnerPerformance(period),
     listDealsNeedingAttention(),
@@ -29,11 +29,11 @@ export async function CrmDashboardTab({ period, canEditRules }: { period: Period
 
   return (
     <div className="space-y-6">
-      <CrmDashboardKpiRow kpis={kpis} period={period} />
+      <CrmDashboardKpiRow kpis={kpis} period={period} canSeeFinance={canSeeFinance} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <StageFunnelChart data={stageConversion} />
-        <WonValueChart data={monthlyWon} />
+        {monthlyWon ? <WonValueChart data={monthlyWon} /> : null}
         <LossReasonsChart data={lossReasons} />
       </div>
 

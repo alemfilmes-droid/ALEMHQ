@@ -59,8 +59,8 @@ export default async function HomePage() {
         <PautaHomeCards profileId={profile.id} />
         <HomeAgendaCard />
 
-        {hasCapability(profile, "crmOverview") ? <DirectorCommercialCard /> : null}
-        {hasCapability(profile, "crmWorkday") ? <MyCommercialDayCard profileId={profile.id} showCommissions={!canManageAllDeals(profile)} /> : null}
+        {hasCapability(profile, "crmOverview") ? <DirectorCommercialCard canSeeFinance={hasCapability(profile, "finance")} /> : null}
+        {hasCapability(profile, "crmWorkday") ? <MyCommercialDayCard profileId={profile.id} showCommissions={!canManageAllDeals(profile) && hasCapability(profile, "finance")} /> : null}
 
         {hasCapability(profile, "canSeeFinanceHomeCard") ? <HomeFinanceCard /> : null}
       </section>

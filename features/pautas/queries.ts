@@ -33,19 +33,25 @@ export async function listPautas(filters: PautaFilters): Promise<PautaWithDetail
   if (filters.search?.trim()) query = query.ilike("title", `%${filters.search.trim().replace(/[%_\\]/g, (char) => `\\${char}`)}%`);
 
   const { data, error } = await query;
-  if (error) throw new Error("Falha ao carregar as pautas.");
+  if (error) {
+    // O motivo real (código e mensagem do banco) fica no log do servidor; a tela mostra o genérico.
+    console.error("listPautas:", error.code, error.message, error.details ?? "", error.hint ?? "");
+    throw new Error("Falha ao carregar as pautas.");
+  }
   return data ?? [];
 }
 
 /** Opções para os formulários de pauta (nova pauta, handover). Sem dados financeiros. */
 export async function getPautaFormOptions(): Promise<PautaFormOptions> {
   const supabase = await createClient();
-  const [projects, members, contacts] = await Promise.all([
+  const [companies, projects, members, contacts] = await Promise.all([
+    supabase.from("companies").select("id, name, logo_url").order("name"),
     supabase.from("projects").select("id, name, company_id, is_internal").order("name"),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
     supabase.from("contacts").select("id, company_id, full_name").order("full_name"),
   ]);
   return {
+    companies: companies.data ?? [],
     projects: projects.data ?? [],
     members: members.data ?? [],
     contacts: contacts.data ?? [],

@@ -2,13 +2,13 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { setCompanyLogoAction } from "@/app/(app)/clientes/actions";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { AVATAR_MAX_BYTES, AVATAR_TYPES } from "@/lib/validations/profile";
+import { IMAGE_ACCEPT, IMAGE_MAX_LABEL, IMAGE_TYPES, describeUploadError, validateImage } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 const BUCKET = "company-logos";
@@ -21,7 +21,7 @@ interface CompanyLogoUploaderProps {
   variant?: "compact" | "full";
 }
 
-/** Envia para {company_id}/logo.{ext} no bucket público; mesmos limites do avatar (2 MB, JPG/PNG/WebP). */
+/** Envia para {company_id}/logo.{ext} no bucket público; limites em lib/uploads.ts (5 MB, JPG/PNG/WebP). */
 export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant = "full" }: CompanyLogoUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -36,9 +36,12 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
   }
 
   async function handleFile(file: File) {
-    const extension = AVATAR_TYPES[file.type];
-    if (!extension) return toast.error("Use uma imagem JPG, PNG ou WebP.");
-    if (file.size > AVATAR_MAX_BYTES) return toast.error("A imagem deve ter no máximo 2 MB.");
+    const invalid = validateImage(file);
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
+    const extension = IMAGE_TYPES[file.type];
 
     setUploading(true);
     const supabase = createClient();
@@ -48,7 +51,8 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
     const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       setUploading(false);
-      return toast.error("Não foi possível enviar o logo.");
+      toast.error(describeUploadError(error));
+      return;
     }
     await removeStoredFiles(supabase, fileName);
 
@@ -75,7 +79,7 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
     <input
       ref={inputRef}
       type="file"
-      accept="image/jpeg,image/png,image/webp"
+      accept={IMAGE_ACCEPT}
       className="sr-only"
       aria-label="Selecionar logo do cliente"
       tabIndex={-1}
@@ -98,12 +102,17 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
           aria-label={logoUrl ? `Trocar logo de ${companyName}` : `Enviar logo de ${companyName}`}
           className={cn(
             "group relative block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            busy && "cursor-wait opacity-60",
+            busy && "cursor-wait",
           )}
         >
           <ClientAvatar name={companyName} logoUrl={logoUrl} size="lg" />
-          <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/70 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-            <ImagePlus className="size-5" aria-hidden />
+          <span
+            className={cn(
+              "absolute inset-0 flex items-center justify-center rounded-lg bg-background/70 transition-opacity",
+              busy ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
+            )}
+          >
+            {busy ? <Loader2 className="size-5 animate-spin" aria-label="Enviando o logo" /> : <ImagePlus className="size-5" aria-hidden />}
           </span>
         </button>
         {input}
@@ -127,7 +136,7 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
             </Button>
           ) : null}
         </div>
-        <p className="text-xs text-subtle">Quadrado, sem corte. JPG, PNG ou WebP, até 2 MB.</p>
+        <p className="text-xs text-subtle" aria-live="polite">{uploading ? "Enviando o logo…" : `Quadrado, sem corte. JPG, PNG ou WebP, até ${IMAGE_MAX_LABEL}.`}</p>
         {input}
       </div>
     </div>

@@ -120,7 +120,7 @@ export async function ProjectFinanceTab({ projectId, companyId, isInternal }: Pr
             </div>
             <div className="min-w-0">
               <p className="eyebrow">Percentual</p>
-              <MetricValue className="mt-1" value={profitability.marginPct} format="percent" tone={MARGIN_STATUS_TONE[profitability.marginStatus]} />
+              <MetricValue className="mt-1" value={profitability.marginPct} format="percent" sensitive tone={MARGIN_STATUS_TONE[profitability.marginStatus]} />
             </div>
             <div className="min-w-0">
               <p className="eyebrow">Situação</p>
@@ -143,7 +143,9 @@ export async function ProjectFinanceTab({ projectId, companyId, isInternal }: Pr
           ].map((item) => (
             <div key={item.label}>
               <p className="text-xs font-semibold text-muted-foreground">{item.label}</p>
-              <p className="mt-1 font-bold">{item.value}</p>
+              <p className="mt-1 font-bold" data-sensitive>
+                {item.value}
+              </p>
             </div>
           ))}
         </div>

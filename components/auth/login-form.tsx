@@ -42,7 +42,8 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
   const noticeText = notice ? NOTICES[notice] : undefined;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5">
+    // method="post": se o JavaScript não carregar, o navegador nunca manda e-mail e senha na URL.
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-5">
       {noticeText ? <Alert variant="info">{noticeText}</Alert> : null}
       {error ? <Alert variant="error">{error}</Alert> : null}
 

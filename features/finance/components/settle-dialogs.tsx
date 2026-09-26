@@ -1,12 +1,13 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { settlePayableAction, settleReceivableAction } from "@/features/finance/actions";
 import { MethodSelect } from "@/features/finance/components/method-select";
-import { centsToInput, formatCents } from "@/features/finance/money";
+import { centsToInput } from "@/features/finance/money";
 import {
   settlePayableSchema,
   settleReceivableSchema,
@@ -71,7 +72,7 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
         <DialogHeader>
           <DialogTitle>Marcar como recebido.</DialogTitle>
           <DialogDescription>
-            {receivable.description} · previsto {formatCents(receivable.amount)}
+            {receivable.description} · previsto <Money cents={receivable.amount} />
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
@@ -144,7 +145,7 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
         <DialogHeader>
           <DialogTitle>Marcar como pago.</DialogTitle>
           <DialogDescription>
-            {payable.description} · {formatCents(payable.amount)}
+            {payable.description} · <Money cents={payable.amount} />
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">

@@ -8,7 +8,7 @@ import { updateAvatarAction } from "@/app/(app)/perfil/actions";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { AVATAR_MAX_BYTES, AVATAR_TYPES } from "@/lib/validations/profile";
+import { IMAGE_ACCEPT, IMAGE_MAX_LABEL, IMAGE_TYPES, describeUploadError, validateImage } from "@/lib/uploads";
 
 interface AvatarUploaderProps {
   userId: string;
@@ -30,9 +30,12 @@ export function AvatarUploader({ userId, name, avatarUrl }: AvatarUploaderProps)
   }
 
   async function handleFile(file: File) {
-    const extension = AVATAR_TYPES[file.type];
-    if (!extension) return toast.error("Use uma imagem JPG, PNG ou WebP.");
-    if (file.size > AVATAR_MAX_BYTES) return toast.error("A imagem deve ter no máximo 2 MB.");
+    const invalid = validateImage(file);
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
+    const extension = IMAGE_TYPES[file.type];
 
     setUploading(true);
     const supabase = createClient();
@@ -42,7 +45,8 @@ export function AvatarUploader({ userId, name, avatarUrl }: AvatarUploaderProps)
     const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       setUploading(false);
-      return toast.error("Não foi possível enviar a imagem.");
+      toast.error(describeUploadError(error));
+      return;
     }
     await removeStoredFiles(supabase, fileName);
 
@@ -88,11 +92,11 @@ export function AvatarUploader({ userId, name, avatarUrl }: AvatarUploaderProps)
             </Button>
           ) : null}
         </div>
-        <p className="text-xs text-subtle">JPG, PNG ou WebP. Até 2 MB.</p>
+        <p className="text-xs text-subtle" aria-live="polite">{uploading ? "Enviando a foto…" : `JPG, PNG ou WebP. Até ${IMAGE_MAX_LABEL}.`}</p>
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={IMAGE_ACCEPT}
           className="sr-only"
           aria-label="Selecionar foto de perfil"
           tabIndex={-1}

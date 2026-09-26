@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useState, useTransition, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -252,9 +253,9 @@ export function ReceivableDialog(props: ReceivableDialogProps) {
 
           {preview ? (
             <p className="rounded-md border border-border bg-surface-raised p-3 text-[13px] text-muted-foreground">
-              {installments} parcelas de {formatCents(preview[preview.length - 1] ?? 0)}
+              {installments} parcelas de <Money cents={preview[preview.length - 1] ?? 0} />
               {preview[0] !== preview[preview.length - 1] ? ` (as primeiras com ${formatCents(preview[0] ?? 0)})` : ""}. Soma:{" "}
-              <span className="font-bold text-foreground">{formatCents(amountCents ?? 0)}</span>.
+              <span className="font-bold text-foreground"><Money cents={amountCents ?? 0} /></span>.
             </p>
           ) : null}
 

@@ -7,7 +7,7 @@ import { PautasCounters } from "@/features/pautas/components/pautas-counters";
 import { summarizePautas } from "@/features/pautas/board";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
 import { parsePautaFilters, pautaFiltersKey } from "@/features/pautas/filters";
-import { canFullyManagePauta, hasCapability, managedSquads } from "@/lib/auth/permissions";
+import { canCreateProjectPauta, canFullyManagePauta, hasCapability, managedSquads } from "@/lib/auth/permissions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
 import { requireProfile } from "@/lib/auth/session";
@@ -67,9 +67,10 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
           options={options}
           companies={companies.data ?? []}
           canManage={canManage}
-          defaultOwnerId={profile.id}
+          canCreate={canCreateProjectPauta(profile)}
+          canCreateProjects={hasCapability(profile, "manageProjects")}
           initialOpenId={params.pauta}
-          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url }}
+          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, squads: profile.squads }}
           filtersKey={pautaFiltersKey(filters)}
         />
       </Suspense>

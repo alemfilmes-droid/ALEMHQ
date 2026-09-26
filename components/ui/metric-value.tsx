@@ -52,10 +52,16 @@ interface MetricValueProps {
   format?: MetricFormat;
   size?: MetricSize;
   tone?: StatusTone;
+  /**
+   * Valor sensível (modo privacidade): mascarado como "R$ ••••••". Dinheiro ("cents") é sempre
+   * sensível; use para percentuais de margem e afins.
+   */
+  sensitive?: boolean;
   className?: string;
 }
 
-export function MetricValue({ value, format = "number", size = "lg", tone, className }: MetricValueProps) {
+export function MetricValue({ value, format = "number", size = "lg", tone, sensitive, className }: MetricValueProps) {
+  const isSensitive = sensitive ?? format === "cents";
   const text = formatMetric(value, format);
   const color = tone ? toneColor(tone) : undefined;
   const style = {
@@ -66,7 +72,12 @@ export function MetricValue({ value, format = "number", size = "lg", tone, class
 
   return (
     <span className={cn("metric-box", className)}>
-      <span className="metric-value font-display font-black tracking-tight" style={style} title={text}>
+      <span
+        className="metric-value font-display font-black tracking-tight"
+        style={style}
+        title={isSensitive ? undefined : text}
+        data-sensitive={isSensitive ? (format === "percent" ? "percent" : "money") : undefined}
+      >
         {text}
       </span>
     </span>
@@ -81,18 +92,19 @@ interface MetricProps {
   size?: MetricSize;
   tone?: StatusTone;
   note?: ReactNode;
+  sensitive?: boolean;
   className?: string;
 }
 
 /** Rótulo (pode quebrar) + valor (nunca quebra) + nota opcional. */
-export function Metric({ label, icon: Icon, value, format, size = "md", tone, note, className }: MetricProps) {
+export function Metric({ label, icon: Icon, value, format, size = "md", tone, note, sensitive, className }: MetricProps) {
   return (
     <div className={cn("min-w-0 space-y-1", className)}>
       <p className="flex items-start gap-1.5 text-xs font-semibold text-muted-foreground">
         {Icon ? <Icon className="mt-px size-3.5 shrink-0" aria-hidden /> : null}
         <span className="min-w-0">{label}</span>
       </p>
-      <MetricValue value={value} format={format} size={size} tone={tone} />
+      <MetricValue value={value} format={format} size={size} tone={tone} sensitive={sensitive} />
       {note ? <p className="text-xs text-subtle">{note}</p> : null}
     </div>
   );

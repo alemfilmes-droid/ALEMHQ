@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
+import { PrivacyCardToggle } from "@/components/privacy/privacy-mode";
 import { SURFACE, iconChipStyle, type PanelTone } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -43,13 +44,24 @@ function CardIcon({ icon: Icon, tone = "accent", className }: { icon: LucideIcon
   );
 }
 
+interface CardHeadingProps {
+  icon: LucideIcon;
+  tone?: PanelTone;
+  title: React.ReactNode;
+  action?: React.ReactNode;
+  /** O card mostra valores: aparece o olho do modo privacidade só deste card. */
+  sensitive?: boolean;
+  className?: string;
+}
+
 /** Cabeçalho padrão dos cards de painel: ícone tingido + título + ação opcional à direita. */
-function CardHeading({ icon, tone = "accent", title, action, className }: { icon: LucideIcon; tone?: PanelTone; title: React.ReactNode; action?: React.ReactNode; className?: string }) {
+function CardHeading({ icon, tone = "accent", title, action, sensitive = false, className }: CardHeadingProps) {
   return (
     <div className={cn("flex items-center gap-3 p-6 pb-4", className)}>
       <CardIcon icon={icon} tone={tone} />
       <h3 className="min-w-0 flex-1 truncate text-sm font-bold text-muted-foreground">{title}</h3>
       {action}
+      {sensitive ? <PrivacyCardToggle className="-mr-1" /> : null}
     </div>
   );
 }

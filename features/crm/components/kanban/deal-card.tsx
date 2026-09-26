@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AlertTriangle, Flame, MessageCircle, MessageSquareReply } from "lucide-react";
@@ -9,7 +10,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { isDealOverdue } from "@/features/crm/board";
 import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { TEMPERATURE_LABELS, type Temperature } from "@/features/crm/labels";
-import { formatCents, toCents } from "@/features/finance/money";
+import { toCents } from "@/features/finance/money";
 import { formatDate } from "@/lib/format";
 import { TEMPERATURE_TONE } from "@/lib/status";
 import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
@@ -83,10 +84,10 @@ export function DealCard({ deal, dragging = false }: DealCardProps) {
         ) : null}
       </div>
 
-      {deal.estimated_value != null ? <p className="text-sm font-bold">{formatCents(toCents(deal.estimated_value))}</p> : null}
+      {deal.estimated_value != null ? <p className="text-sm font-bold"><Money cents={toCents(deal.estimated_value)} /></p> : null}
       {deal.commission_amount != null && deal.commission_percent != null && deal.stage !== "perdido" ? (
         <p className="text-[12px] font-semibold text-muted-foreground">
-          {isOwner ? "Sua comissão" : "Comissão"}: {formatCents(toCents(deal.commission_amount))} ({percentLabel(deal.commission_percent)}%)
+          {isOwner ? "Sua comissão" : "Comissão"}: <Money cents={toCents(deal.commission_amount)} /> ({percentLabel(deal.commission_percent)}%)
         </p>
       ) : null}
 

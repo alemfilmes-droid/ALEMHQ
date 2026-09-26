@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import { PRIVACY_BOOT_SCRIPT } from "@/components/privacy/privacy-mode";
 import { publicEnv } from "@/lib/env";
 import "./globals.css";
 
@@ -33,7 +34,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${archivo.variable} ${inter.variable} dark`}>
+    <html lang="pt-BR" className={`${archivo.variable} ${inter.variable} dark`} suppressHydrationWarning>
+      <head>
+        {/* Modo privacidade salvo neste navegador: aplicado antes da primeira pintura (script próprio, estático). */}
+        <script dangerouslySetInnerHTML={{ __html: PRIVACY_BOOT_SCRIPT }} />
+      </head>
       <body>
         {children}
         <Toaster

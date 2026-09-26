@@ -1,7 +1,8 @@
+import { Money } from "@/components/ui/money";
 import type { ReactNode } from "react";
 import { Gem, Layers, CircleDashed, TrendingUp, type LucideIcon } from "lucide-react";
 import { CardIcon } from "@/components/ui/card";
-import { formatCents, toCents } from "@/features/finance/money";
+import { toCents } from "@/features/finance/money";
 import { TIER_LABELS } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import type { ClientTier } from "@/types";
@@ -34,7 +35,7 @@ export function TierColumn({ tier, count, total, children }: TierColumnProps) {
           <span className="truncate text-sm font-bold">{COLUMN_LABEL[tier]}</span>
           <span className="shrink-0 text-xs font-semibold tabular-nums text-subtle">{count}</span>
         </span>
-        {total != null ? <span className="shrink-0 whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground">{formatCents(toCents(total))}</span> : null}
+        {total != null ? <span className="shrink-0 whitespace-nowrap text-xs font-bold tabular-nums text-muted-foreground"><Money cents={toCents(total)} /></span> : null}
       </header>
       <div className="space-y-3 p-3">{count === 0 ? <p className="px-1 py-6 text-center text-[12px] text-subtle">Nenhum cliente aqui.</p> : children}</div>
     </section>

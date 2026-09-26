@@ -1,12 +1,13 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useDroppable } from "@dnd-kit/core";
 import { StatusBar } from "@/components/ui/status-bar";
 import { StatusDot } from "@/components/ui/status-dot";
+import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { DealCard } from "@/features/crm/components/kanban/deal-card";
 import { summarizeStage } from "@/features/crm/board";
 import { DEAL_STAGE_LABELS } from "@/features/crm/labels";
-import { formatCents } from "@/features/finance/money";
 import { DEAL_STAGE_TONE } from "@/lib/status";
 import { laneGlowStyle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ interface DealColumnProps {
 export function DealColumn({ stage, deals }: DealColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   const summary = summarizeStage(deals);
+  const { canSeeFinance } = useCrmFlow();
 
   return (
     <div
@@ -34,7 +36,11 @@ export function DealColumn({ stage, deals }: DealColumnProps) {
           <span className="truncate text-sm font-bold">{DEAL_STAGE_LABELS[stage]}</span>
           <span className="shrink-0 text-xs font-semibold text-subtle">{summary.count}</span>
         </div>
-        <p className="mt-0.5 text-[12px] font-semibold text-muted-foreground">{formatCents(summary.totalValue)}</p>
+        {canSeeFinance ? (
+          <p className="mt-0.5 text-[12px] font-semibold text-muted-foreground">
+            <Money cents={summary.totalValue} />
+          </p>
+        ) : null}
       </div>
 
       <div ref={setNodeRef} className={cn("min-h-0 flex-1 space-y-3 overflow-y-auto p-3", isOver && "bg-surface-hover")}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useState } from "react";
 import Link from "next/link";
 import { ClientAvatar } from "@/components/companies/client-avatar";
@@ -157,7 +158,7 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
                 {item.invoiceNumber ? <span className="block text-[13px] text-muted-foreground">NF {item.invoiceNumber}</span> : null}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">
-                {formatCents(item.status === "recebido" && item.receivedAmount != null ? item.receivedAmount : item.amount)}
+                <Money cents={item.status === "recebido" && item.receivedAmount != null ? item.receivedAmount : item.amount} />
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={item.status} />

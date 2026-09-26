@@ -36,8 +36,15 @@ export interface PautaOptionContact {
   full_name: string;
 }
 
-/** Listas usadas pelos formulários (projeto, pessoas, contatos). Sem dados financeiros. */
+export interface PautaOptionCompany {
+  id: string;
+  name: string;
+  logo_url: string | null;
+}
+
+/** Listas usadas pelos formulários (cliente, projeto, pessoas, contatos). Sem dados financeiros. */
 export interface PautaFormOptions {
+  companies: PautaOptionCompany[];
   projects: PautaOptionProject[];
   members: PautaOptionMember[];
   contacts: PautaOptionContact[];

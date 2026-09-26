@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Archive, Trash2 } from "lucide-react";
 import { getPautaDetailAction } from "@/features/pautas/actions";
 import { PautaActivityTab } from "@/features/pautas/components/pauta-activity-tab";
 import { PautaCommentsTab } from "@/features/pautas/components/pauta-comments-tab";
 import { PautaDetailsTab } from "@/features/pautas/components/pauta-details-tab";
+import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import { StandaloneTaskDetailsTab } from "@/features/pautas/components/standalone-task-details-tab";
 import type { PautaDetail, PautaFormOptions } from "@/features/pautas/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabBar } from "@/components/ui/tab-bar";
@@ -22,14 +25,17 @@ interface PautaDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChanged: (pauta: PautaWithDetails) => void;
+  /** Depois de apagar ou arquivar: tira a pauta da lista de quem abriu o modal. */
+  onRemoved?: (id: string) => void;
 }
 
 type TabKey = "detalhes" | "comentarios" | "atividade";
 
-export function PautaDetailModal({ pautaId, options, canManage, currentUser, open, onOpenChange, onChanged }: PautaDetailModalProps) {
+export function PautaDetailModal({ pautaId, options, canManage, currentUser, open, onOpenChange, onChanged, onRemoved }: PautaDetailModalProps) {
   const [detail, setDetail] = useState<PautaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("detalhes");
+  const [removal, setRemoval] = useState<PautaRemoval | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +95,29 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
                 ) : null}
               </p>
               <DialogTitle>{detail.pauta.title}</DialogTitle>
+              {(() => {
+                // Apagar: só quem criou. Arquivar: gestão plena ou quem criou (a diretoria arquiva o que não criou).
+                const isCreator = detail.pauta.created_by === currentUser.id;
+                const canArchive = canManage || isCreator;
+                if (!isCreator && !canArchive) return null;
+                const title = detail.pauta.title ?? "";
+                return (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {canArchive ? (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setRemoval({ mode: "archive", id: pautaId, title })}>
+                        <Archive aria-hidden />
+                        Arquivar
+                      </Button>
+                    ) : null}
+                    {isCreator ? (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setRemoval({ mode: "delete", id: pautaId, title })}>
+                        <Trash2 aria-hidden />
+                        Apagar
+                      </Button>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </DialogHeader>
 
             <TabBar<TabKey>
@@ -139,6 +168,16 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
           </>
         )}
       </DialogContent>
+      {removal ? (
+        <PautaRemoveDialog
+          removal={removal}
+          onOpenChange={(next) => !next && setRemoval(null)}
+          onDone={(id) => {
+            onRemoved?.(id);
+            onOpenChange(false);
+          }}
+        />
+      ) : null}
     </Dialog>
   );
 }

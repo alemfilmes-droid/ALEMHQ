@@ -1,10 +1,11 @@
 "use client";
 
+import { Money } from "@/components/ui/money";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard } from "@/features/finance/components/charts/chart-card";
 import { PAYABLE_CATEGORY_LABELS } from "@/features/finance/labels";
-import { formatCents, formatCentsCompact } from "@/features/finance/money";
+import { formatCentsCompact } from "@/features/finance/money";
 import type { CategoryCostItem } from "@/features/finance/types";
 import { CHART_AXIS_TICK, CHART_CATEGORY_COLORS, CHART_GRID, CHART_TOOLTIP_STYLE } from "@/lib/chart-colors";
 import { EmptyState } from "@/features/finance/components/table-shell";
@@ -23,8 +24,8 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Tooltip
   return (
     <div style={CHART_TOOLTIP_STYLE}>
       <p className="mb-1 font-bold">{PAYABLE_CATEGORY_LABELS[category.category]}</p>
-      <p>Fixo: {formatCents(category.fixedTotal)}</p>
-      <p>Variável: {formatCents(category.variableTotal)}</p>
+      <p>Fixo: <Money cents={category.fixedTotal} /></p>
+      <p>Variável: <Money cents={category.variableTotal} /></p>
     </div>
   );
 }
@@ -71,7 +72,7 @@ export function CategoryCostsChart({ data }: { data: CategoryCostItem[] }) {
             ))}
           </defs>
           <CartesianGrid stroke={CHART_GRID} horizontal={false} />
-          <XAxis type="number" tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} />
+          <XAxis className="sensitive-axis" type="number" tickFormatter={formatCentsCompact} tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} />
           <YAxis
             type="category"
             dataKey="category"

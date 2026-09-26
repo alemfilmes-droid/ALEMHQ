@@ -16,7 +16,8 @@ export interface ClientOverview {
     won: number;
     lost: number;
     conversionRate: number | null;
-    negotiationValue: Cents;
+    /** Nulo sem acesso ao financeiro. */
+    negotiationValue: Cents | null;
     lastInteractionAt: string | null;
     lastInteractionChannel: DealInteractionChannel | null;
   } | null;
