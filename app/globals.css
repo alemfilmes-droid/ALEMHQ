@@ -4,7 +4,9 @@
 
 /*
   Além Filmes — tokens da marca (interface somente escura).
-  O vermelho #E5231B pertence exclusivamente ao "é" do logo e não aparece aqui.
+  Política de cor completa em lib/theme/index.ts. O vermelho da marca (#E5231B) é o acento da
+  interface: gradientes de baixa opacidade, bordas finas, brilho no hover, navegação ativa, anel de
+  foco. Nunca fundo de botão, texto corrido ou área grande.
 */
 :root {
   --background: #0a0a0a; /* Preto Absoluto */
@@ -18,7 +20,7 @@
   --muted-foreground: #a3a3a3;
   --primary: #f0f0f0;
   --primary-foreground: #0a0a0a;
-  --ring: #a3a3a3;
+  --ring: rgb(229 35 27 / 0.75); /* anel de foco no acento da marca */
   /*
     Paleta semântica de status. Uso restrito a indicadores pequenos (ponto de
     8px, barra de 3px, contorno de badge, texto de percentual) — nunca fundo
@@ -37,6 +39,15 @@
   --brand-glow-core: rgb(240 240 240 / 0.08);
   /* Colunas de fim de semana nos calendários: um tom neutro levemente diferente. */
   --surface-weekend: #0d0d0d;
+  /* Acento da marca — só em opacidade baixa (ver lib/theme). */
+  --brand-accent: #e5231b;
+  --brand-accent-rgb: 229 35 27;
+  --accent-border: rgb(var(--brand-accent-rgb) / 0.32);
+  --accent-glow: rgb(var(--brand-accent-rgb) / 0.1);
+  --accent-soft: rgb(var(--brand-accent-rgb) / 0.06);
+  --accent-ring: rgb(var(--brand-accent-rgb) / 0.75);
+  /* Ícone de painel azul-acinzentado (Agenda). */
+  --panel-slate: #8b98ab;
   color-scheme: dark;
 }
 
@@ -54,7 +65,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--accent-ring);
     outline-offset: 2px;
   }
 
@@ -107,7 +118,7 @@
   /* Mesma grade, cards um pouco maiores — usada na home. */
   .card-grid-lg {
     display: grid;
-    gap: 1rem;
+    gap: 1.25rem;
     grid-auto-rows: 1fr;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   }
@@ -124,10 +135,66 @@
       grid-column: span 2;
     }
   }
-  /* Superfície elevada: gradiente de grafite sutil + borda própria — profundidade, nunca cor. */
-  .card-elevated {
+  /*
+    Sistema de cards (lib/theme SURFACE.card): gradiente #141414→#0A0A0A, borda de 1px #1F1F1F e, no
+    hover, um brilho vermelho muito suave + borda um pouco mais clara. Só box-shadow e cor de borda
+    mudam — nenhuma mudança de layout.
+  */
+  .card-surface {
     background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
-    border-color: var(--border-card);
+    border: 1px solid var(--border-card);
+    transition:
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+  .card-surface:not(.card-static):hover,
+  .card-surface:not(.card-static):focus-within {
+    border-color: color-mix(in srgb, var(--brand-accent) 22%, var(--border-strong));
+    box-shadow:
+      0 0 0 1px var(--accent-soft),
+      0 10px 32px -12px var(--accent-glow),
+      0 0 24px -8px var(--accent-glow);
+  }
+  /* Contêiner do ícone de um card: pequeno, arredondado, tingido pelo acento (cor vem de iconChipStyle). */
+  .icon-chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--brand-accent);
+  }
+  .icon-chip svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  /* Card-herói (cabeçalho do Início, Essência): o gradiente do card + um brilho vermelho suave no canto. */
+  .hero-surface {
+    background:
+      radial-gradient(55% 140% at 100% 0%, rgb(var(--brand-accent-rgb) / 0.1), transparent 70%),
+      radial-gradient(40% 90% at 0% 100%, rgb(240 240 240 / 0.025), transparent 70%),
+      linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
+  }
+  /* Calendário de Minhas Pautas: colunas e cards com contorno levemente avermelhado. */
+  .calendar-day {
+    border-color: color-mix(in srgb, var(--brand-accent) 10%, var(--border));
+  }
+  .calendar-day-today {
+    border-color: color-mix(in srgb, var(--brand-accent) 35%, var(--border));
+    background-image: linear-gradient(180deg, var(--accent-soft), transparent 40%);
+    box-shadow: 0 12px 36px -20px var(--accent-glow);
+  }
+  .calendar-card {
+    border-color: color-mix(in srgb, var(--brand-accent) 16%, var(--border-card));
+    box-shadow: 0 0 18px -10px var(--accent-glow);
+  }
+  /* Traço decorativo fino do acento (divisórias do login, citações). */
+  .accent-rule {
+    background: linear-gradient(180deg, transparent, rgb(var(--brand-accent-rgb) / 0.45), transparent);
   }
 
   /*
@@ -162,6 +229,165 @@
   /* Brilho do logo da sidebar: sombra branca difusa e de baixa opacidade — nunca recolore o logo. */
   .brand-glow {
     filter: drop-shadow(0 0 14px var(--brand-glow)) drop-shadow(0 0 2px var(--brand-glow-core));
+  }
+}
+
+/*
+  Painel cinematográfico do login (components/auth/cinematic-panel.tsx). Só transform/opacity animam;
+  tudo em cinzas profundos com o acento vermelho em opacidade baixa.
+*/
+@layer components {
+  .cine-panel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 70% 20%, var(--surface-raised) 0%, transparent 60%),
+      radial-gradient(90% 70% at 20% 90%, var(--surface) 0%, transparent 65%),
+      var(--background);
+    contain: strict;
+  }
+  .cine-beam {
+    position: absolute;
+    top: -30%;
+    width: 38%;
+    height: 170%;
+    filter: blur(28px);
+    transform-origin: 50% 0%;
+    will-change: transform, opacity;
+  }
+  .cine-beam-a {
+    left: 8%;
+    background: linear-gradient(180deg, rgb(240 240 240 / 0.09), rgb(240 240 240 / 0.02) 55%, transparent 80%);
+    animation: cine-sweep 26s ease-in-out infinite alternate;
+  }
+  .cine-beam-b {
+    left: 42%;
+    width: 26%;
+    background: linear-gradient(180deg, rgb(var(--brand-accent-rgb) / 0.12), rgb(var(--brand-accent-rgb) / 0.03) 50%, transparent 78%);
+    animation: cine-sweep 34s ease-in-out -9s infinite alternate-reverse;
+  }
+  .cine-beam-c {
+    left: 64%;
+    width: 30%;
+    background: linear-gradient(180deg, rgb(240 240 240 / 0.06), transparent 70%);
+    animation: cine-sweep 30s ease-in-out -16s infinite alternate;
+  }
+  .cine-flare {
+    position: absolute;
+    top: 14%;
+    right: 12%;
+    width: 22rem;
+    height: 22rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgb(var(--brand-accent-rgb) / 0.16) 0%, rgb(var(--brand-accent-rgb) / 0.05) 35%, transparent 68%);
+    filter: blur(6px);
+    animation: cine-breathe 14s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+  .cine-flare-streak {
+    position: absolute;
+    top: calc(14% + 11rem);
+    right: -10%;
+    width: 120%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgb(240 240 240 / 0.1) 35%, rgb(var(--brand-accent-rgb) / 0.35) 50%, rgb(240 240 240 / 0.1) 65%, transparent);
+    filter: blur(1px);
+    opacity: 0.6;
+    animation: cine-streak 18s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+  .cine-grain {
+    position: absolute;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    animation: cine-grain 1.2s steps(6) infinite;
+  }
+  .cine-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgb(10 10 10 / 0.75) 82%, var(--background) 100%);
+  }
+  .cine-letterbox {
+    position: absolute;
+    inset-inline: 0;
+    height: 7%;
+    background: linear-gradient(var(--background), transparent);
+  }
+  .cine-letterbox-top {
+    top: 0;
+  }
+  .cine-letterbox-bottom {
+    bottom: 0;
+    transform: scaleY(-1);
+  }
+  @keyframes cine-sweep {
+    0% {
+      transform: rotate(14deg) translateX(-6%);
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(-10deg) translateX(8%);
+      opacity: 0.7;
+    }
+  }
+  @keyframes cine-breathe {
+    0%,
+    100% {
+      transform: scale(0.94);
+      opacity: 0.7;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+    }
+  }
+  @keyframes cine-streak {
+    0%,
+    100% {
+      transform: translateX(-4%) scaleX(0.9);
+      opacity: 0.35;
+    }
+    50% {
+      transform: translateX(4%) scaleX(1.05);
+      opacity: 0.7;
+    }
+  }
+  @keyframes cine-grain {
+    0% {
+      transform: translate(0, 0);
+    }
+    20% {
+      transform: translate(-3%, 2%);
+    }
+    40% {
+      transform: translate(2%, -3%);
+    }
+    60% {
+      transform: translate(-2%, -1%);
+    }
+    80% {
+      transform: translate(3%, 3%);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cine-beam,
+  .cine-flare,
+  .cine-flare-streak,
+  .cine-grain {
+    animation: none !important;
   }
 }
 

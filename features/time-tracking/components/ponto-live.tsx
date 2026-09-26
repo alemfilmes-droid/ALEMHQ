@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TimerActions } from "@/features/time-tracking/components/timer-actions";
 import { formatMinutes } from "@/features/time-tracking/format";
 import { toneColor } from "@/lib/status";
+import { MetricValue } from "@/components/ui/metric-value";
 import { cn } from "@/lib/utils";
 
 function pad(value: number) {
@@ -71,7 +72,6 @@ export function PontoLive({ closedSecondsToday, openStartedAt, hasEntriesToday, 
   const showClosedCaption = !isOpen && hasEntriesToday;
 
   const dotTone = isOpen ? "success" : hasEntriesToday ? "warning" : "neutral";
-  const digitsColor = isOpen ? toneColor("success") : undefined;
 
   const pct = dailyMinutes > 0 ? (liveMinutes / dailyMinutes) * 100 : 0;
   const basePct = Math.min(pct, 100);
@@ -81,18 +81,13 @@ export function PontoLive({ closedSecondsToday, openStartedAt, hasEntriesToday, 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2.5">
         <span
           aria-hidden
           className={cn("inline-block size-2.5 shrink-0 rounded-full", isOpen && "animate-pulse")}
           style={{ background: toneColor(dotTone) ?? "var(--subtle)" }}
         />
-        <p
-          className="font-display text-5xl font-black tracking-tight tabular-nums sm:text-6xl"
-          style={digitsColor ? { color: digitsColor } : undefined}
-        >
-          {formatHms(liveSeconds)}
-        </p>
+        <MetricValue value={formatHms(liveSeconds)} format="text" size="display" tone={isOpen ? "success" : undefined} className="min-w-0 flex-1" />
       </div>
 
       <TimerActions isOpen={isOpen} hasEntriesToday={hasEntriesToday} />

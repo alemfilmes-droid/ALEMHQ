@@ -55,7 +55,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/financeiro", label: "Financeiro", icon: Landmark },
       { href: "/banco-de-horas", label: "Banco de Horas", icon: Clock },
       { href: "/equipe", label: "Equipe", icon: Users },
-      { href: "/avisos", label: "Avisos", icon: Megaphone, placeholder: true },
+      { href: "/avisos", label: "Avisos", icon: Megaphone },
       { href: "/configuracoes", label: "Configurações", icon: Settings },
     ],
   },
@@ -74,11 +74,11 @@ export function findNavItem(href: string): NavItem | undefined {
   return NAV_GROUPS.flatMap((group) => group.items).find((item) => item.href === href);
 }
 
-const EXTRA_TITLES: Record<string, string> = { "/perfil": "Perfil" };
+const EXTRA_TITLES: Record<string, string> = { "/perfil": "Perfil", "/essencia": "Essência" };
 
 export function getPageTitle(pathname: string): string | null {
   for (const [href, title] of Object.entries(EXTRA_TITLES)) {
-    if (pathname === href) return title;
+    if (pathname === href || pathname.startsWith(`${href}/`)) return title;
   }
   const item = NAV_GROUPS.flatMap((group) => group.items).find(
     (candidate) => pathname === candidate.href || pathname.startsWith(`${candidate.href}/`),

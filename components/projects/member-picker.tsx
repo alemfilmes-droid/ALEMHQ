@@ -30,7 +30,7 @@ export function MemberPicker({ idPrefix, value, onChange, members, legend = "Mem
         return (
           <div key={member.id} className="flex items-center gap-2.5 rounded-sm px-2 py-1.5 hover:bg-surface-hover">
             <Checkbox id={id} checked={value.includes(member.id)} onCheckedChange={(checked) => toggle(member.id, checked === true)} />
-            <UserAvatar name={member.full_name} src={member.avatar_url} className="size-6" />
+            <UserAvatar name={member.full_name} src={member.avatar_url} profileId={member.id} className="size-6" />
             <Label htmlFor={id} className="flex-1 cursor-pointer text-[13px] font-normal">
               {member.full_name}
             </Label>

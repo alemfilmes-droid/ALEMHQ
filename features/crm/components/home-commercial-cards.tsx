@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { AlertTriangle, CalendarCheck2, Coins, Handshake, TrendingUp, Wallet } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_LINK_CLASS, CardContent, CardHeading } from "@/components/ui/card";
 import { Metric, MetricGrid } from "@/components/ui/metric-value";
 import { getDirectorHomeSummary, getMyCommissions, getWorkday } from "@/features/crm/queries";
 import type { WorkdayItem } from "@/features/crm/types";
 import { formatCents } from "@/features/finance/money";
 
-const CARD_CLASS =
-  "card-elevated block rounded-lg border outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring";
 
 const CATEGORY_LABELS: Record<WorkdayItem["category"], string> = {
   acao_vencida: "Ações vencidas",
@@ -23,11 +21,8 @@ export async function DirectorCommercialCard() {
   const summary = await getDirectorHomeSummary();
 
   return (
-    <Link href="/crm" className={CARD_CLASS}>
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm text-muted-foreground">Comercial</CardTitle>
-        <TrendingUp className="size-4 shrink-0 text-subtle" aria-hidden />
-      </CardHeader>
+    <Link href="/crm" className={CARD_LINK_CLASS}>
+      <CardHeading icon={TrendingUp} tone="alert" title="Comercial" />
       <CardContent>
         <MetricGrid min="8.5rem">
           <Metric label="Em negociação" icon={Wallet} value={summary.valueInNegotiation} format="cents" tone="warning" />
@@ -55,11 +50,8 @@ export async function MyCommercialDayCard({ profileId, showCommissions }: { prof
   const visible = items.slice(0, 6);
 
   return (
-    <div className="card-elevated card-span-2 rounded-lg border">
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm text-muted-foreground">Meu dia comercial</CardTitle>
-        <AlertTriangle className="size-4 shrink-0 text-subtle" aria-hidden />
-      </CardHeader>
+    <div className="card-surface card-span-2 flex h-full flex-col rounded-lg">
+      <CardHeading icon={AlertTriangle} tone="alert" title="Meu dia comercial" />
       <CardContent className="space-y-5">
         {visible.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nada pendente com você agora.</p>

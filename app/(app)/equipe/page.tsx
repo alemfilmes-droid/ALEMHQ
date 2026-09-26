@@ -55,7 +55,7 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
         panel="/equipe"
         eyebrow="Empresa"
         title="Equipe."
-        description="Squads, papéis e funções de quem acessa o Além HQ."
+        description="Squads, cargos e atuação de quem acessa o Além HQ."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {current.org_level === "master" ? <TransferMasterDialog candidates={members.filter((m) => m.id !== current.id && m.is_active)} /> : null}

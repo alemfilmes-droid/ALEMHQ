@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AlertCircle, Building2 } from "lucide-react";
+import { ClientTierBoard, TIER_COLUMNS, TierColumn, type TierColumnKey } from "@/components/companies/client-tier-board";
 import { CompanyCard } from "@/components/companies/company-card";
 import { CompanyFilters } from "@/components/companies/company-filters";
 import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
@@ -9,38 +10,48 @@ import { LinkTabs } from "@/components/ui/link-tabs";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { CLIENT_HEALTHS } from "@/lib/validations/health";
-import { TIERS } from "@/lib/domain";
 import { createClient } from "@/lib/supabase/server";
-import type { ClientHealth, ClientTier, CompanyLifecycle } from "@/types";
+import type { ClientHealth, Company, CompanyLifecycle } from "@/types";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-type SearchParams = Promise<{ aba?: string; saude?: string; nivel?: string; cidade?: string }>;
+type SearchParams = Promise<{ aba?: string; saude?: string; cidade?: string; busca?: string }>;
+
+type CompanyStats = { active: number; lastActivity: string | null };
+
+function escapeLike(value: string) {
+  return value.replace(/[%_\\]/g, (char) => `\\${char}`);
+}
 
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
-  const { aba, saude, nivel, cidade } = await searchParams;
+  const { aba, saude, cidade, busca } = await searchParams;
   const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : "client";
   const isClientTab = lifecycle === "client";
   const canManage = hasCapability(profile, "manageCompanies");
 
   const health = CLIENT_HEALTHS.find((item): item is ClientHealth => item === saude);
-  const tier = isClientTab ? TIERS.find((item): item is ClientTier => item === nivel) : undefined;
+  const search = busca?.trim();
 
   const supabase = await createClient();
   let query = supabase.from("companies").select("*").eq("lifecycle", lifecycle).order("name");
   if (health) query = query.eq("health", health);
-  if (tier) query = query.eq("tier", tier);
-  if (cidade) query = query.ilike("city", `%${cidade}%`);
+  if (cidade) query = query.ilike("city", `%${escapeLike(cidade)}%`);
+  if (search) query = query.ilike("name", `%${escapeLike(search)}%`);
 
-  const { data: companies, error } = await query;
+  const [{ data: companies, error }, ranking] = await Promise.all([
+    query,
+    // Ordem por valor de contrato (soma dos projetos): todos recebem a ORDEM; o valor só vem para
+    // quem tem acesso ao financeiro (a própria função decide, igual à RLS de project_financials).
+    isClientTab ? supabase.rpc("company_contract_ranking") : Promise.resolve({ data: [] as { company_id: string; rank: number; total_value: number | null }[] }),
+  ]);
   const companyIds = (companies ?? []).map((company) => company.id);
 
   const { data: projects } = companyIds.length
     ? await supabase.from("projects").select("company_id, stage, created_at").in("company_id", companyIds)
     : { data: [] as { company_id: string | null; stage: string; created_at: string }[] };
 
-  const stats = new Map<string, { active: number; lastActivity: string | null }>();
+  const stats = new Map<string, CompanyStats>();
   for (const project of projects ?? []) {
     if (!project.company_id) continue;
     const current = stats.get(project.company_id) ?? { active: 0, lastActivity: null };
@@ -49,7 +60,34 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
     stats.set(project.company_id, current);
   }
 
-  const hasFilters = Boolean(health || tier || cidade);
+  const rankById = new Map((ranking.data ?? []).map((row) => [row.company_id, row]));
+  const hasFilters = Boolean(health || cidade || search);
+
+  function card(company: Company, hideTier: boolean) {
+    const companyStats = stats.get(company.id) ?? { active: 0, lastActivity: null };
+    return (
+      <CompanyCard
+        key={company.id}
+        company={company}
+        activeProjects={companyStats.active}
+        lastActivity={companyStats.lastActivity}
+        canManage={canManage}
+        contractValue={rankById.get(company.id)?.total_value ?? null}
+        hideTier={hideTier}
+      />
+    );
+  }
+
+  // Coluna por nível, cada uma do maior para o menor valor de contrato (sem contrato: por nome, no fim).
+  const columns = new Map<TierColumnKey, Company[]>(TIER_COLUMNS.map((key) => [key, []]));
+  for (const company of companies ?? []) columns.get(company.tier ?? "sem_nivel")?.push(company);
+  for (const list of columns.values()) {
+    list.sort((a, b) => (rankById.get(a.id)?.rank ?? Number.MAX_SAFE_INTEGER) - (rankById.get(b.id)?.rank ?? Number.MAX_SAFE_INTEGER) || a.name.localeCompare(b.name, "pt-BR"));
+  }
+  const columnTotal = (list: Company[]) => {
+    const values = list.map((company) => rankById.get(company.id)?.total_value);
+    return values.some((value) => value != null) ? values.reduce<number>((sum, value) => sum + (value ?? 0), 0) : null;
+  };
 
   return (
     <>
@@ -57,13 +95,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         panel="/clientes"
         eyebrow="Operação"
         title="Clientes."
-        description="Empresas atendidas e em prospecção. O CRM não é necessário para cadastrar um cliente."
-        actions={
-          canManage ? (
-            // A aba define a situação inicial do formulário.
-            <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} />
-          ) : null
-        }
+        description="Clientes por nível de ticket, do maior para o menor contrato. Prospects ficam na aba própria."
+        actions={canManage ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
       />
 
       <div className="mb-6">
@@ -78,7 +111,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
 
       <div className="mb-6">
         <Suspense>
-          <CompanyFilters showTier={isClientTab} />
+          <CompanyFilters />
         </Suspense>
       </div>
 
@@ -95,21 +128,19 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{hasFilters ? "Ajuste ou limpe os filtros." : "Use “Nova empresa” para começar."}</p>
         </div>
-      ) : (
-        <div className="card-grid">
-          {companies.map((company) => {
-            const companyStats = stats.get(company.id) ?? { active: 0, lastActivity: null };
+      ) : isClientTab ? (
+        <ClientTierBoard>
+          {TIER_COLUMNS.map((tier) => {
+            const list = columns.get(tier) ?? [];
             return (
-              <CompanyCard
-                key={company.id}
-                company={company}
-                activeProjects={companyStats.active}
-                lastActivity={companyStats.lastActivity}
-                canManage={canManage}
-              />
+              <TierColumn key={tier} tier={tier} count={list.length} total={columnTotal(list)}>
+                {list.map((company) => card(company, true))}
+              </TierColumn>
             );
           })}
-        </div>
+        </ClientTierBoard>
+      ) : (
+        <div className="card-grid">{companies.map((company) => card(company, false))}</div>
       )}
     </>
   );

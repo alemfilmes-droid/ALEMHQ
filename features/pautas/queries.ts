@@ -28,7 +28,9 @@ export async function listPautas(filters: PautaFilters): Promise<PautaWithDetail
   if (filters.assigneeIds?.length) query = query.in("current_assignee_id", filters.assigneeIds);
   if (filters.companyIds?.length) query = query.in("company_id", filters.companyIds);
   if (filters.priorities?.length) query = query.in("priority", filters.priorities);
-  if (filters.search?.trim()) query = query.ilike("title", `%${filters.search.trim()}%`);
+  if (filters.statuses?.length) query = query.in("status", filters.statuses);
+  if (filters.squads?.length) query = query.in("squad", filters.squads);
+  if (filters.search?.trim()) query = query.ilike("title", `%${filters.search.trim().replace(/[%_\\]/g, (char) => `\\${char}`)}%`);
 
   const { data, error } = await query;
   if (error) throw new Error("Falha ao carregar as pautas.");

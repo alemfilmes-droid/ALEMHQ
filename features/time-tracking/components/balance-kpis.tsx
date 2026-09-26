@@ -1,6 +1,6 @@
 import { Calendar, Clock, Scale, TrendingUp, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { formatMinutes } from "@/features/time-tracking/format";
 import type { BalanceKpis } from "@/features/time-tracking/types";
 import { MetricValue, type MetricFormat } from "@/components/ui/metric-value";
@@ -37,10 +37,7 @@ export function BalanceKpiRow({ kpis }: { kpis: BalanceKpis }) {
     <section aria-label="Indicadores do banco de horas" className="card-grid">
       {items.map(({ title, icon: Icon, value, format, tone }) => (
         <Card key={title}>
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
-            <Icon className="size-4 text-subtle" aria-hidden />
-          </CardHeader>
+          <CardHeading icon={Icon} tone="neutral" title={title} className="pb-2" />
           <CardContent>
             <MetricValue value={value} format={format} tone={tone} />
           </CardContent>

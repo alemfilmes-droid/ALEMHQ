@@ -106,7 +106,7 @@ export function EventDetailDialog({ event, members, onOpenChange, onEdit, onCanc
                 <ul className="flex flex-wrap gap-2">
                   {people.map((person) => (
                     <li key={person.id} className="flex items-center gap-1.5 text-[13px]">
-                      <UserAvatar name={person.full_name} src={person.avatar_url} className="size-5" />
+                      <UserAvatar name={person.full_name} src={person.avatar_url} profileId={person.id} className="size-5" />
                       {person.full_name}
                     </li>
                   ))}

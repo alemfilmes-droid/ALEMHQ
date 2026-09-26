@@ -8,11 +8,12 @@ import type { NavGroup } from "@/lib/navigation";
 
 interface MobileDrawerProps {
   groups: NavGroup[];
+  badges: Record<string, number>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function MobileDrawer({ groups, open, onOpenChange }: MobileDrawerProps) {
+export function MobileDrawer({ groups, badges, open, onOpenChange }: MobileDrawerProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -29,7 +30,7 @@ export function MobileDrawer({ groups, open, onOpenChange }: MobileDrawerProps) 
               <span className="sr-only">Fechar menu</span>
             </DialogPrimitive.Close>
           </div>
-          <NavList groups={groups} onNavigate={() => onOpenChange(false)} />
+          <NavList groups={groups} badges={badges} onNavigate={() => onOpenChange(false)} />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

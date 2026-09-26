@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { ProjectClientLabel } from "@/components/projects/project-client-label";
 import { ProjectMarginLine } from "@/components/projects/project-margin-line";
+import { getCompanySettings } from "@/features/settings/queries";
 import { ProjectOverviewEditor } from "@/components/projects/project-overview-editor";
 import { StageSelect } from "@/components/projects/stage-select";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +72,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
           <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
           <span>Código: {project.id.slice(0, 8)}</span>
         </p>
-        {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} /> : null}
+        {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} target={(await getCompanySettings()).margin.healthy} /> : null}
       </div>
 
       <LinkTabs label="Seções do projeto" tabs={tabs} />

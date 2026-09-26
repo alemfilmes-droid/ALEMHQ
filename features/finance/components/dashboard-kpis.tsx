@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowDownLeft, CheckCircle2, Handshake, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_LINK_CLASS, CardContent, CardHeading } from "@/components/ui/card";
 import { formatCents } from "@/features/finance/money";
 import { periodSearchParams, type Period } from "@/features/finance/period";
 import type { DashboardKpis, NegotiationTotals } from "@/features/finance/types";
@@ -102,12 +102,9 @@ export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: Dashboard
         <Link
           key={title}
           href={href}
-          className="block rounded-lg border border-border bg-card outline-none transition-colors hover:border-border-strong hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring"
+          className={CARD_LINK_CLASS}
         >
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
-            <Icon className="size-4 text-subtle" aria-hidden />
-          </CardHeader>
+          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" />
           <CardContent>
             <MetricValue value={value} format={format} tone={tone} />
             {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}

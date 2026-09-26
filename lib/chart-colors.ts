@@ -22,8 +22,20 @@ export const CHART_CATEGORY_COLORS: Record<PayableCategory, string> = {
   software: "#7B8FD9",
   imposto: "#8A6BB0",
   marketing: "#C97A96",
+  pessoal: "#6FA8DC",
+  estrutura: "#B08D6A",
   outro: "#8A8A8A",
 };
+
+/** Cores dos grupos da aba "Custos da empresa" (mesma família da paleta acima, sem o vermelho da marca). */
+export const CHART_COST_GROUP_COLORS = {
+  equipe: "#6FA8DC",
+  software: "#7B8FD9",
+  estrutura: "#B08D6A",
+  impostos: "#8A6BB0",
+  marketing: "#C97A96",
+  outros: "#8A8A8A",
+} as const;
 
 export const CHART_TOOLTIP_STYLE = {
   background: "var(--surface-raised)",

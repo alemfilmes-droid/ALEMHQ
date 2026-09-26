@@ -18,7 +18,7 @@ export default async function ProfilePage() {
     <>
       <PageHeader title="Perfil." description="Suas informações visíveis para o restante da equipe." />
       <div className="grid max-w-3xl gap-6">
-        <Card>
+        <Card variant="static">
           <CardHeader>
             <CardTitle>Foto</CardTitle>
           </CardHeader>
@@ -27,7 +27,7 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="static">
           <CardHeader>
             <CardTitle>Dados pessoais</CardTitle>
           </CardHeader>
@@ -36,7 +36,7 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="static">
           <CardHeader>
             <CardTitle>Acesso</CardTitle>
             <CardDescription>Definido pela administração. Não pode ser alterado por aqui.</CardDescription>

@@ -3,11 +3,9 @@ import { FinanceSwitch } from "@/components/team/finance-switch";
 import { MemberActions } from "@/components/team/member-actions";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { StatusDot } from "@/components/ui/status-dot";
+import { SquadBadge } from "@/components/ui/squad-badge";
 import { ORG_LEVEL_LABELS } from "@/lib/auth/org";
 import { FUNCTION_LABELS, ROLE_LABELS } from "@/lib/auth/roles";
-import { SQUAD_LABELS } from "@/lib/auth/squads";
-import { SQUAD_TONE } from "@/lib/status";
 import type { ProfileWithSquads } from "@/types";
 
 interface MemberListProps {
@@ -21,10 +19,10 @@ interface MemberListProps {
 
 export function MemberList({ members, viewer, viewerIsAdmin, viewerHasFinance }: MemberListProps) {
   return (
-    <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+    <ul className="card-surface card-static divide-y divide-border rounded-lg">
       {members.map((member) => (
         <li key={member.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 md:flex-nowrap">
-          <UserAvatar name={member.full_name} src={member.avatar_url} className="size-10" />
+          <UserAvatar name={member.full_name} src={member.avatar_url} squads={member.squads} className="size-10" />
 
           <div className="min-w-0 flex-1 basis-40">
             <p className={`truncate text-sm font-bold ${member.is_active ? "" : "text-muted-foreground line-through"}`}>
@@ -32,9 +30,10 @@ export function MemberList({ members, viewer, viewerIsAdmin, viewerHasFinance }:
               {member.id === viewer.id ? <span className="ml-2 font-normal text-subtle no-underline">(você)</span> : null}
             </p>
             <p className="truncate text-[13px] text-muted-foreground">
-              {member.job_title ? <span className="font-semibold text-foreground">{member.job_title} · </span> : null}
-              {member.email}
+              <span className="text-subtle">Cargo: </span>
+              <span className="font-semibold text-foreground">{member.job_title || "não definido"}</span>
             </p>
+            <p className="truncate text-[12px] text-subtle">{member.email}</p>
           </div>
 
           <div className="flex w-full flex-wrap gap-1.5 md:w-40">
@@ -46,10 +45,7 @@ export function MemberList({ members, viewer, viewerIsAdmin, viewerHasFinance }:
             {member.squads.length > 0 ? (
               member.squads.map((squad) => (
                 <li key={squad}>
-                  <Badge variant="muted">
-                    <StatusDot tone={SQUAD_TONE[squad]} />
-                    {SQUAD_LABELS[squad]}
-                  </Badge>
+                  <SquadBadge squad={squad} />
                 </li>
               ))
             ) : (
@@ -57,7 +53,8 @@ export function MemberList({ members, viewer, viewerIsAdmin, viewerHasFinance }:
             )}
           </ul>
 
-          <ul className="flex w-full flex-wrap gap-1.5 md:w-64" aria-label="Funções">
+          <ul className="flex w-full flex-wrap items-center gap-1.5 md:w-64" aria-label="Atuação">
+            <li className="eyebrow mr-0.5 text-[10px]">Atuação</li>
             {member.functions.length > 0 ? (
               member.functions.map((fn) => (
                 <li key={fn}>
@@ -65,7 +62,7 @@ export function MemberList({ members, viewer, viewerIsAdmin, viewerHasFinance }:
                 </li>
               ))
             ) : (
-              <li className="text-[13px] text-subtle">Sem funções</li>
+              <li className="text-[13px] text-subtle">—</li>
             )}
           </ul>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, ChevronRight } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeading } from "@/components/ui/card";
 import { StatusBar } from "@/components/ui/status-bar";
 import { eventTimeLabel } from "@/features/agenda/layout";
 import { getUpcomingAgenda } from "@/features/agenda/queries";
@@ -24,15 +24,16 @@ export async function HomeAgendaCard() {
   const today = todayInAppZone();
 
   return (
-    <div className="card-elevated rounded-lg border">
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm text-muted-foreground">
+    <div className="card-surface flex h-full flex-col rounded-lg">
+      <CardHeading
+        icon={CalendarClock}
+        tone="slate"
+        title={
           <Link href="/agenda" className="hover:text-foreground hover:underline">
             Próximos compromissos
           </Link>
-        </CardTitle>
-        <CalendarClock className="size-4 text-subtle" aria-hidden />
-      </CardHeader>
+        }
+      />
       <CardContent className="space-y-3">
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum compromisso agendado.</p>

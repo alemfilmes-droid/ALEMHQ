@@ -23,7 +23,7 @@ export function UserMenu({ profile, canSeeSettings }: { profile: Profile; canSee
         className="flex items-center gap-3 rounded-full py-1 pl-1 pr-1 transition-colors hover:bg-surface-hover sm:pr-3"
         aria-label="Menu do usuário"
       >
-        <UserAvatar name={profile.full_name} src={profile.avatar_url} />
+        <UserAvatar name={profile.full_name} src={profile.avatar_url} profileId={profile.id} />
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-semibold leading-tight">{getFirstName(profile.full_name)}</span>
           {profile.job_title ? <span className="block text-[11px] leading-tight text-subtle">{profile.job_title}</span> : null}

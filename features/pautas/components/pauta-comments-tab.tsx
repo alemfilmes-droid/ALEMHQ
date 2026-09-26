@@ -73,7 +73,7 @@ export function PautaCommentsTab({ pautaId, comments, onAdded, currentUser }: Pa
         <ul className="space-y-4">
           {[...comments].reverse().map((comment) => (
             <li key={comment.id} className="flex gap-3">
-              <UserAvatar name={comment.author?.full_name ?? "—"} src={comment.author?.avatar_url ?? null} className="size-8 shrink-0" />
+              <UserAvatar name={comment.author?.full_name ?? "—"} src={comment.author?.avatar_url ?? null} profileId={comment.author_id} className="size-8 shrink-0" />
               <div className="min-w-0 flex-1 rounded-md border border-border bg-surface-raised p-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-bold">{comment.author?.full_name ?? "—"}</p>

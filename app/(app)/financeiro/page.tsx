@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { ByClientTab } from "@/features/finance/components/by-client-tab";
 import { CashFlowTab } from "@/features/finance/components/cash-flow-tab";
+import { CompanyCostsTab } from "@/features/finance/components/company-costs-tab";
+import { parseCompanyCostFilters } from "@/features/finance/company-costs";
 import { DashboardTab } from "@/features/finance/components/dashboard-tab";
 import { FiltersPopover } from "@/features/finance/components/filters-popover";
 import { NegotiationTab } from "@/features/finance/components/negotiation-tab";
@@ -42,6 +44,7 @@ const TABS = [
   { key: "por-cliente", label: "Por cliente" },
   { key: "em-negociacao", label: "Em negociação" },
   { key: "fluxo-de-caixa", label: "Fluxo de caixa" },
+  { key: "custos-da-empresa", label: "Custos da empresa" },
 ] as const;
 
 function splitParam(value: string | undefined): string[] {
@@ -75,7 +78,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
       <PageHeader
         panel="/financeiro"
         title="Financeiro."
-        description="Painel, recebimentos, pagamentos, clientes e fluxo de caixa."
+        description="Painel, recebimentos, pagamentos, clientes, fluxo de caixa e custos da empresa."
         actions={
           <div className="flex flex-wrap gap-2">
             <ReceivableDialog mode="create" options={options} today={today} />
@@ -85,9 +88,11 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
       />
 
       <div className="space-y-6">
-        <Suspense>
-          <PeriodSelector period={period} />
-        </Suspense>
+        {tab === "custos-da-empresa" ? null : (
+          <Suspense>
+            <PeriodSelector period={period} />
+          </Suspense>
+        )}
         <LinkTabs label="Seções do financeiro" tabs={TABS.map((item) => ({ href: tabHref(item.key), label: item.label, active: item.key === tab }))} />
 
         {tab === "dashboard" ? (
@@ -100,8 +105,10 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
           <ByClientTab />
         ) : tab === "em-negociacao" ? (
           <NegotiationTab canEditProbabilities={hasCapability(profile, "crmOverview")} />
-        ) : (
+        ) : tab === "fluxo-de-caixa" ? (
           <CashFlowTab />
+        ) : (
+          <CompanyCostsTab filters={parseCompanyCostFilters(params, today.slice(0, 7))} options={options} />
         )}
       </div>
     </>

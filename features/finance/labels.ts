@@ -3,6 +3,7 @@ import type { PayableCategory, PayableRecurrence, PaymentMethod } from "@/types"
 export const PAYMENT_METHODS = ["pix", "boleto", "transferencia", "cartao", "dinheiro", "outro"] as const satisfies readonly PaymentMethod[];
 
 export const PAYABLE_CATEGORIES = [
+  "pessoal",
   "freelancer",
   "equipamento",
   "locacao",
@@ -13,6 +14,7 @@ export const PAYABLE_CATEGORIES = [
   "software",
   "imposto",
   "marketing",
+  "estrutura",
   "outro",
 ] as const satisfies readonly PayableCategory[];
 
@@ -26,6 +28,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 export const PAYABLE_CATEGORY_LABELS: Record<PayableCategory, string> = {
+  pessoal: "Pessoal/Equipe",
   freelancer: "Freelancer",
   equipamento: "Equipamento",
   locacao: "Locação",
@@ -36,7 +39,41 @@ export const PAYABLE_CATEGORY_LABELS: Record<PayableCategory, string> = {
   software: "Software",
   imposto: "Imposto",
   marketing: "Marketing",
+  estrutura: "Estrutura",
   outro: "Outro",
+};
+
+/**
+ * Grupos da aba "Custos da empresa": cada categoria de pagamento cai em um grupo. Equipe junta
+ * colaboradores (Pessoal/Equipe) e freelancers; Estrutura junta aluguel/locação, equipamento e a
+ * própria categoria Estrutura.
+ */
+export const COMPANY_COST_GROUPS = ["equipe", "software", "estrutura", "impostos", "marketing", "outros"] as const;
+export type CompanyCostGroup = (typeof COMPANY_COST_GROUPS)[number];
+
+export const COMPANY_COST_GROUP_LABELS: Record<CompanyCostGroup, string> = {
+  equipe: "Equipe e colaboradores",
+  software: "Software",
+  estrutura: "Estrutura",
+  impostos: "Impostos",
+  marketing: "Marketing",
+  outros: "Outros",
+};
+
+export const COMPANY_COST_GROUP_OF: Record<PayableCategory, CompanyCostGroup> = {
+  pessoal: "equipe",
+  freelancer: "equipe",
+  software: "software",
+  estrutura: "estrutura",
+  locacao: "estrutura",
+  equipamento: "estrutura",
+  imposto: "impostos",
+  marketing: "marketing",
+  deslocamento: "outros",
+  hospedagem: "outros",
+  alimentacao: "outros",
+  trilha_licenca: "outros",
+  outro: "outros",
 };
 
 export const PAYABLE_RECURRENCES = ["none", "mensal", "trimestral", "anual"] as const satisfies readonly PayableRecurrence[];

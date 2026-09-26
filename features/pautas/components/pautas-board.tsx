@@ -16,6 +16,8 @@ interface PautasBoardProps {
   defaultOwnerId: string;
   initialOpenId?: string;
   currentUser: { id: string; full_name: string; avatar_url: string | null };
+  /** Assinatura dos filtros da URL: quando muda, o quadro remonta com a lista nova do servidor. */
+  filtersKey: string;
 }
 
 /**
@@ -23,12 +25,12 @@ interface PautasBoardProps {
  * client boundary, para o botão abrir o diálogo que vive dentro do KanbanBoard (mesmo
  * estado otimista da lista) sem precisar duplicar a lógica de criação aqui.
  */
-export function PautasBoard({ initialPautas, options, companies, canManage, defaultOwnerId, initialOpenId, currentUser }: PautasBoardProps) {
+export function PautasBoard({ initialPautas, options, companies, canManage, defaultOwnerId, initialOpenId, currentUser, filtersKey }: PautasBoardProps) {
   const boardRef = useRef<KanbanBoardHandle>(null);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3">
         <PautasFilters options={options} companies={companies} />
         {canManage ? (
           <Button className="shrink-0" onClick={() => boardRef.current?.openCreate()}>
@@ -39,7 +41,13 @@ export function PautasBoard({ initialPautas, options, companies, canManage, defa
       </div>
 
       <div className="min-h-0 flex-1">
+        {/*
+          O quadro guarda a lista em estado local (arrasto otimista). Sem a key, um filtro novo trazia
+          a lista filtrada do servidor mas o quadro continuava mostrando a lista antiga — era o bug
+          de "Prioridade: Média devolve tudo". A key remonta o quadro a cada combinação de filtros.
+        */}
         <KanbanBoard
+          key={filtersKey}
           ref={boardRef}
           initialPautas={initialPautas}
           options={options}

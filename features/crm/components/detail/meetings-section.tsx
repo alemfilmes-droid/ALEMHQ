@@ -57,7 +57,7 @@ export function MeetingsSection({ deal, meetings, closed }: MeetingsSectionProps
                   )}
                 </div>
                 <p className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground">
-                  <UserAvatar name={meeting.attendee?.full_name ?? "—"} src={meeting.attendee?.avatar_url ?? null} className="size-5" />
+                  <UserAvatar name={meeting.attendee?.full_name ?? "—"} src={meeting.attendee?.avatar_url ?? null} profileId={meeting.attendee_id} className="size-5" />
                   {meeting.attendee?.full_name ?? "—"}
                 </p>
                 {meeting.location_or_link ? (

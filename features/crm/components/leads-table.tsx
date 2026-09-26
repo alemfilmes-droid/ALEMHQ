@@ -156,7 +156,7 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <span className="flex items-center gap-2">
-                    <UserAvatar name={deal.owner_name ?? "—"} src={deal.owner_avatar_url} className="size-6" />
+                    <UserAvatar name={deal.owner_name ?? "—"} src={deal.owner_avatar_url} profileId={deal.owner_id} className="size-6" />
                     {deal.owner_name}
                   </span>
                 </td>

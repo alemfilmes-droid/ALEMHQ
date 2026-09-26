@@ -9,7 +9,6 @@ import { PautaCard } from "@/features/pautas/components/pauta-card";
 import { movePautaColumnAction, updatePautaAction } from "@/features/pautas/actions";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
 import { PRIORITIES } from "@/lib/domain";
-import { SQUAD_TONE } from "@/lib/status";
 import type { PautaColumn, PautaWithDetails, ProjectPriority, Squad } from "@/types";
 
 interface MyPautasKanbanProps {
@@ -19,8 +18,6 @@ interface MyPautasKanbanProps {
   currentUserId: string;
   /** Gestão plena de pautas (can_fully_manage_pauta) — pode mudar a prioridade de qualquer pauta. */
   canManage: boolean;
-  /** Tinge o card com a cor do squad de origem (quem está em mais de um squad). */
-  tintBySquad: boolean;
   onOpen: (id: string) => void;
   onChanged: (pauta: PautaWithDetails) => void;
 }
@@ -41,7 +38,7 @@ function isColumn(value: string): value is PautaColumn {
  * uma rolando por dentro. Arrastar só muda o que a pessoa pode mudar: prioridade (gestão ou dono da
  * tarefa avulsa) ou status (quem edita a pauta — o banco confere de novo). Entre squads, nunca.
  */
-export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, tintBySquad, onOpen, onChanged }: MyPautasKanbanProps) {
+export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged }: MyPautasKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -134,12 +131,7 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
               blockedLabel={dimension === "squad" ? "Não muda de squad" : "Sem permissão para mudar"}
             >
               {items.map((pauta) => (
-                <PautaCard
-                  key={pauta.id}
-                  pauta={pauta}
-                  onOpen={() => onOpen(pauta.id!)}
-                  tint={tintBySquad && pauta.squad ? SQUAD_TONE[pauta.squad] : undefined}
-                />
+                <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} />
               ))}
             </KanbanLane>
           );
@@ -147,7 +139,7 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
       </div>
       <DragOverlay>
         {activePauta ? (
-          <PautaCard pauta={activePauta} onOpen={() => {}} dragging tint={tintBySquad && activePauta.squad ? SQUAD_TONE[activePauta.squad] : undefined} />
+          <PautaCard pauta={activePauta} onOpen={() => {}} dragging />
         ) : null}
       </DragOverlay>
     </DndContext>

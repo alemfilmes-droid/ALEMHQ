@@ -30,20 +30,20 @@ function truncate(name: string) {
   return name.length > 22 ? `${name.slice(0, 21)}…` : name;
 }
 
-/** Uma barra por projeto, colorida pela situação da margem; linha de referência em 50%. */
-export function ProjectMarginChart({ data }: { data: ProfitabilityItem[] }) {
+/** Uma barra por projeto, colorida pela situação da margem; linha de referência na meta. */
+export function ProjectMarginChart({ data, target }: { data: ProfitabilityItem[]; target: number }) {
   const items = data.filter((item) => item.marginPct != null && item.marginStatus).slice(0, 12);
 
   if (items.length === 0) {
     return (
-      <ChartCard title="Margem por projeto" note="Meta: 50% líquido" titleId="margem-projeto-title">
+      <ChartCard title="Margem por projeto" note={`Meta: ${String(target).replace(".", ",")}% líquido`} titleId="margem-projeto-title">
         <EmptyState icon={Layers} title="Nenhum projeto com margem calculada." />
       </ChartCard>
     );
   }
 
   return (
-    <ChartCard title="Margem por projeto" note="Meta: 50% líquido" titleId="margem-projeto-title">
+    <ChartCard title="Margem por projeto" note={`Meta: ${String(target).replace(".", ",")}% líquido`} titleId="margem-projeto-title">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={items} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART_GRID} horizontal={false} />
@@ -55,7 +55,7 @@ export function ProjectMarginChart({ data }: { data: ProfitabilityItem[] }) {
             tickLine={false}
             // Projetos com custo acima do contrato têm margem negativa — o domínio precisa
             // incluir valores abaixo de zero, senão a barra fica com comprimento errado.
-            domain={([dataMin, dataMax]: [number, number]) => [Math.min(dataMin, 0), Math.max(dataMax, 50)]}
+            domain={([dataMin, dataMax]: [number, number]) => [Math.min(dataMin, 0), Math.max(dataMax, target)]}
           />
           <ReferenceLine x={0} stroke="var(--border-strong)" strokeWidth={1.5} />
           <YAxis
@@ -68,7 +68,7 @@ export function ProjectMarginChart({ data }: { data: ProfitabilityItem[] }) {
             width={140}
           />
           <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--surface-hover)" }} />
-          <ReferenceLine x={50} stroke="var(--muted-foreground)" strokeDasharray="4 4" label={{ value: "Margem saudável", position: "insideTopRight", fill: "var(--muted-foreground)", fontSize: 11 }} />
+          <ReferenceLine x={target} stroke="var(--muted-foreground)" strokeDasharray="4 4" label={{ value: "Margem saudável", position: "insideTopRight", fill: "var(--muted-foreground)", fontSize: 11 }} />
           <Bar dataKey="marginPct" name="Margem" radius={[0, 3, 3, 0]}>
             {items.map((item) => (
               <Cell key={item.projectId} fill={item.marginStatus ? toneColor(MARGIN_STATUS_TONE[item.marginStatus]) : "var(--subtle)"} />

@@ -22,7 +22,7 @@ export function ContactCard({ contact, canManage }: ContactCardProps) {
         onClick={() => setOpen(true)}
         className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-border-strong hover:bg-surface-raised"
       >
-        <UserAvatar name={contact.full_name} className="size-9" />
+        <UserAvatar name={contact.full_name} plain className="size-9" />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 truncate text-sm font-bold">
             {contact.full_name}

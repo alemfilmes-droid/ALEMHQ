@@ -194,7 +194,7 @@ export function PautaDetailsTab({ detail, options, canManage, canEditOperational
         <div>
           <dt className="eyebrow">Responsável atual</dt>
           <dd className="mt-1 flex items-center gap-2 font-semibold">
-            <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} className="size-6" />
+            <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} profileId={pauta.current_assignee_id} className="size-6" />
             {pauta.assignee_name ?? "—"}
           </dd>
         </div>
@@ -214,7 +214,7 @@ export function PautaDetailsTab({ detail, options, canManage, canEditOperational
             {members.map((member) => (
               <li key={`${member.profile_id}-${member.production_function}`}>
                 <Badge variant="muted">
-                  <UserAvatar name={member.profile?.full_name ?? "—"} src={member.profile?.avatar_url ?? null} className="size-4" />
+                  <UserAvatar name={member.profile?.full_name ?? "—"} src={member.profile?.avatar_url ?? null} profileId={member.profile_id} className="size-4" />
                   {member.profile?.full_name} · {FUNCTION_LABELS[member.production_function]}
                 </Badge>
               </li>

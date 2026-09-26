@@ -9,11 +9,12 @@ import type { NavGroup } from "@/lib/navigation";
 
 interface SidebarProps {
   groups: NavGroup[];
+  badges: Record<string, number>;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export function Sidebar({ groups, collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ groups, badges, collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
@@ -24,7 +25,7 @@ export function Sidebar({ groups, collapsed, onToggle }: SidebarProps) {
       <div className={cn("pb-8 pt-12", collapsed ? "px-3" : "px-6")}>
         <BrandLogo collapsed={collapsed} />
       </div>
-      <NavList groups={groups} collapsed={collapsed} />
+      <NavList groups={groups} badges={badges} collapsed={collapsed} />
       <div className={cn("border-t border-border p-3", collapsed && "flex justify-center")}>
         <Button
           variant="ghost"

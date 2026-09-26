@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AlertTriangle, Flame, MessageCircle, MessageSquareReply } from "lucide-react";
-import { UserAvatar } from "@/components/ui/avatar";
+import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { isDealOverdue } from "@/features/crm/board";
@@ -12,6 +12,7 @@ import { TEMPERATURE_LABELS, type Temperature } from "@/features/crm/labels";
 import { formatCents, toCents } from "@/features/finance/money";
 import { formatDate } from "@/lib/format";
 import { TEMPERATURE_TONE } from "@/lib/status";
+import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { DealWithDetails } from "@/types";
 
@@ -36,11 +37,18 @@ export function DealCard({ deal, dragging = false }: DealCardProps) {
   const withBall = deal.responsible_id && deal.responsible_id !== deal.owner_id;
 
   const stop = (event: React.SyntheticEvent) => event.stopPropagation();
+  // Degradê na cor do squad de quem está com a bola agora; barra na cor do dono (SDR).
+  const responsibleSquad = usePrimarySquad(deal.responsible_id ?? deal.owner_id);
+  const ownerSquad = usePrimarySquad(deal.owner_id);
+  const gradient = squadGradient(responsibleSquad);
 
   return (
     <div
       ref={setNodeRef}
-      style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
+      style={{
+        transform: transform ? CSS.Translate.toString(transform) : undefined,
+        backgroundImage: gradient ? `${gradient}, linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to))` : undefined,
+      }}
       {...listeners}
       {...attributes}
       role="button"
@@ -54,10 +62,12 @@ export function DealCard({ deal, dragging = false }: DealCardProps) {
         }
       }}
       className={cn(
-        "cursor-grab space-y-2.5 rounded-md border border-border bg-card p-3.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
+        SURFACE.card,
+        "relative cursor-grab space-y-2.5 overflow-hidden rounded-md p-3.5 pl-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
         (isDragging || dragging) && "opacity-50",
       )}
     >
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={squadBarStyle(ownerSquad)} />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
           <p className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-subtle">
@@ -83,11 +93,11 @@ export function DealCard({ deal, dragging = false }: DealCardProps) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex -space-x-1.5">
           <span title={`SDR: ${deal.owner_name ?? "—"}`}>
-            <UserAvatar name={deal.owner_name ?? "—"} src={deal.owner_avatar_url} className="size-6 border-2 border-card" />
+            <UserAvatar name={deal.owner_name ?? "—"} src={deal.owner_avatar_url} profileId={deal.owner_id} className="size-6" />
           </span>
           {withBall ? (
             <span title={`Com a bola: ${deal.responsible_name ?? "—"}`}>
-              <UserAvatar name={deal.responsible_name ?? "—"} src={deal.responsible_avatar_url} className="size-6 border-2 border-card" />
+              <UserAvatar name={deal.responsible_name ?? "—"} src={deal.responsible_avatar_url} profileId={deal.responsible_id} className="size-6" />
             </span>
           ) : null}
         </div>

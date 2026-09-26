@@ -54,7 +54,7 @@ export function MemberActions({ member, viewer, viewerIsAdmin, isSelf }: MemberA
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setEditOpen(true)}>
             <Pencil aria-hidden />
-            {viewerIsAdmin ? "Editar papel e funções" : "Editar nível hierárquico"}
+            {viewerIsAdmin ? "Editar papel, cargo e atuação" : "Editar nível hierárquico"}
           </DropdownMenuItem>
           {!viewerIsAdmin || isSelf ? null : member.is_active ? (
             <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>

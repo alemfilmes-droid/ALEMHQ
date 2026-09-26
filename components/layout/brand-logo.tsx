@@ -1,20 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 /**
- * Logo da marca, sem recolorir, girar ou cortar — o vermelho continua só no "é". Recolhida, a
- * sidebar mostra o símbolo original completo. Espaço generoso acima do logo (o acento não encosta
- * em nada) e um brilho branco difuso de baixa opacidade (.brand-glow), que dá presença sem
- * embaçar as letras.
+ * Marca dentro do sistema (sidebar e menu mobile): só o símbolo — o acento vermelho do "é" —, igual
+ * nos estados recolhido e expandido. O logotipo completo aparece apenas no login. O símbolo nunca é
+ * recolorido, girado ou cortado; o brilho branco difuso (.brand-glow) dá presença sem competir.
  */
 export function BrandLogo({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <Link href="/inicio" aria-label="Além HQ — ir para o início" className="block rounded-sm">
-      {collapsed ? (
-        <Image src="/brand/simbolo_vermelho.png" alt="Além" width={1440} height={903} sizes="44px" className="brand-glow mx-auto h-auto w-11" priority />
-      ) : (
-        <Image src="/brand/alem_texto-branco.png" alt="Além" width={4100} height={1432} sizes="152px" className="brand-glow h-auto w-[152px]" priority />
-      )}
+    <Link href="/inicio" aria-label="Além HQ — ir para o início" className={cn("block w-fit rounded-sm", collapsed && "mx-auto")}>
+      <Image src="/brand/simbolo_vermelho.png" alt="Além" width={1440} height={903} sizes="44px" className="brand-glow h-auto w-11" priority />
     </Link>
   );
 }

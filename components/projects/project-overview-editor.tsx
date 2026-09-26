@@ -117,7 +117,7 @@ export function ProjectOverviewEditor(props: ProjectOverviewEditorProps) {
               {props.memberProfiles.length > 0 ? (
                 props.memberProfiles.map((member) => (
                   <span key={member.id} className="flex items-center gap-1.5 rounded-full border border-border-strong py-0.5 pl-0.5 pr-2.5 text-[13px] font-semibold">
-                    <UserAvatar name={member.full_name} src={member.avatar_url} className="size-6" />
+                    <UserAvatar name={member.full_name} src={member.avatar_url} profileId={member.id} className="size-6" />
                     {member.full_name}
                   </span>
                 ))

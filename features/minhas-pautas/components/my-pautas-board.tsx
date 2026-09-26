@@ -213,7 +213,6 @@ export function MyPautasBoard({ board, options, canManage, initialOpenId, curren
           mySquads={mySquads}
           currentUserId={currentUser.id}
           canManage={canManage}
-          tintBySquad={multiSquad}
           onOpen={setOpenId}
           onChanged={handleChanged}
         />

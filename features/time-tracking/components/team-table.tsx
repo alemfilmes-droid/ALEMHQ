@@ -33,7 +33,7 @@ export function TeamTable({ members, yearMonth }: { members: TeamMemberStatus[];
                 href={`/banco-de-horas/${member.profileId}?mes=${yearMonth}`}
                 className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring md:flex-nowrap"
               >
-                <UserAvatar name={member.fullName} src={member.avatarUrl} className="size-10" />
+                <UserAvatar name={member.fullName} src={member.avatarUrl} profileId={member.profileId} className="size-10" />
 
                 <div className="min-w-0 flex-1 basis-40">
                   <p className="truncate text-sm font-bold">{member.fullName}</p>

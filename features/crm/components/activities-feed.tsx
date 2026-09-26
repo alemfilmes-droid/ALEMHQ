@@ -23,8 +23,8 @@ export async function ActivitiesFeed({ ownerId, kind }: ActivitiesFeedProps) {
   return (
     <ul className="space-y-3">
       {interactions.map((item) => (
-        <li key={item.id} className="flex gap-3 rounded-md border border-border bg-card p-3.5">
-          <UserAvatar name={item.author?.full_name ?? "—"} src={item.author?.avatar_url ?? null} className="size-8 shrink-0" />
+        <li key={item.id} className="card-surface flex gap-3 rounded-md p-3.5">
+          <UserAvatar name={item.author?.full_name ?? "—"} src={item.author?.avatar_url ?? null} profileId={item.author?.id} className="size-8 shrink-0" />
           <div className="min-w-0 space-y-0.5">
             <p className="flex flex-wrap items-center gap-x-2 text-[13px] font-semibold text-muted-foreground">
               <ChannelIcon channel={item.channel} />

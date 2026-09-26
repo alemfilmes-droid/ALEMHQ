@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { ClientAvatar } from "@/components/companies/client-avatar";
+import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { groupPautasByWeek } from "@/features/minhas-pautas/board";
@@ -10,6 +11,7 @@ import { addDays, dayMonthShort, isWeekend, startOfWeek, timeInAppZone, todayInA
 import { isPautaOverdue } from "@/lib/pautas";
 import { SQUAD_TONE } from "@/lib/status";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
+import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
 
@@ -24,16 +26,26 @@ interface MyPautasCalendarProps {
 
 function CalendarItem({ pauta, onOpen, showSquad }: { pauta: PautaWithDetails; onOpen: () => void; showSquad: boolean }) {
   const overdue = !pauta.scheduled_at && pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
+  const assigneeId = pauta.current_assignee_id ?? pauta.lead_id;
+  const assigneeSquad = usePrimarySquad(assigneeId) ?? pauta.squad;
+  const ownerSquad = usePrimarySquad(pauta.lead_id ?? pauta.created_by) ?? pauta.squad;
+  const gradient = squadGradient(assigneeSquad, 13);
+
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="block w-full space-y-1.5 rounded-md border border-border bg-card p-2.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+      style={{ backgroundImage: gradient ? `${gradient}, linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to))` : undefined }}
+      className={cn(
+        SURFACE.card,
+        "calendar-card relative block w-full space-y-2 overflow-hidden rounded-md py-3 pl-4 pr-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
+      )}
     >
-      <span className="flex items-center justify-between gap-2 text-[11px] font-semibold text-subtle">
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={squadBarStyle(ownerSquad)} />
+      <span className="flex items-center justify-between gap-2 text-[12px] font-semibold text-subtle">
         {pauta.scheduled_at ? (
           <span className="flex items-center gap-1 whitespace-nowrap tabular-nums text-foreground">
-            <Clock className="size-3" aria-hidden />
+            <Clock className="size-3.5" aria-hidden />
             {timeInAppZone(pauta.scheduled_at)}
           </span>
         ) : (
@@ -41,15 +53,23 @@ function CalendarItem({ pauta, onOpen, showSquad }: { pauta: PautaWithDetails; o
         )}
         {showSquad && pauta.squad ? <StatusDot tone={SQUAD_TONE[pauta.squad]} label={SQUAD_LABELS[pauta.squad]} /> : null}
       </span>
-      <span className="line-clamp-2 block text-[13px] font-semibold leading-snug">{pauta.title}</span>
-      <span className="flex items-center gap-1.5 text-[11px] text-subtle">
+      <span className="line-clamp-3 block text-sm font-semibold leading-snug">{pauta.title}</span>
+      <span className="flex items-center gap-1.5 text-[12px] text-subtle">
         <ClientAvatar
           name={pauta.project_is_internal || !pauta.company_name ? "Além Filmes" : pauta.company_name}
           logoUrl={pauta.project_is_internal ? null : pauta.company_logo_url}
           size="sm"
-          className="size-4 text-[7px]"
+          className="size-5 text-[8px]"
         />
-        <span className="truncate">{pauta.is_standalone ? "Tarefa avulsa" : pauta.project_is_internal ? "Interno" : (pauta.company_name ?? "—")}</span>
+        <span className="min-w-0 flex-1 truncate">{pauta.is_standalone ? "Tarefa avulsa" : pauta.project_is_internal ? "Interno" : (pauta.company_name ?? "—")}</span>
+        {assigneeId ? (
+          <UserAvatar
+            name={(pauta.current_assignee_id ? pauta.assignee_name : pauta.lead_name) ?? "—"}
+            src={pauta.current_assignee_id ? pauta.assignee_avatar_url : pauta.lead_avatar_url}
+            profileId={assigneeId}
+            className="size-5 text-[8px]"
+          />
+        ) : null}
       </span>
       {pauta.priority === "alta" || pauta.priority === "urgente" ? <PautaPriorityBadge priority={pauta.priority} /> : null}
     </button>
@@ -84,7 +104,7 @@ export function MyPautasCalendar({ pautas, monday, onWeekChange, onOpen, showSqu
       </div>
 
       <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[980px] grid-cols-7 gap-2">
+        <div className="grid min-w-[1120px] grid-cols-7 gap-3">
           {days.map((day) => {
             const isToday = day.date === today;
             const count = day.timed.length + day.untimed.length;
@@ -93,25 +113,26 @@ export function MyPautasCalendar({ pautas, monday, onWeekChange, onOpen, showSqu
                 key={day.date}
                 aria-label={`${weekdayShort(day.date)}, ${dayMonthShort(day.date)}: ${count} ${count === 1 ? "item" : "itens"}`}
                 className={cn(
-                  "flex min-h-[420px] min-w-0 flex-col rounded-lg border border-border",
+                  "calendar-day relative flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-lg border",
                   isWeekend(day.date) ? "bg-surface-weekend" : "bg-surface",
-                  isToday && "border-t-2 border-t-foreground",
+                  isToday && "calendar-day-today",
                 )}
               >
-                <header className="flex items-baseline justify-between gap-2 border-b border-border px-3 py-2.5">
+                {isToday ? <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-brand-accent" /> : null}
+                <header className="flex items-baseline justify-between gap-2 border-b border-border px-4 py-3.5">
                   <span className="min-w-0">
-                    <span className={cn("block text-[11px] font-bold uppercase tracking-wide", isToday ? "text-foreground" : "text-subtle")}>
+                    <span className={cn("block text-[11px] font-bold uppercase tracking-wide", isToday ? "text-brand-accent" : "text-subtle")}>
                       {weekdayShort(day.date)}
                       {isToday ? " · hoje" : ""}
                     </span>
-                    <span className="block whitespace-nowrap text-sm font-bold">{dayMonthShort(day.date)}</span>
+                    <span className="block whitespace-nowrap text-base font-bold">{dayMonthShort(day.date)}</span>
                   </span>
                   <span className="shrink-0 text-xs font-semibold tabular-nums text-subtle" title={`${count} ${count === 1 ? "item" : "itens"}`}>
                     {count}
                   </span>
                 </header>
-                <div className="flex-1 space-y-2 p-2">
-                  {count === 0 ? <p className="px-1 py-4 text-center text-[11px] text-subtle">Livre.</p> : null}
+                <div className="flex-1 space-y-2.5 p-3">
+                  {count === 0 ? <p className="px-1 py-6 text-center text-[12px] text-subtle">Livre.</p> : null}
                   {day.timed.map((pauta) => (
                     <CalendarItem key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} showSquad={showSquad} />
                   ))}

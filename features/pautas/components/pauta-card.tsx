@@ -3,13 +3,13 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { AlertTriangle, MessageSquare } from "lucide-react";
-import { UserAvatar } from "@/components/ui/avatar";
+import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
 import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
-import { toneGradient, type StatusTone } from "@/lib/status";
+import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
 
@@ -17,20 +17,27 @@ interface PautaCardProps {
   pauta: PautaWithDetails;
   onOpen: () => void;
   dragging?: boolean;
-  /** Degradê levíssimo na cor do squad de origem (Minhas Pautas, para quem está em mais de um squad). */
-  tint?: StatusTone;
 }
 
-export function PautaCard({ pauta, onOpen, dragging = false, tint }: PautaCardProps) {
+/**
+ * Card de pauta (quadro global, aba do projeto e Minhas Pautas). Degradê da esquerda para a direita
+ * na cor do squad principal do RESPONSÁVEL atual — quem está em vários squads reconhece a origem na
+ * hora — e barra lateral de 3px na cor do squad de quem atribuiu/é dono (o líder). Sem squad
+ * conhecido, superfície neutra.
+ */
+export function PautaCard({ pauta, onOpen, dragging = false }: PautaCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: pauta.id! });
   const overdue = pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
+  const assigneeSquad = usePrimarySquad(pauta.current_assignee_id ?? pauta.lead_id) ?? pauta.squad;
+  const ownerSquad = usePrimarySquad(pauta.lead_id ?? pauta.created_by) ?? pauta.squad;
+  const gradient = squadGradient(assigneeSquad);
 
   return (
     <div
       ref={setNodeRef}
       style={{
         transform: transform ? CSS.Translate.toString(transform) : undefined,
-        backgroundImage: tint ? toneGradient(tint) : undefined,
+        backgroundImage: gradient ? `${gradient}, linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to))` : undefined,
       }}
       {...listeners}
       {...attributes}
@@ -44,10 +51,12 @@ export function PautaCard({ pauta, onOpen, dragging = false, tint }: PautaCardPr
         }
       }}
       className={cn(
-        "cursor-grab space-y-2.5 rounded-md border border-border bg-card p-3.5 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
+        SURFACE.card,
+        "relative cursor-grab space-y-2.5 overflow-hidden rounded-md p-3.5 pl-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
         (isDragging || dragging) && "opacity-50",
       )}
     >
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={squadBarStyle(ownerSquad)} />
       <div className="space-y-0.5">
         <p className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-subtle">
           <ClientAvatar
@@ -67,10 +76,10 @@ export function PautaCard({ pauta, onOpen, dragging = false, tint }: PautaCardPr
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex -space-x-1.5">
-          {pauta.lead_id ? <UserAvatar name={pauta.lead_name ?? "—"} src={pauta.lead_avatar_url} className="size-6 border-2 border-card" /> : null}
+        <div className="flex -space-x-1 pl-0.5">
+          {pauta.lead_id ? <UserAvatar name={pauta.lead_name ?? "—"} src={pauta.lead_avatar_url} profileId={pauta.lead_id} className="size-6" /> : null}
           {pauta.current_assignee_id && pauta.current_assignee_id !== pauta.lead_id ? (
-            <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} className="size-6 border-2 border-card" />
+            <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} profileId={pauta.current_assignee_id} className="size-6" />
           ) : null}
         </div>
         <div className="flex items-center gap-2 text-[12px] text-muted-foreground">

@@ -18,7 +18,7 @@ export function FunctionPicker({ idPrefix, value, onChange }: FunctionPickerProp
 
   return (
     <fieldset className="space-y-2">
-      <legend className="mb-2 text-sm font-semibold">Funções de produção</legend>
+      <legend className="mb-2 text-sm font-semibold">Atuação (funções de produção)</legend>
       <div className="grid grid-cols-2 gap-2">
         {PRODUCTION_FUNCTIONS.map((fn) => {
           const id = `${idPrefix}-${fn}`;

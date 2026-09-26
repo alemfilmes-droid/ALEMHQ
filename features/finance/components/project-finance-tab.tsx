@@ -12,6 +12,8 @@ import { centsToInput, formatCents, toCents } from "@/features/finance/money";
 import { todayISO } from "@/features/finance/period";
 import { getFinanceOptions, getProjectFinance } from "@/features/finance/queries";
 import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE, toneColor } from "@/lib/status";
+import { getCompanySettings } from "@/features/settings/queries";
+import { formatPercent } from "@/lib/margin";
 import { createClient } from "@/lib/supabase/server";
 
 interface ProjectFinanceTabProps {
@@ -35,10 +37,11 @@ function Section({ title, actions, children }: { title: string; actions?: React.
 /** Só é renderizado para quem tem a capability "finance"; as queries a exigem de novo. */
 export async function ProjectFinanceTab({ projectId, companyId, isInternal }: ProjectFinanceTabProps) {
   const supabase = await createClient();
-  const [{ receivables, payables, profitability }, options, financialsResult] = await Promise.all([
+  const [{ receivables, payables, profitability }, options, financialsResult, settings] = await Promise.all([
     getProjectFinance(projectId),
     getFinanceOptions(),
     supabase.from("project_financials").select("*").eq("project_id", projectId).maybeSingle(),
+    getCompanySettings(),
   ]);
   const today = todayISO();
   const contractCents = financialsResult.data?.contract_value == null ? null : toCents(financialsResult.data.contract_value);
@@ -124,7 +127,7 @@ export async function ProjectFinanceTab({ projectId, companyId, isInternal }: Pr
               <p className="mt-1 text-sm font-bold" style={{ color: toneColor(MARGIN_STATUS_TONE[profitability.marginStatus]) }}>
                 {MARGIN_STATUS_LABELS[profitability.marginStatus]}
               </p>
-              <p className="mt-0.5 text-xs text-subtle">Meta: margem líquida de 50%</p>
+              <p className="mt-0.5 text-xs text-subtle">Meta: margem líquida de {formatPercent(settings.margin.healthy)}</p>
             </div>
           </MetricGrid>
         ) : (

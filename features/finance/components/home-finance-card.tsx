@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Landmark, Scale } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_LINK_CLASS, CardContent, CardHeading } from "@/components/ui/card";
 import { Metric, MetricGrid } from "@/components/ui/metric-value";
 import { getHomeFinanceCard } from "@/features/finance/queries";
 
@@ -12,14 +12,8 @@ export async function HomeFinanceCard() {
   const data = await getHomeFinanceCard();
 
   return (
-    <Link
-      href="/financeiro"
-      className="card-elevated block rounded-lg border outline-none transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <CardHeader className="flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm text-muted-foreground">Financeiro</CardTitle>
-        <Landmark className="size-4 shrink-0 text-subtle" aria-hidden />
-      </CardHeader>
+    <Link href="/financeiro" className={CARD_LINK_CLASS}>
+      <CardHeading icon={Landmark} tone="success" title="Financeiro" />
       <CardContent>
         <MetricGrid min="10rem">
           <Metric

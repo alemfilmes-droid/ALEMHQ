@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarCheck2, Handshake, Percent, Target, TrendingDown, TrendingUp, Wallet, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_LINK_CLASS, CardContent, CardHeading } from "@/components/ui/card";
 import type { DashboardKpis } from "@/features/crm/types";
 import type { Period } from "@/features/finance/period";
 import { periodSearchParams } from "@/features/finance/period";
@@ -83,12 +83,9 @@ export function CrmDashboardKpiRow({ kpis, period }: { kpis: DashboardKpis; peri
         <Link
           key={title}
           href={href}
-          className="block rounded-lg border border-border bg-card outline-none transition-colors hover:border-border-strong hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring"
+          className={CARD_LINK_CLASS}
         >
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
-            <Icon className="size-4 text-subtle" aria-hidden />
-          </CardHeader>
+          <CardHeading icon={Icon} tone="alert" title={title} className="pb-2" />
           <CardContent>
             <MetricValue value={value} format={format} tone={tone} />
             {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}

@@ -1,8 +1,9 @@
 /**
- * Dados de demonstração (opt-in). Nada aqui roda automaticamente.
+ * Dados de demonstração — DESLIGADO do uso normal: não há script do npm para ele e nada o chama.
+ * O sistema está em uso real; só rode manualmente num projeto Supabase de testes:
  *
- *   npm run seed-demo -- --yes      cria (ou recria) os dados de demonstração
- *   npm run seed-demo -- --clean    remove somente os dados de demonstração
+ *   npx tsx scripts/seed-demo.ts --yes      cria (ou recria) os dados de demonstração
+ *   npx tsx scripts/seed-demo.ts --clean    remove somente os dados de demonstração
  *
  * Tudo que é criado começa com "[Demo]", e é só isso que a limpeza apaga.
  * Usa a service role de .env.local. O alvo é impresso antes de qualquer escrita.

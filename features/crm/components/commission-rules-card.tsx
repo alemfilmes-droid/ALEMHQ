@@ -44,10 +44,10 @@ export function CommissionRulesCard({ rules }: { rules: CommissionRuleRow[] }) {
   });
 
   return (
-    <Card>
+    <Card variant="static">
       <CardHeader>
         <CardTitle>Comissão do SDR</CardTitle>
-        <p className="text-xs text-subtle">Percentual sobre o valor da última proposta (ou do contrato). Vale para os negócios daqui em diante e para os em aberto.</p>
+        <p className="text-xs text-subtle">Percentual padrão e de lead reaquecido sobre o valor da última proposta (ou do contrato). Vale para os negócios daqui em diante e para os em aberto.</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} noValidate className="flex flex-wrap items-end gap-4">

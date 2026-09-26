@@ -6,6 +6,7 @@ import { Ban } from "lucide-react";
 import { StatusBar } from "@/components/ui/status-bar";
 import { StatusDot } from "@/components/ui/status-dot";
 import type { StatusTone } from "@/lib/status";
+import { laneGlowStyle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 interface KanbanLaneProps {
@@ -26,13 +27,17 @@ interface KanbanLaneProps {
 /**
  * Coluna de quadro reaproveitada pelos quadros de pautas (/pautas, aba do projeto e Minhas Pautas).
  * Regra de layout: a página não rola — só o corpo da coluna rola, com altura própria (min-h-0 na
- * cadeia flex é o que faz isso funcionar). Cor só no ponto e na barra de 3px do topo.
+ * cadeia flex é o que faz isso funcionar). A cor do status aparece no ponto, na barra de 3px do topo
+ * e numa borda/brilho suave da coluna (laneGlowStyle).
  */
 export function KanbanLane({ id, label, tone, count, children, emptyLabel = "Nada aqui.", action, blocked = false, blockedLabel }: KanbanLaneProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-border bg-surface">
+    <div
+      className="flex h-full min-h-0 w-full min-w-0 shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      style={laneGlowStyle(tone)}
+    >
       <div className="relative shrink-0 border-b border-border px-3 py-3">
         <StatusBar tone={tone} side="top" />
         <div className="flex items-center justify-between gap-2">

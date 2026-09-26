@@ -29,7 +29,7 @@ export function TeamFilters() {
       <div className="sm:w-52">
         <Select value={role} onValueChange={(value) => update("papel", value)}>
           <SelectTrigger aria-label="Filtrar por papel">
-            <SelectValue />
+            <SelectValue>{role === ALL ? "Todos os papéis" : (ROLE_LABELS[role as keyof typeof ROLE_LABELS] ?? "Todos os papéis")}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Todos os papéis</SelectItem>
@@ -43,11 +43,11 @@ export function TeamFilters() {
       </div>
       <div className="sm:w-52">
         <Select value={fn} onValueChange={(value) => update("funcao", value)}>
-          <SelectTrigger aria-label="Filtrar por função">
-            <SelectValue />
+          <SelectTrigger aria-label="Filtrar por atuação">
+            <SelectValue>{fn === ALL ? "Toda atuação" : (FUNCTION_LABELS[fn as keyof typeof FUNCTION_LABELS] ?? "Toda atuação")}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas as funções</SelectItem>
+            <SelectItem value={ALL}>Toda atuação</SelectItem>
             {PRODUCTION_FUNCTIONS.map((item) => (
               <SelectItem key={item} value={item}>
                 {FUNCTION_LABELS[item]}

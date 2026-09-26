@@ -1,12 +1,14 @@
 import { APP_TIME_ZONE } from "@/lib/format";
 
-export const PERIOD_KEYS = ["mes", "proximo-mes", "3-meses", "ano", "personalizado"] as const;
+export const PERIOD_KEYS = ["mes", "proximo-mes", "3-meses", "proximos-3-meses", "proximos-6-meses", "ano", "personalizado"] as const;
 export type PeriodKey = (typeof PERIOD_KEYS)[number];
 
 export const PERIOD_LABELS: Record<PeriodKey, string> = {
   mes: "Este mês",
   "proximo-mes": "Próximo mês",
   "3-meses": "Últimos 3 meses",
+  "proximos-3-meses": "Próximos 3 meses",
+  "proximos-6-meses": "Próximos 6 meses",
   ano: "Ano",
   personalizado: "Personalizado",
 };
@@ -43,6 +45,17 @@ function shiftMonth(year: number, month: number, delta: number) {
   return { year: Math.floor(index / 12), month: (index % 12) + 1 };
 }
 
+function isRealDate(value: string): boolean {
+  const [year = 0, month = 0, day = 0] = value.split("-").map(Number);
+  return year >= 2000 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month);
+}
+
+/** Último dia do mês de uma data (yyyy-mm-dd). */
+export function endOfMonthISO(date: string): string {
+  const [year = 0, month = 1] = date.split("-").map(Number);
+  return iso(year, month, daysInMonth(year, month));
+}
+
 export function addDaysISO(date: string, days: number): string {
   const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
   const shifted = new Date(Date.UTC(year, month - 1, day + days));
@@ -76,10 +89,18 @@ export function resolvePeriod(key: string | undefined, from?: string, to?: strin
       const start = shiftMonth(year, month, -2);
       return { key: "3-meses", from: iso(start.year, start.month, 1), to: today };
     }
+    case "proximos-3-meses":
+    case "proximos-6-meses": {
+      // Projeção: do início do mês atual até o fim do mês N−1 à frente (inclui meses futuros).
+      const months = key === "proximos-3-meses" ? 3 : 6;
+      const end = shiftMonth(year, month, months - 1);
+      return { key, from: iso(year, month, 1), to: iso(end.year, end.month, daysInMonth(end.year, end.month)) };
+    }
     case "ano":
       return { key: "ano", from: iso(year, 1, 1), to: iso(year, 12, 31) };
     case "personalizado":
-      if (from && to && ISO_DATE.test(from) && ISO_DATE.test(to) && from <= to) {
+      // Qualquer intervalo válido, passado ou FUTURO (projeção de caixa) — sem limite em "hoje".
+      if (from && to && ISO_DATE.test(from) && ISO_DATE.test(to) && from <= to && isRealDate(from) && isRealDate(to)) {
         return { key: "personalizado", from, to };
       }
       return { key: "mes", ...monthRange(year, month) };

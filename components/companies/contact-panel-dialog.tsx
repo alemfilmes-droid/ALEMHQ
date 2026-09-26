@@ -129,7 +129,7 @@ export function ContactPanelDialog({ contact, canManage, open, onOpenChange }: C
           <>
             <DialogHeader>
               <div className="flex items-center gap-3">
-                <UserAvatar name={contact.full_name} className="size-11" />
+                <UserAvatar name={contact.full_name} plain className="size-11" />
                 <div>
                   <DialogTitle className="flex items-center gap-2 text-xl">
                     {contact.full_name}

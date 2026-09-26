@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "db:types": "supabase gen types typescript --linked > types/database.ts",
     "create-first-admin": "tsx scripts/create-first-admin.ts",
-    "seed-demo": "tsx scripts/seed-demo.ts"
+    "reset-data": "tsx scripts/reset-data.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

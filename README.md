@@ -144,14 +144,16 @@ Recebimentos (parcelas) e pagamentos (custos de projeto, freelancers e despesas 
 - **Dinheiro:** `numeric(12,2)` no banco e centavos inteiros no TypeScript (`features/finance/money.ts`). Parcelas somam exatamente o total.
 - **Vínculos futuros:** `receivables.deal_id` e `receivables.task_id` existem sem FK, prontos para CRM e tarefas avulsas.
 
-### Dados de demonstração (opcional)
+### Zerar os dados operacionais (início do uso real)
+
+`scripts/reset-data.ts` apaga empresas, contatos, projetos, financeiro, pautas, CRM, agenda, banco de horas, notificações, avisos e o log de atividades — mantendo a estrutura, as configurações (empresa, comissão, probabilidades) e a conta admin informada. É irreversível; simule antes:
 
 ```bash
-npm run seed-demo -- --yes    # cria empresas, projetos, pautas, recebimentos e pagamentos "[Demo]"
-npm run seed-demo -- --clean  # remove apenas o que começa com "[Demo]"
+npm run reset-data -- --keep-email=voce@alemfilmes.com --dry-run
+npm run reset-data -- --keep-email=voce@alemfilmes.com --confirm=APAGAR-TUDO
 ```
 
-Cria 5 empresas (saúde e nível de ticket diferentes, incluindo um prospect sem tier), um projeto transacional, um recorrente (sem data de fim — "Em andamento desde…"), um projeto interno, um com custos altos o bastante para mostrar a margem em estado crítico, e 12 pautas espalhadas pelas 4 colunas do quadro (duas em atraso, duas críticas).
+Contas de demonstração (`@alemdemo.invalid`) são removidas; outras contas reais só com `--remove-other-users`. O antigo seed de demonstração (`scripts/seed-demo.ts`) não está mais ligado a nenhum script do npm.
 
 ## Status coloridos
 

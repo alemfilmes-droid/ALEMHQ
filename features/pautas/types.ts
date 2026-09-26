@@ -1,4 +1,4 @@
-import type { PautaColumn, PautaWithDetails, ProductionFunction, ProjectPriority } from "@/types";
+import type { PautaColumn, PautaStatus, PautaWithDetails, ProductionFunction, ProjectPriority, Squad } from "@/types";
 
 export interface PautaFilters {
   projectIds?: string[];
@@ -6,6 +6,8 @@ export interface PautaFilters {
   assigneeIds?: string[];
   companyIds?: string[];
   priorities?: ProjectPriority[];
+  statuses?: PautaStatus[];
+  squads?: Squad[];
   search?: string;
 }
 

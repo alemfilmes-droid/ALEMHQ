@@ -6,30 +6,16 @@ import { PautasBoard } from "@/features/pautas/components/pautas-board";
 import { PautasCounters } from "@/features/pautas/components/pautas-counters";
 import { summarizePautas } from "@/features/pautas/board";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
-import type { PautaFilters } from "@/features/pautas/types";
+import { parsePautaFilters, pautaFiltersKey } from "@/features/pautas/filters";
 import { canFullyManagePauta, hasCapability, managedSquads } from "@/lib/auth/permissions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
-import { PRIORITIES } from "@/lib/domain";
 import { requireProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import type { ProjectPriority } from "@/types";
 
 export const metadata: Metadata = { title: "Pautas" };
 
-type SearchParams = Promise<{
-  lider?: string;
-  responsavel?: string;
-  cliente?: string;
-  prioridade?: string;
-  projeto?: string;
-  busca?: string;
-  pauta?: string;
-}>;
-
-function parseList(value?: string): string[] {
-  return value ? value.split(",").filter(Boolean) : [];
-}
+type SearchParams = Promise<Record<string, string | undefined>>;
 
 export default async function PautasPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
@@ -40,17 +26,9 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
   const scopedSquads = managedSquads(profile);
   const scopeLabel = scopedSquads.length === 4 ? "Todos os squads" : scopedSquads.map((squad) => SQUAD_LABELS[squad]).join(", ") || "Nenhum squad";
 
-  const priorities = parseList(params.prioridade).filter((item): item is ProjectPriority =>
-    PRIORITIES.includes(item as ProjectPriority),
-  );
-  const filters: PautaFilters = {
-    leadIds: parseList(params.lider),
-    assigneeIds: parseList(params.responsavel),
-    companyIds: parseList(params.cliente),
-    projectIds: parseList(params.projeto),
-    priorities,
-    search: params.busca,
-  };
+  // URL → filtros validados → consulta no servidor (RLS por baixo). Os contadores do topo são
+  // calculados da mesma lista filtrada, então acompanham cada filtro.
+  const filters = parsePautaFilters(params);
 
   const supabase = await createClient();
   const [pautas, options, companies] = await Promise.all([
@@ -92,6 +70,7 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
           defaultOwnerId={profile.id}
           initialOpenId={params.pauta}
           currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url }}
+          filtersKey={pautaFiltersKey(filters)}
         />
       </Suspense>
     </div>

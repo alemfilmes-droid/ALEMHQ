@@ -17,13 +17,15 @@ import { cn } from "@/lib/utils";
  */
 
 export type MetricFormat = "cents" | "number" | "percent" | "text";
-export type MetricSize = "sm" | "md" | "lg" | "xl";
+export type MetricSize = "sm" | "md" | "lg" | "xl" | "display";
 
 const MAX_SIZE: Record<MetricSize, string> = {
   sm: "1.25rem",
   md: "1.75rem",
   lg: "1.875rem",
   xl: "2.5rem",
+  /** Relógio do ponto e números-herói. */
+  display: "3.75rem",
 };
 
 const numberFormat = new Intl.NumberFormat("pt-BR");

@@ -79,7 +79,7 @@ export function InteractionsTimeline({ interactions }: { interactions: DealInter
                     </p>
                   ) : null}
                   <p className="flex items-center gap-1.5 text-[12px] text-subtle">
-                    <UserAvatar name={item.author?.full_name ?? "—"} src={item.author?.avatar_url ?? null} className="size-4" />
+                    <UserAvatar name={item.author?.full_name ?? "—"} src={item.author?.avatar_url ?? null} profileId={item.author?.id} className="size-4" />
                     {item.author?.full_name ?? "Sistema"}
                   </p>
                 </li>

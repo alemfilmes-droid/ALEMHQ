@@ -8,6 +8,7 @@ import { summarizeStage } from "@/features/crm/board";
 import { DEAL_STAGE_LABELS } from "@/features/crm/labels";
 import { formatCents } from "@/features/finance/money";
 import { DEAL_STAGE_TONE } from "@/lib/status";
+import { laneGlowStyle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { DealStage, DealWithDetails } from "@/types";
 
@@ -22,7 +23,10 @@ export function DealColumn({ stage, deals }: DealColumnProps) {
   const summary = summarizeStage(deals);
 
   return (
-    <div className="flex h-full min-h-0 w-64 shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-border bg-surface sm:w-72">
+    <div
+      className="flex h-full min-h-0 w-64 shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-border bg-surface sm:w-72"
+      style={laneGlowStyle(DEAL_STAGE_TONE[stage])}
+    >
       <div className="relative shrink-0 border-b border-border px-3 py-3">
         <StatusBar tone={DEAL_STAGE_TONE[stage]} side="top" />
         <div className="flex items-center gap-2">

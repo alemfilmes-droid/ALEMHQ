@@ -9,7 +9,7 @@ import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE } from "@/lib/status";
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-label={title} className="card-elevated rounded-lg border p-5">
+    <section aria-label={title} className="card-surface rounded-lg p-5">
       <h3 className="eyebrow mb-4">{title}</h3>
       <MetricGrid min="8.5rem">{children}</MetricGrid>
     </section>

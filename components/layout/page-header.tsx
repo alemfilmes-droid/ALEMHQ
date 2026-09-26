@@ -6,7 +6,7 @@ interface PageHeaderProps {
   description?: ReactNode;
   eyebrow?: string;
   actions?: ReactNode;
-  /** Rota do painel: mostra o ícone do módulo na cor do squad dono (ver PANEL_TONE). */
+  /** Rota do painel: mostra o ícone do módulo na cor do squad dono (ver PANEL_TONE em lib/theme). */
   panel?: string;
   /** Elemento à esquerda do título no lugar do ícone do painel (ex.: logo do cliente). */
   leading?: ReactNode;

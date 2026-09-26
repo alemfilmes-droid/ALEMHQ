@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { createProjectAction } from "@/app/(app)/projetos/actions";
 import { MemberPicker } from "@/components/projects/member-picker";
 import { MarginPreview } from "@/components/projects/margin-preview";
+import type { MarginThresholds } from "@/lib/margin";
 import { OwnerSelect } from "@/components/projects/owner-select";
 import { ProjectCostsField } from "@/components/projects/project-costs-field";
 import { ServiceTypePicker } from "@/components/projects/service-type-picker";
@@ -38,6 +39,8 @@ interface NewProjectDialogProps {
   /** Campos financeiros só existem para quem tem acesso ao financeiro. */
   showFinance: boolean;
   defaultOwnerId: string;
+  /** Limiares da margem (Configurações → Empresa). */
+  marginThresholds?: MarginThresholds;
 }
 
 const EMPTY = (ownerId: string): ProjectValues => ({
@@ -68,7 +71,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="eyebrow border-t border-border pt-5">{children}</p>;
 }
 
-export function NewProjectDialog({ companies, contacts, members, showFinance, defaultOwnerId }: NewProjectDialogProps) {
+export function NewProjectDialog({ companies, contacts, members, showFinance, defaultOwnerId, marginThresholds }: NewProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -342,7 +345,7 @@ export function NewProjectDialog({ companies, contacts, members, showFinance, de
                 <Textarea id="project-terms" {...register("paymentTerms")} />
               </FormField>
               <ProjectCostsField control={control} register={register} errors={errors} />
-              <MarginPreview contractValue={contractValue} costAmounts={costs.map((cost) => cost.amount)} />
+              <MarginPreview contractValue={contractValue} costAmounts={costs.map((cost) => cost.amount)} thresholds={marginThresholds} />
             </>
           ) : null}
 

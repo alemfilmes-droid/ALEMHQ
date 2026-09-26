@@ -81,3 +81,8 @@ export type DealNeedingAttention = Database["public"]["Views"]["deals_needing_at
 export type CommitmentVisibility = Database["public"]["Enums"]["commitment_visibility"];
 export type GoogleSyncStatus = Database["public"]["Enums"]["google_sync_status"];
 export type AgendaFeedRow = Database["public"]["Functions"]["agenda_feed"]["Returns"][number];
+
+export type Announcement = Tables["announcements"]["Row"];
+export type CompanySettings = Tables["company_settings"]["Row"];
+export type UserSettings = Tables["user_settings"]["Row"];
+export type CostScope = Database["public"]["Enums"]["cost_scope"];

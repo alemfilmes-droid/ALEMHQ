@@ -77,6 +77,95 @@ export type Database = {
           },
         ]
       }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          profile_id: string
+          read_at: string
+        }
+        Insert: {
+          announcement_id: string
+          profile_id: string
+          read_at?: string
+        }
+        Update: {
+          announcement_id?: string
+          profile_id?: string
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          archived_at: string | null
+          audience_levels: Database["public"]["Enums"]["org_level"][]
+          audience_squads: Database["public"]["Enums"]["squad"][]
+          author_id: string | null
+          body: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_pinned: boolean
+          notified_at: string | null
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          audience_levels?: Database["public"]["Enums"]["org_level"][]
+          audience_squads?: Database["public"]["Enums"]["squad"][]
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          notified_at?: string | null
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          audience_levels?: Database["public"]["Enums"]["org_level"][]
+          audience_squads?: Database["public"]["Enums"]["squad"][]
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          notified_at?: string | null
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_rules: {
         Row: {
           effective_from: string
@@ -274,6 +363,44 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_settings: {
+        Row: {
+          attention_margin_pct: number
+          default_daily_hours: number
+          default_workdays: number[]
+          healthy_margin_pct: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          attention_margin_pct?: number
+          default_daily_hours?: number
+          default_workdays?: number[]
+          healthy_margin_pct?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          attention_margin_pct?: number
+          default_daily_hours?: number
+          default_workdays?: number[]
+          healthy_margin_pct?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1593,6 +1720,7 @@ export type Database = {
           cancelled_at: string | null
           category: Database["public"]["Enums"]["payable_category"]
           company_id: string | null
+          cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
           created_by: string | null
           description: string
@@ -1615,6 +1743,7 @@ export type Database = {
           cancelled_at?: string | null
           category: Database["public"]["Enums"]["payable_category"]
           company_id?: string | null
+          cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
           created_by?: string | null
           description: string
@@ -1637,6 +1766,7 @@ export type Database = {
           cancelled_at?: string | null
           category?: Database["public"]["Enums"]["payable_category"]
           company_id?: string | null
+          cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
           created_by?: string | null
           description?: string
@@ -2223,6 +2353,50 @@ export type Database = {
           },
         ]
       }
+      user_settings: {
+        Row: {
+          notify_agenda: boolean
+          notify_avisos: boolean
+          notify_banco_horas: boolean
+          notify_comercial: boolean
+          notify_financeiro: boolean
+          notify_pautas: boolean
+          notify_projetos: boolean
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          notify_agenda?: boolean
+          notify_avisos?: boolean
+          notify_banco_horas?: boolean
+          notify_comercial?: boolean
+          notify_financeiro?: boolean
+          notify_pautas?: boolean
+          notify_projetos?: boolean
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          notify_agenda?: boolean
+          notify_avisos?: boolean
+          notify_banco_horas?: boolean
+          notify_comercial?: boolean
+          notify_financeiro?: boolean
+          notify_pautas?: boolean
+          notify_projetos?: boolean
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_schedules: {
         Row: {
           daily_hours: number
@@ -2726,6 +2900,7 @@ export type Database = {
           cancelled_at: string | null
           category: Database["public"]["Enums"]["payable_category"] | null
           company_id: string | null
+          cost_scope: Database["public"]["Enums"]["cost_scope"] | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -2974,6 +3149,18 @@ export type Database = {
       }
     }
     Functions: {
+      announcements_unread_count: { Args: never; Returns: number }
+      can_manage_company: { Args: never; Returns: boolean }
+      company_contract_ranking: {
+        Args: never
+        Returns: {
+          company_id: string
+          rank: number
+          total_value: number | null
+        }[]
+      }
+      margin_status_for: { Args: { p_pct: number }; Returns: string }
+      publish_due_announcements: { Args: never; Returns: number }
       accept_invitation: { Args: never; Returns: undefined }
       agenda_conflicts: {
         Args: {
@@ -3543,6 +3730,7 @@ export type Database = {
       client_health: "ativo" | "atencao" | "tensao" | "churn"
       client_tier: "low_ticket" | "mid_ticket" | "high_ticket"
       commission_kind: "padrao" | "reaquecido"
+      cost_scope: "empresa" | "projeto"
       commitment_kind: "reuniao_comercial" | "captacao" | "entrega" | "interno"
       commitment_status:
         | "agendado"
@@ -3640,6 +3828,8 @@ export type Database = {
         | "imposto"
         | "marketing"
         | "outro"
+        | "pessoal"
+        | "estrutura"
       payable_recurrence: "none" | "mensal" | "trimestral" | "anual"
       payment_method:
         | "pix"
@@ -3845,6 +4035,7 @@ export const Constants = {
       client_health: ["ativo", "atencao", "tensao", "churn"],
       client_tier: ["low_ticket", "mid_ticket", "high_ticket"],
       commission_kind: ["padrao", "reaquecido"],
+      cost_scope: ["empresa", "projeto"],
       commitment_kind: ["reuniao_comercial", "captacao", "entrega", "interno"],
       commitment_status: [
         "agendado",
@@ -3952,6 +4143,8 @@ export const Constants = {
         "imposto",
         "marketing",
         "outro",
+        "pessoal",
+        "estrutura",
       ],
       payable_recurrence: ["none", "mensal", "trimestral", "anual"],
       payment_method: [

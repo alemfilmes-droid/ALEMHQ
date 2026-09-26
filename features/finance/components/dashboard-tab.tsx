@@ -16,9 +16,10 @@ import {
   getMonthlySummary,
   listProfitability,
 } from "@/features/finance/queries";
+import { getCompanySettings } from "@/features/settings/queries";
 
 export async function DashboardTab({ period }: { period: Period }) {
-  const [kpis, monthly, categories, margins, attention, cashFlow, negotiation] = await Promise.all([
+  const [kpis, monthly, categories, margins, attention, cashFlow, negotiation, settings] = await Promise.all([
     getDashboardKpis(period),
     getMonthlySummary(),
     getCategoryCosts(period),
@@ -26,6 +27,7 @@ export async function DashboardTab({ period }: { period: Period }) {
     getAttentionItems(),
     getCashFlowProjection(),
     getDealsInNegotiation(),
+    getCompanySettings(),
   ]);
 
   // finance_monthly_summary traz 18 meses (11 atrás até 6 à frente), em ordem crescente;
@@ -40,7 +42,7 @@ export async function DashboardTab({ period }: { period: Period }) {
         <IncomeExpenseChart data={trailingTwelve} />
         <NetResultChart data={monthly} />
         <CategoryCostsChart data={categories} />
-        <ProjectMarginChart data={margins} />
+        <ProjectMarginChart data={margins} target={settings.margin.healthy} />
       </div>
 
       <CashFlowChart data={cashFlow} />

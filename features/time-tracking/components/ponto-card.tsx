@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
-import { CardTitle } from "@/components/ui/card";
+import { CardIcon } from "@/components/ui/card";
 import { PontoLive } from "@/features/time-tracking/components/ponto-live";
 import { TodayEntriesList } from "@/features/time-tracking/components/today-entries-list";
 import { getOpenSessionState, getWorkSchedule } from "@/features/time-tracking/queries";
@@ -11,11 +11,11 @@ export async function PontoCard({ profileId }: { profileId: string }) {
   const dailyMinutes = Math.round((schedule?.daily_hours ?? 8) * 60);
 
   return (
-    <div className="card-elevated flex flex-col justify-between gap-6 rounded-lg border p-6 card-span-2">
+    <div className="card-surface card-span-2 flex h-full flex-col justify-between gap-6 rounded-lg p-6">
       <div>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-muted-foreground">Ponto do dia</CardTitle>
-          <Clock className="size-4 text-subtle" aria-hidden />
+        <div className="flex items-center gap-3">
+          <CardIcon icon={Clock} tone="neutral" />
+          <h3 className="text-sm font-bold text-muted-foreground">Ponto do dia</h3>
         </div>
         <div className="mt-3">
           <PontoLive

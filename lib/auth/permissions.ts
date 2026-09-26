@@ -20,6 +20,8 @@ const ADMIN_ONLY: readonly AccessRole[] = ["admin"];
 export const ROUTE_ACCESS: Record<string, readonly AccessRole[]> = {
   "/inicio": ALL_ROLES,
   "/perfil": ALL_ROLES,
+  // Manifesto, Valores e Cultura: leitura para todo mundo (edição futura: capability "manageCompany").
+  "/essencia": ALL_ROLES,
   // Quadro pessoal: todo mundo tem o seu, independente de papel ou nível hierárquico.
   "/minhas-pautas": ALL_ROLES,
   "/agenda": ALL_ROLES,
@@ -139,6 +141,13 @@ const CAPABILITIES = {
   /** "Meu dia comercial" em /inicio: quem trabalha negócios (squad comercial ou liderança do comercial). */
   crmWorkday: (subject: CapabilitySubject) =>
     subject.squads.includes("comercial") || (subject.leadSquads?.includes("comercial") ?? false),
+  /**
+   * Administração da empresa: criar/agendar/arquivar avisos, editar as configurações da empresa
+   * (jornada, margem, comissões) e, no futuro, os textos da Essência. Espelha can_manage_company()
+   * no banco: master, nível diretoria ou squad diretoria.
+   */
+  manageCompany: (subject: CapabilitySubject) =>
+    subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria"),
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;

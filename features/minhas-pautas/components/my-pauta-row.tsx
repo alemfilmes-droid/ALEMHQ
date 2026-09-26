@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { ClientAvatar } from "@/components/companies/client-avatar";
-import { UserAvatar } from "@/components/ui/avatar";
+import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Badge } from "@/components/ui/badge";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
@@ -12,6 +12,7 @@ import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
 import { SQUAD_TONE } from "@/lib/status";
+import { SURFACE, squadBarStyle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
 
@@ -26,6 +27,7 @@ interface MyPautaRowProps {
 export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSquad = false }: MyPautaRowProps) {
   const overdue = pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
   const showAssignee = pauta.current_assignee_id !== null && pauta.current_assignee_id !== currentUserId;
+  const ownerSquad = usePrimarySquad(pauta.lead_id ?? pauta.created_by) ?? pauta.squad;
 
   return (
     <div
@@ -39,10 +41,12 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
         }
       }}
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-md border border-border bg-card px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
+        SURFACE.card,
+        "relative flex flex-wrap items-center gap-3 overflow-hidden rounded-md py-3 pl-5 pr-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
         muted && "opacity-70",
       )}
     >
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={squadBarStyle(ownerSquad)} />
       <ClientAvatar
         name={pauta.is_standalone || pauta.project_is_internal || !pauta.company_name ? "Além Filmes" : pauta.company_name}
         logoUrl={pauta.is_standalone || pauta.project_is_internal ? null : pauta.company_logo_url}
@@ -108,7 +112,7 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
         )}
       </div>
 
-      {showAssignee ? <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} className="size-6" /> : null}
+      {showAssignee ? <UserAvatar name={pauta.assignee_name ?? "—"} src={pauta.assignee_avatar_url} profileId={pauta.current_assignee_id} className="size-6" /> : null}
     </div>
   );
 }

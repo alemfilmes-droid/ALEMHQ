@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PERIOD_KEYS, PERIOD_LABELS, type Period, type PeriodKey } from "@/features/finance/period";
+import { PERIOD_KEYS, PERIOD_LABELS, endOfMonthISO, type Period, type PeriodKey } from "@/features/finance/period";
 import { formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +15,11 @@ const PRESET_KEYS = PERIOD_KEYS.filter((key): key is Exclude<PeriodKey, "persona
 
 /**
  * Um único Popover controla tudo (atalhos + intervalo customizado). Fecha explicitamente ao
- * confirmar, e o Radix já fecha sozinho em Esc / clique fora — nada fica "preso aberto" porque
- * não há mais um Select nativo brigando com inputs de data condicionais no mesmo espaço.
+ * confirmar, e o Radix já fecha sozinho em Esc / clique fora.
+ *
+ * Datas futuras: os dois campos aceitam QUALQUER data (antes o "De" tinha `max` = "Até", que por
+ * padrão é o fim do mês atual — por isso nenhum mês futuro podia ser escolhido). Agora não há
+ * min/max cruzado: se o "De" passar do "Até", o "Até" acompanha (fim do mês do "De").
  */
 export function PeriodSelector({ period }: { period: Period }) {
   const router = useRouter();
@@ -103,8 +106,11 @@ export function PeriodSelector({ period }: { period: Period }) {
                   id="period-from"
                   type="date"
                   value={draftFrom}
-                  max={draftTo || undefined}
-                  onChange={(event) => setDraftFrom(event.target.value)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setDraftFrom(next);
+                    if (next && draftTo && next > draftTo) setDraftTo(endOfMonthISO(next));
+                  }}
                 />
               </div>
               <div className="space-y-1">
@@ -113,11 +119,14 @@ export function PeriodSelector({ period }: { period: Period }) {
                   id="period-to"
                   type="date"
                   value={draftTo}
-                  min={draftFrom || undefined}
                   onChange={(event) => setDraftTo(event.target.value)}
+                  aria-invalid={Boolean(draftFrom && draftTo && draftFrom > draftTo) || undefined}
                 />
               </div>
             </div>
+            {draftFrom && draftTo && draftFrom > draftTo ? (
+              <p className="text-[12px] font-semibold text-foreground">O fim precisa ser depois do início.</p>
+            ) : null}
             <Button type="button" size="sm" className="w-full" onClick={applyCustom} disabled={invalidRange}>
               Aplicar
             </Button>

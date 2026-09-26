@@ -137,26 +137,6 @@ export const COMMITMENT_KIND_TONE: Record<CommitmentKind, StatusTone> = {
 };
 
 /**
- * Cor do ícone de cada painel, DENTRO da página (bloco do cabeçalho) — a do squad dono do módulo.
- * A navegação lateral continua monocromática. Rotas fora daqui (Início, Agenda, Equipe, Avisos,
- * Banco de Horas, Configurações) são neutras.
- */
-export const PANEL_TONE: Partial<Record<string, StatusTone>> = {
-  "/crm": SQUAD_TONE.comercial,
-  "/financeiro": SQUAD_TONE.financeiro,
-  "/pautas": SQUAD_TONE.audiovisual,
-  "/minhas-pautas": SQUAD_TONE.audiovisual,
-  "/projetos": SQUAD_TONE.audiovisual,
-  "/clientes": SQUAD_TONE.audiovisual,
-};
-
-/** Contorno tingido de baixa opacidade (sobre a borda neutra) — o fundo continua neutro. */
-export function toneBorder(tone: StatusTone, percent = 35): string | undefined {
-  const color = toneColor(tone);
-  return color ? `color-mix(in srgb, ${color} ${percent}%, var(--border))` : undefined;
-}
-
-/**
  * Degradê muito leve da esquerda para a direita, tingido pela cor do squad, sobre a superfície
  * neutra do card — identifica a origem sem virar fundo colorido. O texto continua em alto contraste.
  */

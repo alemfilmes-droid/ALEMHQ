@@ -1,13 +1,16 @@
 import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE, toneColor } from "@/lib/status";
+import { formatPercent } from "@/lib/margin";
 import type { MarginStatus } from "@/types";
 
 interface ProjectMarginLineProps {
   marginPct: number | null;
   marginStatus: MarginStatus | null;
+  /** Meta de margem saudável (Configurações → Empresa). */
+  target: number;
 }
 
 /** Linha compacta no cabeçalho do projeto. Cor só no percentual. */
-export function ProjectMarginLine({ marginPct, marginStatus }: ProjectMarginLineProps) {
+export function ProjectMarginLine({ marginPct, marginStatus, target }: ProjectMarginLineProps) {
   if (marginPct == null || marginStatus == null) return null;
 
   return (
@@ -16,7 +19,7 @@ export function ProjectMarginLine({ marginPct, marginStatus }: ProjectMarginLine
       <span className="font-bold" style={{ color: toneColor(MARGIN_STATUS_TONE[marginStatus]) }}>
         {String(marginPct).replace(".", ",")}%
       </span>{" "}
-      — {MARGIN_STATUS_LABELS[marginStatus]} (meta: 50%)
+      — {MARGIN_STATUS_LABELS[marginStatus]} (meta: {formatPercent(target)})
     </p>
   );
 }

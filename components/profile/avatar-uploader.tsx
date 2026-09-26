@@ -74,7 +74,7 @@ export function AvatarUploader({ userId, name, avatarUrl }: AvatarUploaderProps)
 
   return (
     <div className="flex items-center gap-5">
-      <UserAvatar name={name} src={avatarUrl} className="size-20 text-lg" />
+      <UserAvatar name={name} src={avatarUrl} profileId={userId} className="size-20 text-lg" />
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" size="sm" loading={busy} onClick={() => inputRef.current?.click()}>

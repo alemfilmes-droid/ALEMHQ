@@ -10,6 +10,7 @@ import { ProjectDates } from "@/components/projects/project-dates";
 import { ProjectFilters } from "@/components/projects/project-filters";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/ui/status-dot";
+import { getCompanySettings } from "@/features/settings/queries";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS, MODELS, PROJECT_STAGES, STAGE_LABELS } from "@/lib/domain";
@@ -85,6 +86,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
               members={membersResult.data ?? []}
               showFinance={hasCapability(profile, "finance")}
               defaultOwnerId={profile.id}
+              marginThresholds={(await getCompanySettings()).margin}
             />
           ) : null
         }

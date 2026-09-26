@@ -1,8 +1,8 @@
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
 
-// Paleta neutra da marca. O vermelho #E5231B é exclusivo do "é" do logo
-// e NÃO existe neste tema de propósito.
+// Paleta neutra da marca + o acento vermelho (#E5231B) como token — uso restrito a traços,
+// bordas e brilhos em baixa opacidade. Política completa em lib/theme/index.ts.
 const config: Config = {
   darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./features/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
@@ -29,6 +29,7 @@ const config: Config = {
         input: "var(--border-strong)",
         ring: "var(--ring)",
         subtle: "var(--subtle)",
+        brand: { accent: "rgb(var(--brand-accent-rgb) / <alpha-value>)" },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

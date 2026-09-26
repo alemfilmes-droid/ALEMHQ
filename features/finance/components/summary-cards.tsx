@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CheckCircle2, Scale, type LucideIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { MetricValue } from "@/components/ui/metric-value";
 import type { PeriodSummary } from "@/features/finance/types";
 
@@ -27,10 +27,7 @@ export function SummaryCards({ summary }: { summary: PeriodSummary }) {
     <section aria-label="Resumo do período" className="card-grid">
       {cards.map(({ title, icon: Icon, value, note }) => (
         <Card key={title}>
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
-            <Icon className="size-4 text-subtle" aria-hidden />
-          </CardHeader>
+          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" />
           <CardContent>
             <MetricValue value={value} format="cents" />
             {note ? <p className="mt-1 text-xs text-subtle">{note}</p> : null}

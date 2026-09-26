@@ -26,6 +26,8 @@ import {
   type UpcomingItem,
 } from "@/features/finance/types";
 import type { Database } from "@/types/database";
+import { getCompanySettings } from "@/features/settings/queries";
+import { marginStatusFor } from "@/lib/margin";
 import type { MarginStatus, PayableCategory, PaymentMethod } from "@/types";
 
 const LIST_LIMIT = 500;
@@ -445,7 +447,7 @@ export async function getDashboardKpis(period: Period): Promise<DashboardKpis> {
   const supabase = await financeClient();
   const { from, to } = period;
 
-  const [receivables, payables, overdueReceivables, overduePayables, profitability] = await Promise.all([
+  const [receivables, payables, overdueReceivables, overduePayables, profitability, settings] = await Promise.all([
     supabase
       .from("receivables_with_status")
       .select("amount, received_amount, status")
@@ -455,6 +457,7 @@ export async function getDashboardKpis(period: Period): Promise<DashboardKpis> {
     supabase.from("receivables_with_status").select("amount").eq("status", "atrasado"),
     supabase.from("payables_with_status").select("amount").eq("status", "atrasado"),
     listProfitability(),
+    getCompanySettings(),
   ]);
   if (receivables.error || payables.error || overdueReceivables.error || overduePayables.error) {
     throw new Error("Falha ao carregar os indicadores do financeiro.");
@@ -475,7 +478,7 @@ export async function getDashboardKpis(period: Period): Promise<DashboardKpis> {
   const marginValues = profitability.map((item) => item.marginPct).filter((value): value is number => value != null);
   const averageMarginPct = marginValues.length > 0 ? Math.round((marginValues.reduce((a, b) => a + b, 0) / marginValues.length) * 10) / 10 : null;
   const averageMarginStatus: MarginStatus | null =
-    averageMarginPct == null ? null : averageMarginPct >= 50 ? "saudavel" : averageMarginPct >= 47 ? "atencao" : "critico";
+    averageMarginPct == null ? null : marginStatusFor(averageMarginPct, settings.margin);
 
   const overdueTotal =
     sumCents((overdueReceivables.data ?? []).map((row) => toCents(row.amount))) +
