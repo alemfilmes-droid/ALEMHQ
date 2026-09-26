@@ -220,11 +220,15 @@ export async function transferMasterAction(values: { newMasterId: string }): Pro
   const supabase = await createClient();
   const { error } = await supabase.rpc("transfer_master", { p_new_master_id: parsed.data.newMasterId });
   if (error) {
-    return { ok: false, error: error.message.includes("Selecione") || error.message.includes("encontrada") ? error.message : "Não foi possível transferir o master." };
+    // 22023 (alvo inelegível) e 42501 (permissão) trazem mensagens escritas para a pessoa, em PT-BR,
+    // vindas de transfer_master(). Outros erros (rede, banco) ficam com a mensagem genérica.
+    const readable = error.code === "22023" || error.code === "42501";
+    return { ok: false, error: readable ? error.message : "Não foi possível transferir o master. Tente de novo." };
   }
 
-  revalidatePath("/equipe");
-  return { ok: true, message: "Master transferido." };
+  // O layout inteiro depende do nível (navegação, permissões): recarrega tudo.
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Master transferido. Você agora é Diretoria." };
 }
 
 export async function setMemberActiveAction(values: { id: string; active: boolean }): Promise<ActionResult> {

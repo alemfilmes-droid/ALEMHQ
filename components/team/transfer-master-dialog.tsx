@@ -32,7 +32,9 @@ export function TransferMasterDialog({ candidates }: TransferMasterDialogProps) 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const target = candidates.find((candidate) => candidate.id === targetId);
+  // Só quem já está no nível Diretoria pode receber o master (a função transfer_master() confere de novo).
+  const eligible = candidates.filter((candidate) => candidate.org_level === "diretoria");
+  const target = eligible.find((candidate) => candidate.id === targetId);
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -77,13 +79,22 @@ export function TransferMasterDialog({ candidates }: TransferMasterDialogProps) 
 
         {!confirming ? (
           <>
-            <FormField id="transfer-master-target" label="Nova pessoa master">
-              <Select value={targetId} onValueChange={setTargetId}>
+            {eligible.length === 0 ? (
+              <Alert variant="info">
+                Ninguém está no nível Diretoria ainda. Mude o nível da pessoa em Equipe (Editar → Nível hierárquico) e volte aqui.
+              </Alert>
+            ) : null}
+            <FormField
+              id="transfer-master-target"
+              label="Nova pessoa master"
+              hint="Só aparecem pessoas ativas no nível Diretoria."
+            >
+              <Select value={targetId} onValueChange={setTargetId} disabled={eligible.length === 0}>
                 <SelectTrigger id="transfer-master-target">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {candidates.map((candidate) => (
+                  {eligible.map((candidate) => (
                     <SelectItem key={candidate.id} value={candidate.id}>
                       {candidate.full_name}
                     </SelectItem>
