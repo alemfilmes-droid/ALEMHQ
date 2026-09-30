@@ -1,5 +1,7 @@
 "use client";
 
+import { cleanVapidKey } from "@/lib/push-keys";
+
 /** Web push no navegador: suporte, service worker e inscrição deste aparelho. */
 
 export type PushSupport = "supported" | "needs-install" | "unsupported";
@@ -43,14 +45,19 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
 
 /** Pede a permissão (precisa vir de um toque) e inscreve o aparelho. */
 export async function subscribeThisDevice(): Promise<PushSubscription | null> {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const publicKey = cleanVapidKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
   if (!publicKey) throw new Error("Notificações ainda não configuradas no servidor.");
+  const keyBytes = urlBase64ToUint8Array(publicKey);
+  // Chave pública P-256 não comprimida: 65 bytes começando em 0x04.
+  if (keyBytes.length !== 65 || keyBytes[0] !== 4) {
+    throw new Error("A chave pública de notificações (NEXT_PUBLIC_VAPID_PUBLIC_KEY) está inválida na Vercel.");
+  }
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return null;
   const registration = await registerServiceWorker();
   const existing = await registration.pushManager.getSubscription();
   if (existing) return existing;
-  return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+  return registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
 }
 
 export function setAppBadge(count: number) {

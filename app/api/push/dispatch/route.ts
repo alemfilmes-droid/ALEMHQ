@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ensureWebPush, webpush } from "@/lib/push.server";
+import { checkVapidKeys, ensureWebPush, webpush } from "@/lib/push.server";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+/** Diagnóstico: diz se as chaves VAPID da Vercel estão certas (sem mostrar as chaves). */
+export function GET() {
+  return NextResponse.json(checkVapidKeys(), { headers: { "Cache-Control": "no-store" } });
+}
 
 const bodySchema = z.object({ id: z.string().uuid() });
 
