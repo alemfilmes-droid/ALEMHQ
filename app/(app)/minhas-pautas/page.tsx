@@ -7,7 +7,7 @@ import { getPautaFormOptions } from "@/features/pautas/queries";
 import { PanelIcon } from "@/components/layout/panel-icon";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/ui/status-dot";
-import { canCreateProjectPauta, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
+import { canCreateProjectPauta, canFullyManagePauta, hasCapability, managedSquads } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
 import { SQUAD_TONE } from "@/lib/status";
@@ -53,7 +53,7 @@ export default async function MinhasPautasPage({ searchParams }: { searchParams:
           canCreateProjectPauta={canCreateProjectPauta(profile)}
           canCreateProjects={hasCapability(profile, "manageProjects")}
           initialOpenId={pauta}
-          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url }}
+          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, managedSquads: hasCapability(profile, "managePautas") ? managedSquads(profile) : [] }}
           mySquads={profile.squads}
         />
       </Suspense>

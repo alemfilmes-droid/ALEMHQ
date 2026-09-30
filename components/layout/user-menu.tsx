@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { LogOut, Settings, User } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
+import { unregisterPushSubscriptionAction } from "@/features/push/actions";
 import { UserAvatar } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -52,7 +53,25 @@ export function UserMenu({ profile, canSeeSettings }: { profile: Profile; canSee
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
-        <form action={signOutAction}>
+        <form
+          action={signOutAction}
+          onSubmit={(event) => {
+            // Quem sai deixa de receber as notificações neste aparelho (melhor esforço, até 1,5 s).
+            // O menu fecha e desmonta o form, então a saída segue chamando a action direto.
+            if (!("serviceWorker" in navigator)) return;
+            event.preventDefault();
+            const detach = navigator.serviceWorker
+              .getRegistration()
+              .then((registration) => registration?.pushManager.getSubscription())
+              .then(async (subscription) => {
+                if (!subscription) return;
+                await unregisterPushSubscriptionAction(subscription.endpoint);
+                await subscription.unsubscribe();
+              })
+              .catch(() => undefined);
+            void Promise.race([detach, new Promise((resolve) => setTimeout(resolve, 1500))]).then(() => signOutAction());
+          }}
+        >
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full">
               <LogOut aria-hidden />

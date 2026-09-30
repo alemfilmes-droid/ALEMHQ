@@ -23,7 +23,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL),
   title: { default: "Além HQ", template: "%s · Além HQ" },
   description: "Sistema operacional interno da Além Filmes.",
-  icons: { icon: "/brand/simbolo_vermelho.png" },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: { capable: true, title: "Além HQ", statusBarStyle: "black" },
   robots: { index: false, follow: false },
 };
 

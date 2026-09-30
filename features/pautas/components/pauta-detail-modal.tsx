@@ -15,13 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabBar } from "@/components/ui/tab-bar";
-import type { PautaWithDetails } from "@/types";
+import type { PautaWithDetails, Squad } from "@/types";
 
 interface PautaDetailModalProps {
   pautaId: string;
   options: PautaFormOptions;
   canManage: boolean;
-  currentUser: { id: string; full_name: string; avatar_url: string | null };
+  currentUser: { id: string; full_name: string; avatar_url: string | null; managedSquads?: readonly Squad[] };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChanged: (pauta: PautaWithDetails) => void;
@@ -82,10 +82,14 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
                     ) : (
                       <span>Interno — Além Filmes</span>
                     )}
-                    <span aria-hidden>·</span>
-                    <Link href={`/projetos/${detail.pauta.project_id}`} className="underline underline-offset-4 hover:text-foreground">
-                      {detail.pauta.project_name}
-                    </Link>
+                    {detail.pauta.project_id ? (
+                      <>
+                        <span aria-hidden>·</span>
+                        <Link href={`/projetos/${detail.pauta.project_id}`} className="underline underline-offset-4 hover:text-foreground">
+                          {detail.pauta.project_name}
+                        </Link>
+                      </>
+                    ) : null}
                   </>
                 )}
                 {detail.pauta.is_critical ? (
@@ -150,6 +154,12 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
                       detail.pauta.lead_id === currentUser.id ||
                       detail.pauta.current_assignee_id === currentUser.id ||
                       detail.members.some((member) => member.profile_id === currentUser.id)
+                    }
+                    // Lápis (todos os dados): quem criou a pauta ou a gestão do squad dela.
+                    canEditAll={
+                      canManage ||
+                      detail.pauta.created_by === currentUser.id ||
+                      (currentUser.managedSquads ?? []).includes(detail.pauta.squad ?? "audiovisual")
                     }
                     onChanged={handleChanged}
                   />

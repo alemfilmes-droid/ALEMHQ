@@ -26,7 +26,7 @@ interface KanbanBoardProps {
   /** Fixa o projeto (aba Pautas do projeto) e some com o rótulo de cliente repetido nos cards. */
   lockedProjectId?: string;
   initialOpenId?: string;
-  currentUser: { id: string; full_name: string; avatar_url: string | null; squads: Squad[] };
+  currentUser: { id: string; full_name: string; avatar_url: string | null; squads: Squad[]; managedSquads?: readonly Squad[] };
 }
 
 /** Permite que o botão "Nova pauta" da barra de ferramentas (fora deste componente) abra o diálogo. */

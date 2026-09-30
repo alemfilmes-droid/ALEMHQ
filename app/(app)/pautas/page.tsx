@@ -70,7 +70,7 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
           canCreate={canCreateProjectPauta(profile)}
           canCreateProjects={hasCapability(profile, "manageProjects")}
           initialOpenId={params.pauta}
-          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, squads: profile.squads }}
+          currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, squads: profile.squads, managedSquads: scopedSquads }}
           filtersKey={pautaFiltersKey(filters)}
         />
       </Suspense>

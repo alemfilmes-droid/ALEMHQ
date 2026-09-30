@@ -48,7 +48,7 @@ export async function getPautaDetailAction(id: string): Promise<PautaDetail | nu
 export async function createPautaAction(values: CreatePautaValues): Promise<ActionResult & { id?: string }> {
   const actor = await getCurrentProfile();
   if (!actor) return UNAUTHENTICATED;
-  if (!canCreateProjectPauta(actor)) return { ok: false, error: "Só diretoria, master e heads criam pautas de projeto. Crie uma tarefa interna." };
+  if (!canCreateProjectPauta(actor)) return { ok: false, error: "Só diretoria, master e heads criam pautas para o time. Crie uma tarefa interna." };
   const parsed = createPautaSchema.safeParse(values);
   if (!parsed.success) return INVALID;
   const data = parsed.data;
@@ -67,15 +67,18 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
     // gerado não sabe do trigger e exige os dois).
     .insert({
       id: pauta.id,
-      project_id: data.projectId,
+      // Projeto e cliente são opcionais (prospect sem projeto, tarefa interna da equipe). Com projeto,
+      // o banco usa o cliente do projeto.
+      project_id: data.projectId || null,
+      direct_company_id: data.projectId ? null : data.companyId || null,
       created_by: actor.id,
       squad: data.squad || undefined,
       freelancer_id: data.freelancerId || null,
       title: data.title,
       briefing: nullIfEmpty(data.briefing),
+      // Líder revisa; o responsável (executor) é quem está com a pauta agora.
       lead_id: data.leadId,
-      // O líder começa como responsável atual; passa adiante quem pega a próxima etapa.
-      current_assignee_id: data.leadId,
+      current_assignee_id: data.executorId || data.leadId,
       board_column: data.boardColumn || undefined,
       priority: data.priority,
       is_critical: data.isCritical,
@@ -86,6 +89,7 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
       duration_minutes: data.durationMinutes === "" ? null : Number(data.durationMinutes),
       start_date: nullIfEmpty(data.startDate),
       due_date: nullIfEmpty(data.dueDate),
+      due_time: data.dueDate && data.dueTime ? data.dueTime : null,
       contact_id: data.contactId || null,
       contact_phone_override: nullIfEmpty(data.contactPhoneOverride),
       drive_folder_url: nullIfEmpty(data.driveFolderUrl),
@@ -94,12 +98,14 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
     } as Tables["pautas"]["Insert"]);
 
   if (error) {
-    if (error.code === "42501") return { ok: false, error: "Você não tem permissão para criar pautas de projeto." };
-    const mismatch = error.code === "23514";
-    return { ok: false, error: mismatch ? "O contato não pertence ao cliente deste projeto." : "Não foi possível criar a pauta." };
+    if (error.code === "42501") return { ok: false, error: "Você não tem permissão para criar pautas para o time." };
+    if (error.code === "23514") return { ok: false, error: error.message || "Revise o cliente e o contato da pauta." };
+    return { ok: false, error: "Não foi possível criar a pauta." };
   }
 
-  const members = data.members.filter(
+  // O executor entra como responsável com a atividade dele; depois, os responsáveis extras.
+  const executorId = data.executorId || data.leadId;
+  const members = [{ profileId: executorId, productionFunction: data.executorActivity }, ...data.members].filter(
     (member, index, list) =>
       list.findIndex((other) => other.profileId === member.profileId && other.productionFunction === member.productionFunction) === index,
   );
@@ -113,7 +119,7 @@ export async function createPautaAction(values: CreatePautaValues): Promise<Acti
     }
   }
 
-  refresh(data.projectId);
+  refresh(data.projectId || null);
   return { ok: true, message: "Pauta criada.", id: pauta.id };
 }
 
@@ -185,6 +191,8 @@ export async function updatePautaAction(id: string, values: UpdatePautaValues): 
   if (d.scriptUrl !== undefined) patch.script_url = d.scriptUrl;
   if (d.equipmentNotes !== undefined) patch.equipment_notes = d.equipmentNotes;
   if (d.freelancerId !== undefined) patch.freelancer_id = d.freelancerId;
+  if (d.waitingOnContactId !== undefined) patch.waiting_on_contact_id = d.waitingOnContactId;
+  if (d.dueTime !== undefined) patch.due_time = d.dueTime;
 
   if (Object.keys(patch).length === 0) return { ok: true };
 

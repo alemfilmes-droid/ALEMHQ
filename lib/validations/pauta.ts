@@ -2,7 +2,8 @@ import { z } from "zod";
 import { PAUTA_CAPTURE_TYPES, PAUTA_STATUSES } from "@/lib/pautas";
 import { PAUTA_COLUMNS } from "@/lib/pautas";
 import { PRIORITIES } from "@/lib/domain";
-import { PRODUCTION_FUNCTIONS } from "@/lib/auth/roles";
+import { PAUTA_ACTIVITIES } from "@/lib/auth/roles";
+import type { ProductionFunction } from "@/types";
 import { SQUADS } from "@/lib/auth/squads";
 
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
@@ -14,14 +15,37 @@ const optionalUrl = z
   .refine((value) => value === "" || /^https?:\/\//i.test(value), "Use um link começando com http:// ou https://")
   .or(z.literal(""));
 
-/** Responsável adicional da pauta, com a função de produção dele. */
+/** Atividade da pauta (produção, comercial, financeiro, diretoria) — ver PAUTA_ACTIVITIES_BY_SQUAD. */
+const activitySchema = z.custom<ProductionFunction>(
+  (value) => typeof value === "string" && (PAUTA_ACTIVITIES as readonly string[]).includes(value),
+  { message: "Selecione a atividade." },
+);
+
+const optionalTime = z
+  .string()
+  .trim()
+  .regex(/^\d{2}:\d{2}$/, "Informe um horário válido.")
+  .or(z.literal(""));
+
+/** Responsável adicional da pauta, com a atividade dele. */
 export const pautaMemberInputSchema = z.object({
-  profileId: z.string().uuid(),
-  productionFunction: z.enum(PRODUCTION_FUNCTIONS),
+  profileId: z.string().uuid("Escolha a pessoa."),
+  productionFunction: activitySchema,
 });
 
+/**
+ * Pauta/tarefa para o time. Cliente e projeto são opcionais (ex.: ajuste no CRM de um prospect, que
+ * ainda não tem projeto; ou tarefa interna da equipe). Líder revisa; o responsável executa.
+ */
 export const createPautaSchema = z.object({
-  projectId: z.string().uuid("Selecione o projeto."),
+  /** Vazio = sem projeto. */
+  projectId: z.string().uuid().or(z.literal("")),
+  /** Cliente quando não há projeto; vazio = sem cliente (tarefa interna da equipe). */
+  companyId: z.string().uuid().or(z.literal("")),
+  /** Quem executa (responsável atual). Vazio = o próprio líder. */
+  executorId: z.string().uuid().or(z.literal("")),
+  executorActivity: activitySchema,
+  dueTime: optionalTime,
   /** Squad da pauta; vazio = o padrão do banco (audiovisual). */
   squad: z.enum(SQUADS).or(z.literal("")),
   members: z.array(pautaMemberInputSchema).max(20, "Use até 20 responsáveis."),
@@ -74,6 +98,8 @@ export const updatePautaSchema = z.object({
   startDate: z.string().nullable().optional(),
   dueDate: z.string().nullable().optional(),
   contactId: z.string().uuid().nullable().optional(),
+  waitingOnContactId: z.string().uuid().nullable().optional(),
+  dueTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   contactPhoneOverride: z.string().trim().max(30).nullable().optional(),
   driveFolderUrl: z.string().trim().max(500).nullable().optional(),
   deliveryUrl: z.string().trim().max(500).nullable().optional(),
@@ -88,7 +114,7 @@ export const handoverSchema = z.object({
   pautaId: z.string().uuid(),
   status: z.enum(PAUTA_STATUSES),
   assigneeId: z.string().uuid("Selecione o responsável."),
-  functionRole: z.enum(PRODUCTION_FUNCTIONS, { message: "Selecione a função." }),
+  functionRole: activitySchema,
   dueDate: optionalDate,
   note: z.string().trim().max(500, "Use até 500 caracteres."),
 });

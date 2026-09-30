@@ -56,13 +56,15 @@ export async function middleware(request: NextRequest) {
 
   if (!isPublicRoute(pathname) && !canAccessRouteFor({ ...profile, squads }, pathname)) {
     // Quem não gerencia pautas cai no quadro pessoal, não na home — é o destino equivalente.
-    const fallback = pathname === "/pautas" || pathname.startsWith("/pautas/") ? "/minhas-pautas" : DEFAULT_ROUTE;
-    return redirectTo(request, getResponse(), fallback);
+    // Mantém o ?pauta=… dos links antigos de notificação para abrir a pauta direto.
+    const isPautas = pathname === "/pautas" || pathname.startsWith("/pautas/");
+    const pautaId = isPautas ? request.nextUrl.searchParams.get("pauta") : null;
+    return redirectTo(request, getResponse(), isPautas ? "/minhas-pautas" : DEFAULT_ROUTE, pautaId ? `?pauta=${encodeURIComponent(pautaId)}` : undefined);
   }
 
   return getResponse();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|brand/|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|brand/|icons/|sw\\.js|manifest\\.webmanifest|api/push/dispatch|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt)$).*)"],
 };

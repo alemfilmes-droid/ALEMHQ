@@ -7,6 +7,8 @@ import { Topbar } from "@/components/layout/topbar";
 import { PrivacyProvider } from "@/components/privacy/privacy-mode";
 import { SquadDirectoryProvider, type SquadDirectory } from "@/components/providers/squad-directory";
 import type { NotificationsSnapshot } from "@/features/notifications/queries";
+import { PushPrompt } from "@/features/push/components/push-prompt";
+import { PushRegistrar } from "@/features/push/components/push-registrar";
 import { canAccessRouteFor, hasCapability } from "@/lib/auth/permissions";
 import { getNavGroupsForProfile } from "@/lib/navigation";
 import type { ProfileWithSquads } from "@/types";
@@ -72,7 +74,11 @@ export function AppShell({ profile, notifications, squadDirectory, badges = {}, 
               />
             </div>
             <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 sm:py-10">
-              <div className="mx-auto w-full max-w-7xl">{children}</div>
+              <div className="mx-auto w-full max-w-7xl">
+                <PushPrompt />
+                {children}
+              </div>
+              <PushRegistrar unreadCount={notifications.unreadCount} />
             </main>
           </div>
         </div>

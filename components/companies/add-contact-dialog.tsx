@@ -12,6 +12,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -63,20 +64,21 @@ export function AddContactDialog({ companyId }: { companyId: string }) {
       <DialogTrigger asChild>
         <Button variant="secondary" size="sm">
           <UserPlus aria-hidden />
-          Novo contato
+          Adicionar pessoa
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo contato.</DialogTitle>
+          <DialogTitle>Pessoa da equipe do cliente.</DialogTitle>
+          <DialogDescription>Não acessa o sistema. Serve para saber com quem está a pauta (ex.: quem aprova os vídeos) e quem cobrar.</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
           {error ? <Alert variant="error">{error}</Alert> : null}
           <FormField id="contact-name" label="Nome" error={errors.fullName?.message}>
             <Input id="contact-name" {...register("fullName")} aria-invalid={!!errors.fullName} />
           </FormField>
-          <FormField id="contact-title" label="Cargo" error={errors.jobTitle?.message}>
-            <Input id="contact-title" {...register("jobTitle")} />
+          <FormField id="contact-title" label="O que ela faz" error={errors.jobTitle?.message}>
+            <Input id="contact-title" placeholder="Ex.: Aprova os vídeos, Marketing, Sócia" {...register("jobTitle")} />
           </FormField>
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="contact-email" label="E-mail" error={errors.email?.message}>

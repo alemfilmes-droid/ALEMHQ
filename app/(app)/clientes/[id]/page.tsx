@@ -191,12 +191,12 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
           <section aria-labelledby="contacts-title" className="mb-10 space-y-4">
             <div className="flex items-center justify-between">
               <h2 id="contacts-title" className="section-title">
-                Contatos
+                Equipe do cliente
               </h2>
               {canManage ? <AddContactDialog companyId={company.id} /> : null}
             </div>
             {contacts.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border-strong p-6 text-sm text-muted-foreground">Nenhum contato cadastrado.</p>
+              <p className="rounded-lg border border-dashed border-border-strong p-6 text-sm text-muted-foreground">Ninguém cadastrado. Adicione quem aprova, quem é o contato do dia a dia etc.</p>
             ) : (
               <div className="card-grid">
                 {contacts.map((contact) => (

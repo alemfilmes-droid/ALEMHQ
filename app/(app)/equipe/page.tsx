@@ -26,7 +26,7 @@ export default async function TeamPage({ searchParams }: { searchParams: SearchP
   const isAdmin = can(current.access_role, "team:invite");
   const { papel, funcao } = await searchParams;
   const role = ACCESS_ROLES.find((item): item is AccessRole => item === papel);
-  const fn = PRODUCTION_FUNCTIONS.find((item): item is ProductionFunction => item === funcao);
+  const fn: ProductionFunction | undefined = PRODUCTION_FUNCTIONS.find((item) => item === funcao);
 
   const supabase = await createClient();
   await supabase.rpc("expire_stale_invitations");

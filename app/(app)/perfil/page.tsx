@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { AvatarUploader } from "@/components/profile/avatar-uploader";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { PushSettings } from "@/features/push/components/push-settings";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,16 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <ProfileForm defaultValues={{ fullName: profile.full_name, phone: profile.phone ?? "" }} />
+          </CardContent>
+        </Card>
+
+        <Card variant="static">
+          <CardHeader>
+            <CardTitle>Notificações no celular</CardTitle>
+            <CardDescription>Cada aparelho ativa o seu. Chegam as mesmas notificações do sino do sistema.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PushSettings />
           </CardContent>
         </Card>
 

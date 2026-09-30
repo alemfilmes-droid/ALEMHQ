@@ -60,7 +60,7 @@ export function EventDetailDialog({ event, members, onOpenChange, onEdit, onCanc
         <DialogHeader>
           <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
             <StatusDot tone={COMMITMENT_KIND_TONE[event.kind]} />
-            {event.source === "pauta" ? "Pauta agendada" : COMMITMENT_KIND_LABELS[event.kind]}
+            {event.source === "pauta" ? (event.kind === "entrega" ? "Prazo de pauta" : "Pauta agendada") : COMMITMENT_KIND_LABELS[event.kind]}
             {event.status !== "agendado" ? <Badge variant="muted">{COMMITMENT_STATUS_LABELS[event.status]}</Badge> : null}
             {event.visibility === "privado" ? <Badge variant="outline">Privado</Badge> : null}
           </p>

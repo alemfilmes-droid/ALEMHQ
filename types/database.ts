@@ -1342,6 +1342,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
+          pushed_at: string | null
           read_at: string | null
           recipient_id: string
           title: string
@@ -1354,6 +1355,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          pushed_at?: string | null
           read_at?: string | null
           recipient_id: string
           title: string
@@ -1366,6 +1368,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          pushed_at?: string | null
           read_at?: string | null
           recipient_id?: string
           title?: string
@@ -1586,8 +1589,10 @@ export type Database = {
           current_assignee_id: string | null
           deal_id: string | null
           delivery_url: string | null
+          direct_company_id: string | null
           drive_folder_url: string | null
           due_date: string | null
+          due_time: string | null
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
@@ -1608,6 +1613,7 @@ export type Database = {
           status: Database["public"]["Enums"]["pauta_status"]
           title: string
           updated_at: string
+          waiting_on_contact_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -1623,8 +1629,10 @@ export type Database = {
           current_assignee_id?: string | null
           deal_id?: string | null
           delivery_url?: string | null
+          direct_company_id?: string | null
           drive_folder_url?: string | null
           due_date?: string | null
+          due_time?: string | null
           duration_minutes?: number | null
           equipment_notes?: string | null
           format?: string | null
@@ -1645,6 +1653,7 @@ export type Database = {
           status: Database["public"]["Enums"]["pauta_status"]
           title: string
           updated_at?: string
+          waiting_on_contact_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -1660,8 +1669,10 @@ export type Database = {
           current_assignee_id?: string | null
           deal_id?: string | null
           delivery_url?: string | null
+          direct_company_id?: string | null
           drive_folder_url?: string | null
           due_date?: string | null
+          due_time?: string | null
           duration_minutes?: number | null
           equipment_notes?: string | null
           format?: string | null
@@ -1682,6 +1693,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["pauta_status"]
           title?: string
           updated_at?: string
+          waiting_on_contact_id?: string | null
         }
         Relationships: [
           {
@@ -1741,6 +1753,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pautas_direct_company_id_fkey"
+            columns: ["direct_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pautas_direct_company_id_fkey"
+            columns: ["direct_company_id"]
+            isOneToOne: false
+            referencedRelation: "finance_by_client"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "pautas_freelancer_id_fkey"
             columns: ["freelancer_id"]
             isOneToOne: false
@@ -1773,6 +1799,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pautas_waiting_on_contact_id_fkey"
+            columns: ["waiting_on_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -2214,6 +2247,47 @@ export type Database = {
           {
             foreignKeyName: "projects_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          profile_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          profile_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          profile_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2826,13 +2900,16 @@ export type Database = {
           contact_phone_override: string | null
           created_at: string | null
           created_by: string | null
+          created_by_name: string | null
           created_for: string | null
           created_for_name: string | null
           current_assignee_id: string | null
           deal_id: string | null
           delivery_url: string | null
+          direct_company_id: string | null
           drive_folder_url: string | null
           due_date: string | null
+          due_time: string | null
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
@@ -2859,6 +2936,9 @@ export type Database = {
           status: Database["public"]["Enums"]["pauta_status"] | null
           title: string | null
           updated_at: string | null
+          waiting_on_contact_id: string | null
+          waiting_on_contact_name: string | null
+          waiting_on_contact_role: string | null
         }
         Relationships: [
           {
@@ -2918,6 +2998,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pautas_direct_company_id_fkey"
+            columns: ["direct_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pautas_direct_company_id_fkey"
+            columns: ["direct_company_id"]
+            isOneToOne: false
+            referencedRelation: "finance_by_client"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "pautas_freelancer_id_fkey"
             columns: ["freelancer_id"]
             isOneToOne: false
@@ -2953,18 +3047,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "projects_company_id_fkey"
-            columns: ["company_id"]
+            foreignKeyName: "pautas_waiting_on_contact_id_fkey"
+            columns: ["waiting_on_contact_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "projects_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "finance_by_client"
-            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -3676,6 +3763,7 @@ export type Database = {
       is_leadership: { Args: never; Returns: boolean }
       is_master: { Args: never; Returns: boolean }
       is_pauta_creator: { Args: { p_pauta_id: string }; Returns: boolean }
+      is_pauta_squad_manager: { Args: { p_pauta_id: string }; Returns: boolean }
       is_squad_lead: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
@@ -3692,6 +3780,10 @@ export type Database = {
       managed_squads: {
         Args: never
         Returns: Database["public"]["Enums"]["squad"][]
+      }
+      manages_pauta_squad: {
+        Args: { p_squad: Database["public"]["Enums"]["squad"] }
+        Returns: boolean
       }
       margin_status_for: { Args: { p_pct: number }; Returns: string }
       notification_category: { Args: { p_type: string }; Returns: string }
@@ -3739,8 +3831,10 @@ export type Database = {
           current_assignee_id: string | null
           deal_id: string | null
           delivery_url: string | null
+          direct_company_id: string | null
           drive_folder_url: string | null
           due_date: string | null
+          due_time: string | null
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
@@ -3761,6 +3855,7 @@ export type Database = {
           status: Database["public"]["Enums"]["pauta_status"]
           title: string
           updated_at: string
+          waiting_on_contact_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -3788,8 +3883,10 @@ export type Database = {
           current_assignee_id: string | null
           deal_id: string | null
           delivery_url: string | null
+          direct_company_id: string | null
           drive_folder_url: string | null
           due_date: string | null
+          due_time: string | null
           duration_minutes: number | null
           equipment_notes: string | null
           format: string | null
@@ -3810,6 +3907,7 @@ export type Database = {
           status: Database["public"]["Enums"]["pauta_status"]
           title: string
           updated_at: string
+          waiting_on_contact_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -3835,6 +3933,15 @@ export type Database = {
       }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
       publish_due_announcements: { Args: never; Returns: number }
+      register_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       set_company_logo: {
         Args: { p_company_id: string; p_logo_url: string }
         Returns: undefined
@@ -3842,6 +3949,10 @@ export type Database = {
       shares_squad_with: { Args: { p_profile_id: string }; Returns: boolean }
       sync_crm_alerts: { Args: never; Returns: number }
       transfer_master: { Args: { p_new_master_id: string }; Returns: undefined }
+      unregister_push_subscription: {
+        Args: { p_endpoint: string }
+        Returns: undefined
+      }
     }
     Enums: {
       access_role:
@@ -3978,6 +4089,25 @@ export type Database = {
         | "motion"
         | "producao"
         | "fotografia"
+        | "ajuste_crm"
+        | "prospeccao"
+        | "follow_up"
+        | "proposta"
+        | "reuniao_comercial"
+        | "relatorio_comercial"
+        | "cobranca"
+        | "conciliacao"
+        | "pagamentos"
+        | "nota_fiscal"
+        | "orcamento"
+        | "relatorio_financeiro"
+        | "aprovacao"
+        | "planejamento_estrategico"
+        | "revisao"
+        | "reuniao"
+        | "contratacao"
+        | "relatorio_gerencial"
+        | "outro"
       project_model: "transacional" | "recorrente"
       project_priority: "baixa" | "media" | "alta" | "urgente"
       project_stage:
@@ -4295,6 +4425,25 @@ export const Constants = {
         "motion",
         "producao",
         "fotografia",
+        "ajuste_crm",
+        "prospeccao",
+        "follow_up",
+        "proposta",
+        "reuniao_comercial",
+        "relatorio_comercial",
+        "cobranca",
+        "conciliacao",
+        "pagamentos",
+        "nota_fiscal",
+        "orcamento",
+        "relatorio_financeiro",
+        "aprovacao",
+        "planejamento_estrategico",
+        "revisao",
+        "reuniao",
+        "contratacao",
+        "relatorio_gerencial",
+        "outro",
       ],
       project_model: ["transacional", "recorrente"],
       project_priority: ["baixa", "media", "alta", "urgente"],

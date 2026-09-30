@@ -7,7 +7,7 @@ import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Badge } from "@/components/ui/badge";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
-import { FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
+import { ClientWaitingBadge, FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
 import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
@@ -84,14 +84,18 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
                   {pauta.company_name ?? "—"}
                 </Link>
               )}
-              {" · "}
-              <Link
-                href={`/projetos/${pauta.project_id}`}
-                onClick={(event) => event.stopPropagation()}
-                className="hover:text-foreground hover:underline"
-              >
-                {pauta.project_name}
-              </Link>
+              {pauta.project_id ? (
+                <>
+                  {" · "}
+                  <Link
+                    href={`/projetos/${pauta.project_id}`}
+                    onClick={(event) => event.stopPropagation()}
+                    className="hover:text-foreground hover:underline"
+                  >
+                    {pauta.project_name}
+                  </Link>
+                </>
+              ) : null}
             </>
           )}
         </p>
@@ -101,6 +105,7 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
         {pauta.status ? <PautaStatusBadge status={pauta.status} /> : null}
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
+        {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}
       </div>
 
       <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">

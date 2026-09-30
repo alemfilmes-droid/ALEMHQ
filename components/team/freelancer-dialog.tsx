@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { FunctionPicker } from "@/components/team/function-picker";
+import { isAtuacaoFunction } from "@/lib/auth/roles";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,7 +22,7 @@ function toValues(freelancer?: Freelancer): FreelancerValues {
     fullName: freelancer?.full_name ?? "",
     phone: freelancer?.phone ?? "",
     email: freelancer?.email ?? "",
-    functions: freelancer?.functions ?? [],
+    functions: (freelancer?.functions ?? []).filter(isAtuacaoFunction),
     city: freelancer?.city ?? "",
     notes: freelancer?.notes ?? "",
   };

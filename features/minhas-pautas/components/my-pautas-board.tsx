@@ -37,7 +37,7 @@ interface MyPautasBoardProps {
   canCreateProjectPauta: boolean;
   canCreateProjects: boolean;
   initialOpenId?: string;
-  currentUser: { id: string; full_name: string; avatar_url: string | null };
+  currentUser: { id: string; full_name: string; avatar_url: string | null; managedSquads?: readonly Squad[] };
   mySquads: Squad[];
 }
 

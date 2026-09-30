@@ -22,6 +22,7 @@ import {
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isAtuacaoFunction } from "@/lib/auth/roles";
 import { ORG_LEVEL_LABELS, ROLE_TITLE_SUGGESTIONS } from "@/lib/auth/org";
 import { assignableOrgLevels, canManageOrgLevel } from "@/lib/auth/permissions";
 import { updateMemberSchema, type UpdateMemberValues } from "@/lib/validations/team";
@@ -49,7 +50,7 @@ export function EditMemberDialog({ member, viewer, viewerIsAdmin, isSelf, open, 
     defaultValues: {
       id: member.id,
       accessRole: member.access_role,
-      functions: member.functions,
+      functions: member.functions.filter(isAtuacaoFunction),
       squads: member.squads,
       jobTitle: member.job_title ?? "",
       orgLevel: member.org_level,

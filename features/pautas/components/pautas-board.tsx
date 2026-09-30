@@ -17,7 +17,7 @@ interface PautasBoardProps {
   canCreate: boolean;
   canCreateProjects: boolean;
   initialOpenId?: string;
-  currentUser: { id: string; full_name: string; avatar_url: string | null; squads: Squad[] };
+  currentUser: { id: string; full_name: string; avatar_url: string | null; squads: Squad[]; managedSquads?: readonly Squad[] };
   /** Assinatura dos filtros da URL: quando muda, o quadro remonta com a lista nova do servidor. */
   filtersKey: string;
 }

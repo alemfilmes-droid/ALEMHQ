@@ -23,7 +23,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FUNCTION_LABELS, PRODUCTION_FUNCTIONS } from "@/lib/auth/roles";
+import { FUNCTION_LABELS, PAUTA_ACTIVITIES_BY_SQUAD } from "@/lib/auth/roles";
 import { PAUTA_STATUSES } from "@/lib/pautas";
 import { handoverSchema, type HandoverValues } from "@/lib/validations/pauta";
 import type { PautaWithDetails } from "@/types";
@@ -123,7 +123,7 @@ export function HandoverDialog({ pauta, members, open, onOpenChange, onDone }: H
                 )}
               />
             </FormField>
-            <FormField id="handover-function" label="Função" error={errors.functionRole?.message}>
+            <FormField id="handover-function" label="O que vai fazer" error={errors.functionRole?.message}>
               <Controller
                 control={control}
                 name="functionRole"
@@ -133,7 +133,7 @@ export function HandoverDialog({ pauta, members, open, onOpenChange, onDone }: H
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PRODUCTION_FUNCTIONS.map((fn) => (
+                      {PAUTA_ACTIVITIES_BY_SQUAD[pauta.squad ?? "audiovisual"].map((fn) => (
                         <SelectItem key={fn} value={fn}>
                           {FUNCTION_LABELS[fn]}
                         </SelectItem>
