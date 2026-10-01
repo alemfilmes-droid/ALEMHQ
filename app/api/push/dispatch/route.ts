@@ -47,6 +47,7 @@ export async function POST(request: Request) {
 
   let sent = 0;
   const gone: string[] = [];
+  const failures: { status: number | null; reason: string }[] = [];
   await Promise.all(
     (subscriptions ?? []).map(async (subscription) => {
       try {
@@ -57,13 +58,16 @@ export async function POST(request: Request) {
         );
         sent += 1;
       } catch (error) {
-        const status = (error as { statusCode?: number }).statusCode;
+        const { statusCode, body, message } = error as { statusCode?: number; body?: string; message?: string };
+        // Motivo da recusa (sem dados da pessoa) para diagnóstico nos logs e na resposta.
+        failures.push({ status: statusCode ?? null, reason: String(body || message || "erro").slice(0, 200) });
+        console.error("[push] envio recusado", statusCode, body || message);
         // Aparelho desinstalou o app ou revogou a permissão: a inscrição morreu.
-        if (status === 404 || status === 410) gone.push(subscription.id);
+        if (statusCode === 404 || statusCode === 410) gone.push(subscription.id);
       }
     }),
   );
   if (gone.length > 0) await admin.from("push_subscriptions").delete().in("id", gone);
 
-  return NextResponse.json({ ok: true, sent });
+  return NextResponse.json({ ok: true, sent, failures });
 }

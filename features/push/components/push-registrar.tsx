@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { registerPushSubscriptionAction } from "@/features/push/actions";
-import { getCurrentSubscription, getPushSupport, setAppBadge } from "@/features/push/client";
+import { getCurrentSubscription, getPushSupport, matchesCurrentKey, renewSubscription, setAppBadge } from "@/features/push/client";
 
 /**
  * Sem interface. Ao abrir o sistema: registra o service worker e, se este aparelho já tem as
@@ -14,7 +14,9 @@ export function PushRegistrar({ unreadCount }: { unreadCount: number }) {
     if (getPushSupport() !== "supported" || Notification.permission !== "granted") return;
     let cancelled = false;
     getCurrentSubscription()
-      .then((subscription) => {
+      .then(async (current) => {
+        if (!current || cancelled) return;
+        const subscription = matchesCurrentKey(current) ? current : await renewSubscription(current);
         if (!subscription || cancelled) return;
         return registerPushSubscriptionAction(subscription.toJSON(), navigator.userAgent);
       })

@@ -43,6 +43,22 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
   return registration.pushManager.getSubscription();
 }
 
+/** A inscrição foi feita com a chave pública atual do servidor? (Se a chave mudar, a Apple recusa.) */
+export function matchesCurrentKey(subscription: PushSubscription): boolean {
+  const current = cleanVapidKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+  const used = subscription.options.applicationServerKey;
+  if (!current || !used) return true;
+  const a = urlBase64ToUint8Array(current);
+  const b = new Uint8Array(used);
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+/** Refaz a inscrição com a chave atual (permissão já concedida: não precisa de toque). */
+export async function renewSubscription(old: PushSubscription): Promise<PushSubscription | null> {
+  await old.unsubscribe().catch(() => undefined);
+  return subscribeThisDevice();
+}
+
 /** Pede a permissão (precisa vir de um toque) e inscreve o aparelho. */
 export async function subscribeThisDevice(): Promise<PushSubscription | null> {
   const publicKey = cleanVapidKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
