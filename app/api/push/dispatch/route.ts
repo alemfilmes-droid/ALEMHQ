@@ -5,7 +5,21 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Diagnóstico: diz se as chaves VAPID da Vercel estão certas (sem mostrar as chaves). */
 export function GET() {
-  return NextResponse.json(checkVapidKeys(), { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ ...checkVapidKeys(), serverKey: describeServerKey() }, { headers: { "Cache-Control": "no-store" } });
+}
+
+/** Tipo da chave do Supabase no servidor (nunca a chave): o push precisa da service role. */
+function describeServerKey(): string {
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  if (!key) return "ausente";
+  if (key.startsWith("sb_secret_")) return "secret";
+  if (key.startsWith("sb_publishable_")) return "publishable (errada)";
+  try {
+    const payload = JSON.parse(Buffer.from(key.split(".")[1] ?? "", "base64url").toString()) as { role?: string };
+    return payload.role === "service_role" ? "service_role" : `${payload.role ?? "desconhecida"} (errada)`;
+  } catch {
+    return "formato desconhecido";
+  }
 }
 
 const bodySchema = z.object({ id: z.string().uuid() });
@@ -22,7 +36,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const { data: notification } = await admin
+  const { data: notification, error: claimError } = await admin
     .from("notifications")
     .update({ pushed_at: new Date().toISOString() })
     .eq("id", parsed.data.id)
@@ -30,7 +44,11 @@ export async function POST(request: Request) {
     .gte("created_at", tenMinutesAgo)
     .select("id, recipient_id, title, body, url")
     .maybeSingle();
-  if (!notification) return NextResponse.json({ ok: true, sent: 0 });
+  if (claimError) {
+    console.error("[push] falha ao reivindicar", claimError.code, claimError.message);
+    return NextResponse.json({ ok: false, reason: claimError.message }, { status: 500 });
+  }
+  if (!notification) return NextResponse.json({ ok: true, sent: 0, reason: "já enviada, antiga ou inexistente" });
 
   const [{ data: subscriptions }, { count: unread }] = await Promise.all([
     admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("profile_id", notification.recipient_id),
