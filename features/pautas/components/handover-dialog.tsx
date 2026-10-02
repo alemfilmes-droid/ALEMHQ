@@ -7,6 +7,7 @@ import { ArrowRightCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { getPautaDetailAction, handoverPautaAction } from "@/features/pautas/actions";
 import type { PautaOptionMember } from "@/features/pautas/types";
+import { requestProjectFinalizeCheck } from "@/features/projects/finalize-events";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -97,6 +98,8 @@ export function HandoverDialog({ pauta, members, open, onOpenChange, onDone, ini
       const result = await handoverPautaAction(values);
       if (!result.ok) return setError(result.error);
       toast.success(result.message);
+      // Aprovou a última pauta de um projeto já pago: oferece finalizar o projeto.
+      if (values.status === "aprovado") requestProjectFinalizeCheck(pauta.project_id);
       const detail = await getPautaDetailAction(pauta.id!);
       if (detail) onDone(detail.pauta);
       onOpenChange(false);

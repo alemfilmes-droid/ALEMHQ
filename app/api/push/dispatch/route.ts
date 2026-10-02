@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkVapidKeys, ensureWebPush, webpush } from "@/lib/push.server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Squad } from "@/types";
 
 /** Diagnóstico: diz se as chaves VAPID da Vercel estão certas (sem mostrar as chaves). */
 export function GET() {
@@ -25,6 +26,33 @@ function describeServerKey(): string {
 const bodySchema = z.object({ id: z.string().uuid() });
 
 /**
+ * Cor do squad no push. O iPhone não permite mudar a cor/fundo do cartão da notificação, então o
+ * título começa com o círculo na cor do squad (as mesmas cores do sistema).
+ */
+const SQUAD_MARK: Record<Squad, string> = {
+  comercial: "🟠",
+  audiovisual: "🟡",
+  financeiro: "🟢",
+  diretoria: "🔴",
+};
+
+async function squadOf(
+  admin: ReturnType<typeof createAdminClient>,
+  notification: { type: string; entity_type: string | null; entity_id: string | null },
+): Promise<Squad | null> {
+  const type = notification.type;
+  if (notification.entity_type === "pauta" && notification.entity_id) {
+    const { data } = await admin.from("pautas").select("squad").eq("id", notification.entity_id).maybeSingle();
+    return data?.squad ?? null;
+  }
+  if (type.startsWith("finance") || type === "project_payment_check" || type === "payable" || type === "receivable") return "financeiro";
+  if (type.startsWith("deal") || type.startsWith("crm") || type === "qualificado") return "comercial";
+  if (type.startsWith("announcement")) return "diretoria";
+  if (type.startsWith("project")) return "audiovisual";
+  return null;
+}
+
+/**
  * Chamado pelo banco (pg_net) a cada notificação nova. Não há segredo: a notificação é
  * "reivindicada" de forma atômica (pushed_at nulo e criada há menos de 10 min) e só então enviada —
  * chamadas repetidas ou forjadas não geram push duplicado nem de algo inexistente.
@@ -42,7 +70,7 @@ export async function POST(request: Request) {
     .eq("id", parsed.data.id)
     .is("pushed_at", null)
     .gte("created_at", tenMinutesAgo)
-    .select("id, recipient_id, title, body, url")
+    .select("id, recipient_id, type, title, body, url, entity_type, entity_id")
     .maybeSingle();
   if (claimError) {
     console.error("[push] falha ao reivindicar", claimError.code, claimError.message);
@@ -55,9 +83,11 @@ export async function POST(request: Request) {
     admin.from("notifications").select("id", { count: "exact", head: true }).eq("recipient_id", notification.recipient_id).is("read_at", null),
   ]);
 
+  const squad = await squadOf(admin, notification);
   const payload = JSON.stringify({
     id: notification.id,
-    title: notification.title,
+    title: squad ? `${SQUAD_MARK[squad]} ${notification.title}` : notification.title,
+    squad,
     body: notification.body ?? "",
     url: notification.url ?? "/inicio",
     unread: unread ?? undefined,

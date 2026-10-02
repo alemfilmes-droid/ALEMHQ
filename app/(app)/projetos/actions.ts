@@ -47,7 +47,7 @@ export async function createProjectAction(values: ProjectValues): Promise<Action
       stage: data.stage,
       model: data.model,
       due_date: data.model === "transacional" ? nullIfEmpty(data.dueDate) : null,
-      start_date: data.model === "recorrente" ? nullIfEmpty(data.startDate) : null,
+      start_date: nullIfEmpty(data.startDate),
       end_date: data.model === "recorrente" ? nullIfEmpty(data.endDate) : null,
       owner_id: data.ownerId,
       priority: data.priority,

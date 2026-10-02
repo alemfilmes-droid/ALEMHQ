@@ -7,6 +7,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { PrivacyProvider } from "@/components/privacy/privacy-mode";
 import { SquadDirectoryProvider, type SquadDirectory } from "@/components/providers/squad-directory";
 import type { NotificationsSnapshot } from "@/features/notifications/queries";
+import { ProjectFinalizeWatcher } from "@/features/projects/components/finalize-project-dialog";
 import { PushPrompt } from "@/features/push/components/push-prompt";
 import { PushRegistrar } from "@/features/push/components/push-registrar";
 import { canAccessRouteFor, hasCapability } from "@/lib/auth/permissions";
@@ -79,6 +80,7 @@ export function AppShell({ profile, notifications, squadDirectory, badges = {}, 
                 {children}
               </div>
               <PushRegistrar unreadCount={notifications.unreadCount} />
+              <ProjectFinalizeWatcher />
             </main>
           </div>
         </div>

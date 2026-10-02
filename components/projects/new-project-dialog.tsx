@@ -294,9 +294,14 @@ export function NewProjectDialog({ companies, contacts, members, showFinance, de
           </FormField>
 
           {model === "transacional" ? (
-            <FormField id="project-due" label="Data de entrega" error={errors.dueDate?.message}>
-              <Input id="project-due" type="date" {...register("dueDate")} />
-            </FormField>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormField id="project-start" label="Início dos trabalhos" error={errors.startDate?.message}>
+                <Input id="project-start" type="date" {...register("startDate")} />
+              </FormField>
+              <FormField id="project-due" label="Data de entrega" hint="O projeto é finalizado quando tudo for aprovado e pago." error={errors.dueDate?.message}>
+                <Input id="project-due" type="date" {...register("dueDate")} />
+              </FormField>
+            </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2">
               <FormField id="project-start" label="Início do projeto" error={errors.startDate?.message}>

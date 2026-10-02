@@ -17,17 +17,21 @@ import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
 import { canCreateProjectPauta, canDeleteProject, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS } from "@/lib/domain";
+import { formatDate } from "@/lib/format";
+import { FinalizeProjectButton } from "@/features/projects/components/finalize-project-dialog";
+import { InvoiceSchedulesCard } from "@/features/projects/components/invoice-schedules-card";
+import { getInvoiceSchedules } from "@/features/projects/invoices";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Projeto" };
 
 type Params = Promise<{ id: string }>;
-type SearchParams = Promise<{ aba?: string; pauta?: string }>;
+type SearchParams = Promise<{ aba?: string; pauta?: string; finalizar?: string }>;
 
 export default async function ProjectPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const profile = await requireProfile();
   const { id } = await params;
-  const { aba, pauta } = await searchParams;
+  const { aba, pauta, finalizar } = await searchParams;
 
   const supabase = await createClient();
   const { data: project } = await supabase
@@ -46,13 +50,18 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
   tabs.push({ href: `/projetos/${id}?aba=pautas`, label: "Pautas", active: tab === "pautas" });
   if (canSeeFinance) tabs.push({ href: `/projetos/${id}?aba=financeiro`, label: "Financeiro", active: tab === "financeiro" });
 
-  const [profitability, contactsResult, membersOptionsResult, pautasResult, pautaOptionsResult] = await Promise.all([
+  const [profitability, contactsResult, membersOptionsResult, pautasResult, pautaOptionsResult, canFinalizeResult, canInvoicesResult, invoiceSchedules] = await Promise.all([
     canSeeFinance && !project.is_internal ? getProjectProfitability(project.id) : Promise.resolve(null),
     project.company_id ? supabase.from("contacts").select("id, full_name").eq("company_id", project.company_id).order("full_name") : Promise.resolve({ data: [] }),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
     tab === "pautas" ? listPautas({ projectIds: [id] }) : Promise.resolve([]),
     tab === "pautas" ? getPautaFormOptions() : Promise.resolve(null),
+    supabase.rpc("can_finalize_project", { p_project_id: id }),
+    supabase.rpc("can_manage_invoices", { p_project_id: id }),
+    tab === "geral" ? getInvoiceSchedules(id) : Promise.resolve([]),
   ]);
+  const canManageInvoices = canInvoicesResult.data === true;
+  const canFinalize = canFinalizeResult.data === true;
 
   const memberIds = project.members.map((m) => m.profile_id);
   const memberProfiles = project.members.map((m) => m.profile).filter((p): p is NonNullable<typeof p> => p !== null);
@@ -67,6 +76,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {canDeleteProject(profile) ? <DeleteProjectDialog projectId={project.id} projectName={project.name} /> : null}
+            {!project.finalized_at && !project.is_internal && canFinalize ? <FinalizeProjectButton projectId={project.id} autoOpen={finalizar === "1"} /> : null}
             <StageSelect projectId={project.id} stage={project.stage} disabled={!canManage} />
           </div>
         }
@@ -76,6 +86,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
           <ProjectClientLabel isInternal={project.is_internal} company={project.company} asLink />
           {project.is_internal ? <Badge variant="muted">Interno</Badge> : null}
           <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
+          {project.finalized_at ? <Badge variant="outline">Finalizado em {formatDate(project.finalized_at.slice(0, 10))}</Badge> : null}
           <span>Código: {project.id.slice(0, 8)}</span>
         </p>
         {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} target={(await getCompanySettings()).margin.healthy} /> : null}
@@ -127,6 +138,17 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
             deliveryNotes={project.delivery_notes}
           />
         )}
+        {tab === "geral" && !project.is_internal && (canManageInvoices || invoiceSchedules.length > 0) ? (
+          <div className="mt-6 max-w-3xl">
+            <InvoiceSchedulesCard
+              projectId={project.id}
+              schedules={invoiceSchedules}
+              canManage={canManageInvoices}
+              members={membersOptionsResult.data ?? []}
+              contacts={contactsResult.data ?? []}
+            />
+          </div>
+        ) : null}
       </div>
     </>
   );

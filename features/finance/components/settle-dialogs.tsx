@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { settlePayableAction, settleReceivableAction } from "@/features/finance/actions";
+import { requestProjectFinalizeCheck } from "@/features/projects/finalize-events";
 import { MethodSelect } from "@/features/finance/components/method-select";
 import { centsToInput } from "@/features/finance/money";
 import {
@@ -60,6 +61,8 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
       if (result.ok) {
         toast.success(result.message);
         onOpenChange(false);
+        // Último pagamento de um projeto com tudo aprovado: oferece finalizar o projeto.
+        requestProjectFinalizeCheck(receivable.projectId);
       } else {
         setError(result.error);
       }

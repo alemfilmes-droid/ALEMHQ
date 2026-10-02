@@ -1,5 +1,6 @@
 import {
   Building2,
+  Calculator,
   Landmark,
   CalendarDays,
   Clock,
@@ -47,7 +48,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Comercial",
-    items: [{ href: "/crm", label: "CRM", icon: TrendingUp }],
+    items: [
+      { href: "/crm", label: "CRM", icon: TrendingUp },
+      { href: "/orcamentos", label: "Orçamentos", icon: Calculator },
+    ],
   },
   {
     label: "Empresa",

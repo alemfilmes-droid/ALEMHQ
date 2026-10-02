@@ -43,6 +43,8 @@ export const ROUTE_ACCESS: Record<string, readonly AccessRole[]> = {
   "/financeiro": ALL_ROLES,
   // Banco de horas é de todo mundo; a aba "Equipe" (diretoria/admin) é escondida na própria página.
   "/banco-de-horas": ALL_ROLES,
+  // Orçamentos: só o master (capability "budgets"; a RLS repete com is_master()).
+  "/orcamentos": ALL_ROLES,
 };
 
 /** Rotas que dependem de uma capability (squad/flag do profile), além do papel. */
@@ -50,6 +52,7 @@ export const CAPABILITY_ROUTES: Record<string, Capability> = {
   "/financeiro": "finance",
   "/pautas": "managePautas",
   "/crm": "crm",
+  "/orcamentos": "budgets",
 };
 
 export const ACTION_ACCESS = {
@@ -150,6 +153,8 @@ const CAPABILITIES = {
    */
   manageCompany: (subject: CapabilitySubject) =>
     subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria"),
+  /** Painel de orçamentos e propostas comerciais: só o master. */
+  budgets: (subject: CapabilitySubject) => subject.org_level === "master",
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;

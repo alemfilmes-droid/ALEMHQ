@@ -13,6 +13,7 @@ import { CompanySettingsForm } from "@/features/settings/components/company-sett
 import { NotificationPreferencesForm } from "@/features/settings/components/notification-preferences-form";
 import { getCompanySettings, getNotificationPreferences } from "@/features/settings/queries";
 import { GoogleCalendarSettings } from "@/features/google/components/google-calendar-settings";
+import { ProspectSettingsCard } from "@/features/settings/components/prospect-settings-card";
 import { hasCapability } from "@/lib/auth/permissions";
 import { googleConfigured } from "@/lib/google/calendar.server";
 import { createClient } from "@/lib/supabase/server";
@@ -40,6 +41,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
     canManageCompany ? listCommissionRules() : Promise.resolve([]),
     supabase.rpc("my_google_account"),
   ]);
+  const [prospectRow, prospectPeople] = canManageCompany
+    ? await Promise.all([
+        supabase.from("company_settings").select("prospect_sdr_id, prospect_reviewer_id").eq("id", true).maybeSingle(),
+        supabase.from("profiles").select("id, full_name").eq("is_active", true).neq("full_name", "").order("full_name"),
+      ])
+    : [null, null];
+  const prospectSettings = { sdrId: prospectRow?.data?.prospect_sdr_id ?? null, reviewerId: prospectRow?.data?.prospect_reviewer_id ?? null };
+  const prospectMembers = prospectPeople?.data ?? [];
   const googleRow = googleResult.data?.[0];
   const googleAccount = googleRow
     ? { email: googleRow.google_email ?? null, connectedAt: googleRow.connected_at, lastSyncAt: googleRow.last_sync_at ?? null, lastError: googleRow.last_error ?? null }
@@ -122,6 +131,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
                   />
                 </CardContent>
               </Card>
+              <ProspectSettingsCard members={prospectMembers} initial={prospectSettings} />
               <CommissionRulesCard rules={commissionRules} />
             </div>
           ) : null}

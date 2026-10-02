@@ -83,6 +83,7 @@ export const PANEL_TONE: Record<string, PanelTone> = {
   "/banco-de-horas": "neutral",
   "/configuracoes": "neutral",
   "/essencia": "accent",
+  "/orcamentos": "alert",
 };
 
 export function panelToneColor(tone: PanelTone): string | undefined {
