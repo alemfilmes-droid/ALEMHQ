@@ -1,14 +1,12 @@
 import { History } from "lucide-react";
 import type { PautaHistoryEntry } from "@/features/pautas/types";
-import { PAUTA_STATUS_LABELS } from "@/lib/pautas";
+import { pautaStatusLabel } from "@/lib/pautas";
 import { formatDateTime } from "@/lib/format";
-import type { PautaStatus } from "@/types";
+import type { PautaStatus, Squad } from "@/types";
 
-function statusLabel(status: string | null) {
-  return status ? PAUTA_STATUS_LABELS[status as PautaStatus] : null;
-}
+export function PautaActivityTab({ history, squad }: { history: PautaHistoryEntry[]; squad?: Squad | null }) {
+  const statusLabel = (status: string | null) => (status ? pautaStatusLabel(status as PautaStatus, squad) : null);
 
-export function PautaActivityTab({ history }: { history: PautaHistoryEntry[] }) {
   if (history.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-lg border border-dashed border-border-strong px-6 py-12 text-center">

@@ -59,7 +59,7 @@ export function AgendaList({ events, onOpen }: { events: AgendaEvent[]; onOpen: 
                       </span>
                       {!event.busyOnly ? (
                         <span className="block truncate text-[12px] text-subtle">
-                          {event.source === "pauta" ? (event.kind === "entrega" ? "Prazo de pauta" : "Pauta") : COMMITMENT_KIND_LABELS[event.kind]}
+                          {event.source === "google" ? "Google Agenda" : event.source === "pauta" ? (event.kind === "entrega" ? "Prazo de pauta" : "Pauta") : COMMITMENT_KIND_LABELS[event.kind]}
                           {event.companyName ? ` · ${event.companyName}` : ""}
                           {event.projectName ? ` · ${event.projectName}` : ""}
                         </span>

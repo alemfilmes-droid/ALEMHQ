@@ -2,9 +2,11 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { canCreateProjectPauta, canFullyManagePauta } from "@/lib/auth/permissions";
 import { appZoneToIso } from "@/lib/calendar";
+import { syncGoogleForProfiles } from "@/lib/google/calendar.server";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { nullIfEmpty } from "@/lib/validations/company";
 import {
@@ -12,9 +14,11 @@ import {
   createPautaSchema,
   handoverSchema,
   moveColumnSchema,
+  pautaLogSchema,
   updatePautaSchema,
   type CreatePautaValues,
   type HandoverValues,
+  type PautaLogValues,
   type UpdatePautaValues,
 } from "@/lib/validations/pauta";
 import { createClient } from "@/lib/supabase/server";
@@ -229,18 +233,51 @@ export async function handoverPautaAction(values: HandoverValues): Promise<Actio
   const d = parsed.data;
 
   const supabase = await createClient();
+  const approving = d.status === "aprovado";
   const { data, error } = await supabase.rpc("pauta_handover", {
     p_pauta_id: d.pautaId,
     p_status: d.status,
-    p_assignee_id: d.assigneeId,
-    p_function: d.functionRole,
+    p_assignee_id: approving ? undefined : d.assigneeId || undefined,
+    p_function: approving ? undefined : d.functionRole || undefined,
     p_due_date: d.dueDate || undefined,
+    p_due_time: d.dueTime || undefined,
     p_note: d.note || undefined,
   });
-  if (error) return { ok: false, error: error.message.includes("permissão") ? error.message : "Não foi possível passar a pauta adiante." };
+  if (error) {
+    // Mensagens de regra do banco (aprovar só quem criou, status do squad, pessoa obrigatória) vão direto.
+    const businessRule = error.code === "42501" || error.code === "22023";
+    return { ok: false, error: businessRule ? error.message : "Não foi possível passar a pauta adiante." };
+  }
 
   refresh(data?.project_id);
-  return { ok: true, message: "Pauta passada adiante." };
+  if (data) {
+    after(() =>
+      syncGoogleForProfiles([data.lead_id, data.current_assignee_id, d.assigneeId].filter((id): id is string => Boolean(id))).catch(() => undefined),
+    );
+  }
+  return { ok: true, message: approving ? "Pauta aprovada." : "Pauta passada adiante." };
+}
+
+/** Registro de execução ("o que eu fiz") — fica no histórico da pauta e avisa líder e quem criou. */
+export async function addPautaLogAction(values: PautaLogValues): Promise<ActionResult> {
+  const parsed = pautaLogSchema.safeParse(values);
+  if (!parsed.success) return INVALID;
+  const profile = await getCurrentProfile();
+  if (!profile) return UNAUTHENTICATED;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("pauta_logs").insert({
+    pauta_id: parsed.data.pautaId,
+    author_id: profile.id,
+    kind: "registro",
+    body: parsed.data.body,
+    link_url: parsed.data.linkUrl || null,
+  });
+  if (error) return { ok: false, error: error.code === "42501" ? "Só quem está na pauta registra o andamento." : "Não foi possível salvar o registro." };
+
+  revalidatePath("/pautas");
+  revalidatePath("/minhas-pautas");
+  return { ok: true, message: "Registro salvo." };
 }
 
 export async function addPautaCommentAction(input: { pautaId: string; body: string }): Promise<ActionResult> {

@@ -1291,6 +1291,150 @@ export type Database = {
           },
         ]
       }
+      google_accounts: {
+        Row: {
+          access_token: string | null
+          access_token_expires_at: string | null
+          connected_at: string
+          google_email: string | null
+          last_error: string | null
+          last_sync_at: string | null
+          profile_id: string
+          refresh_token: string
+          scope: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          google_email?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          profile_id: string
+          refresh_token: string
+          scope?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          connected_at?: string
+          google_email?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          profile_id?: string
+          refresh_token?: string
+          scope?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_accounts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_events: {
+        Row: {
+          all_day: boolean
+          ends_at: string
+          google_event_id: string
+          html_link: string | null
+          location: string | null
+          profile_id: string
+          starts_at: string
+          synced_at: string
+          title: string
+        }
+        Insert: {
+          all_day?: boolean
+          ends_at: string
+          google_event_id: string
+          html_link?: string | null
+          location?: string | null
+          profile_id: string
+          starts_at: string
+          synced_at?: string
+          title: string
+        }
+        Update: {
+          all_day?: boolean
+          ends_at?: string
+          google_event_id?: string
+          html_link?: string | null
+          location?: string | null
+          profile_id?: string
+          starts_at?: string
+          synced_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_event_links: {
+        Row: {
+          content_hash: string
+          google_event_id: string
+          profile_id: string
+          source_key: string
+          updated_at: string
+        }
+        Insert: {
+          content_hash: string
+          google_event_id: string
+          profile_id: string
+          source_key: string
+          updated_at?: string
+        }
+        Update: {
+          content_hash?: string
+          google_event_id?: string
+          profile_id?: string
+          source_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_event_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_sync_jobs: {
+        Row: {
+          created_at: string
+          detail: string | null
+          finished_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          finished_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          finished_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           access_role: Database["public"]["Enums"]["access_role"]
@@ -1449,6 +1593,61 @@ export type Database = {
           },
         ]
       }
+      pauta_logs: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["pauta_log_kind"]
+          link_url: string | null
+          pauta_id: string
+          status: Database["public"]["Enums"]["pauta_status"] | null
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["pauta_log_kind"]
+          link_url?: string | null
+          pauta_id: string
+          status?: Database["public"]["Enums"]["pauta_status"] | null
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["pauta_log_kind"]
+          link_url?: string | null
+          pauta_id?: string
+          status?: Database["public"]["Enums"]["pauta_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pauta_logs_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pauta_logs_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pauta_logs_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas_with_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pauta_members: {
         Row: {
           added_at: string
@@ -1580,6 +1779,7 @@ export type Database = {
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
+          client_waiting_since: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -1620,6 +1820,7 @@ export type Database = {
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
           capture_type?: Database["public"]["Enums"]["pauta_capture_type"][]
+          client_waiting_since?: string | null
           code?: string | null
           contact_id?: string | null
           contact_phone_override?: string | null
@@ -1660,6 +1861,7 @@ export type Database = {
           board_column?: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
           capture_type?: Database["public"]["Enums"]["pauta_capture_type"][]
+          client_waiting_since?: string | null
           code?: string | null
           contact_id?: string | null
           contact_phone_override?: string | null
@@ -2124,6 +2326,7 @@ export type Database = {
           model: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
+          payment_check_notified_at: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           production_notes: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
@@ -2152,6 +2355,7 @@ export type Database = {
           model?: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
+          payment_check_notified_at?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           production_notes?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
@@ -2180,6 +2384,7 @@ export type Database = {
           model?: Database["public"]["Enums"]["project_model"]
           name?: string
           owner_id?: string
+          payment_check_notified_at?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           production_notes?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
@@ -2889,6 +3094,7 @@ export type Database = {
           capture_type:
             | Database["public"]["Enums"]["pauta_capture_type"][]
             | null
+          client_waiting_since: string | null
           code: string | null
           comments_count: number | null
           company_id: string | null
@@ -2923,6 +3129,7 @@ export type Database = {
           lead_id: string | null
           lead_name: string | null
           location_address: string | null
+          logs_count: number | null
           previous_assignee_id: string | null
           priority: Database["public"]["Enums"]["project_priority"] | null
           project_id: string | null
@@ -3391,6 +3598,10 @@ export type Database = {
         Returns: boolean
       }
       can_view_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
+      check_project_payment: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
       close_deal_won: {
         Args: {
           p_atendimento_id: string
@@ -3424,6 +3635,7 @@ export type Database = {
           model: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
+          payment_check_notified_at: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           production_notes: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
@@ -3740,6 +3952,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      google_sync_dispatch: { Args: never; Returns: undefined }
       has_finance_access: { Args: never; Returns: boolean }
       in_squad: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
@@ -3786,7 +3999,20 @@ export type Database = {
         Returns: boolean
       }
       margin_status_for: { Args: { p_pct: number }; Returns: string }
+      my_google_account: {
+        Args: never
+        Returns: {
+          connected_at: string
+          google_email: string
+          last_error: string
+          last_sync_at: string
+        }[]
+      }
       notification_category: { Args: { p_type: string }; Returns: string }
+      notified_today: {
+        Args: { p_entity: string; p_recipient: string; p_type: string }
+        Returns: boolean
+      }
       notify: {
         Args: {
           p_body: string
@@ -3800,6 +4026,10 @@ export type Database = {
         Returns: undefined
       }
       notify_overdue_finance: { Args: never; Returns: undefined }
+      pauta_column_for_status: {
+        Args: { p_status: Database["public"]["Enums"]["pauta_status"] }
+        Returns: Database["public"]["Enums"]["pauta_column"]
+      }
       pauta_default_squad: {
         Args: {
           p_deal_id: string
@@ -3808,11 +4038,20 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["squad"]
       }
+      pauta_default_status: {
+        Args: {
+          p_column: Database["public"]["Enums"]["pauta_column"]
+          p_old: Database["public"]["Enums"]["pauta_status"]
+          p_squad: Database["public"]["Enums"]["squad"]
+        }
+        Returns: Database["public"]["Enums"]["pauta_status"]
+      }
       pauta_handover: {
         Args: {
-          p_assignee_id: string
+          p_assignee_id?: string
           p_due_date?: string
-          p_function: Database["public"]["Enums"]["production_function"]
+          p_due_time?: string
+          p_function?: Database["public"]["Enums"]["production_function"]
           p_note?: string
           p_pauta_id: string
           p_status: Database["public"]["Enums"]["pauta_status"]
@@ -3822,6 +4061,7 @@ export type Database = {
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
+          client_waiting_since: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -3874,6 +4114,7 @@ export type Database = {
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
+          client_waiting_since: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -3916,6 +4157,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pauta_noun: {
+        Args: { p_squad: Database["public"]["Enums"]["squad"] }
+        Returns: string
+      }
+      pauta_status_label: {
+        Args: {
+          p_squad: Database["public"]["Enums"]["squad"]
+          p_status: Database["public"]["Enums"]["pauta_status"]
+        }
+        Returns: string
+      }
+      pauta_statuses_for: {
+        Args: { p_squad: Database["public"]["Enums"]["squad"] }
+        Returns: Database["public"]["Enums"]["pauta_status"][]
+      }
       pautas_summary: {
         Args: {
           p_assignee_id?: string
@@ -3942,6 +4198,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      run_daily_reminders: { Args: never; Returns: undefined }
       set_company_logo: {
         Args: { p_company_id: string; p_logo_url: string }
         Returns: undefined
@@ -4051,6 +4308,7 @@ export type Database = {
       org_level: "master" | "diretoria" | "head" | "executor"
       pauta_capture_type: "foto" | "video"
       pauta_column: "sprint_backlog" | "em_andamento" | "revisao" | "entregue"
+      pauta_log_kind: "registro" | "entrega" | "ajuste" | "aprovacao"
       pauta_status:
         | "planejamento"
         | "captacao"
@@ -4059,6 +4317,10 @@ export type Database = {
         | "revisao_cliente"
         | "reajuste"
         | "aprovado"
+        | "em_execucao"
+        | "aguardando_retorno"
+        | "aguardando_documento"
+        | "em_analise"
       payable_category:
         | "freelancer"
         | "equipamento"
@@ -4145,6 +4407,7 @@ export type Database = {
         | "descartado"
       service_type: "captacao" | "edicao" | "direcao" | "producao_completa"
       squad: "diretoria" | "audiovisual" | "comercial" | "financeiro"
+      sync_job_status: "pendente" | "rodando" | "concluido" | "erro"
       time_entry_kind: "entrada" | "saida"
       time_entry_source: "timer" | "manual"
     }
@@ -4384,6 +4647,7 @@ export const Constants = {
       org_level: ["master", "diretoria", "head", "executor"],
       pauta_capture_type: ["foto", "video"],
       pauta_column: ["sprint_backlog", "em_andamento", "revisao", "entregue"],
+      pauta_log_kind: ["registro", "entrega", "ajuste", "aprovacao"],
       pauta_status: [
         "planejamento",
         "captacao",
@@ -4392,6 +4656,10 @@ export const Constants = {
         "revisao_cliente",
         "reajuste",
         "aprovado",
+        "em_execucao",
+        "aguardando_retorno",
+        "aguardando_documento",
+        "em_analise",
       ],
       payable_category: [
         "freelancer",
@@ -4486,6 +4754,7 @@ export const Constants = {
       ],
       service_type: ["captacao", "edicao", "direcao", "producao_completa"],
       squad: ["diretoria", "audiovisual", "comercial", "financeiro"],
+      sync_job_status: ["pendente", "rodando", "concluido", "erro"],
       time_entry_kind: ["entrada", "saida"],
       time_entry_source: ["timer", "manual"],
     },

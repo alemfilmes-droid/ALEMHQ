@@ -70,9 +70,9 @@ export const FUNCTION_LABELS: Record<ProductionFunction, string> = {
 
 /** O que cada squad faz numa pauta/tarefa — a lista do "responsável" muda conforme o squad escolhido. */
 export const PAUTA_ACTIVITIES_BY_SQUAD: Record<Squad, readonly ProductionFunction[]> = {
-  audiovisual: [...PRODUCTION_FUNCTIONS, "outro"],
-  comercial: ["ajuste_crm", "prospeccao", "follow_up", "proposta", "reuniao_comercial", "relatorio_comercial", "outro"],
-  financeiro: ["cobranca", "conciliacao", "pagamentos", "nota_fiscal", "orcamento", "relatorio_financeiro", "outro"],
+  audiovisual: [...PRODUCTION_FUNCTIONS, "revisao", "outro"],
+  comercial: ["ajuste_crm", "prospeccao", "follow_up", "proposta", "reuniao_comercial", "relatorio_comercial", "revisao", "outro"],
+  financeiro: ["cobranca", "conciliacao", "pagamentos", "nota_fiscal", "orcamento", "relatorio_financeiro", "revisao", "outro"],
   diretoria: ["aprovacao", "planejamento_estrategico", "revisao", "reuniao", "contratacao", "relatorio_gerencial", "outro"],
 };
 

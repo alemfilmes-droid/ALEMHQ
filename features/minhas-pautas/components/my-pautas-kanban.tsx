@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { KanbanLane } from "@/components/kanban/kanban-lane";
 import { laneKeyOf, lanesFor, priorityRank, type KanbanDimension } from "@/features/minhas-pautas/board";
 import { PautaCard, type PautaCardMenu } from "@/features/pautas/components/pauta-card";
 import { movePautaColumnAction, updatePautaAction } from "@/features/pautas/actions";
+import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
+import type { PautaOptionMember } from "@/features/pautas/types";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
 import { PRIORITIES } from "@/lib/domain";
-import type { PautaColumn, PautaWithDetails, ProjectPriority, Squad } from "@/types";
+import type { PautaColumn, PautaStatus, PautaWithDetails, ProjectPriority, Squad } from "@/types";
 
 interface MyPautasKanbanProps {
   pautas: PautaWithDetails[];
@@ -22,6 +24,8 @@ interface MyPautasKanbanProps {
   onChanged: (pauta: PautaWithDetails) => void;
   /** Menu do card (arquivar / apagar para quem criou). */
   menuFor?: (pauta: PautaWithDetails) => PautaCardMenu | undefined;
+  /** Pessoas para o "passar adiante" que abre ao arrastar por status. */
+  members: PautaOptionMember[];
 }
 
 const BLOCKED_SQUAD = "Pautas não mudam de squad pelo quadro — cada uma pertence ao squad que a criou.";
@@ -40,8 +44,12 @@ function isColumn(value: string): value is PautaColumn {
  * uma rolando por dentro. Arrastar só muda o que a pessoa pode mudar: prioridade (gestão ou dono da
  * tarefa avulsa) ou status (quem edita a pauta — o banco confere de novo). Entre squads, nunca.
  */
-export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged, menuFor }: MyPautasKanbanProps) {
+export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged, menuFor, members }: MyPautasKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Pauta de equipe arrastada por status: o card muda de coluna e abre o "passar adiante" para
+  // confirmar etapa, pessoa e prazo. Cancelar devolve o card.
+  const [dragMove, setDragMove] = useState<{ pauta: PautaWithDetails; status: PautaStatus } | null>(null);
+  const moveDone = useRef(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const lanes = lanesFor(dimension, pautas, mySquads);
@@ -102,48 +110,85 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
 
     if (dimension === "status" && isColumn(target)) {
       const previous = pauta;
-      onChanged({ ...pauta, board_column: target, status: defaultStatusForColumn(target, pauta.status ?? undefined) });
-      void movePautaColumnAction({ id: pauta.id, column: target }).then((result) => {
-        if (!result.ok) {
-          onChanged(previous);
-          toast.error(result.error);
-        }
-      });
+      const status = defaultStatusForColumn(target, pauta.status ?? undefined, pauta.squad);
+
+      // Tarefa avulsa é da própria pessoa: muda direto.
+      if (pauta.is_standalone) {
+        onChanged({ ...pauta, board_column: target, status });
+        void movePautaColumnAction({ id: pauta.id, column: target }).then((result) => {
+          if (!result.ok) {
+            onChanged(previous);
+            toast.error(result.error);
+          }
+        });
+        return;
+      }
+
+      if (target === "entregue" && pauta.created_by !== currentUserId && !(canManage && !pauta.created_by)) {
+        toast.error("Só quem criou a pauta pode aprovar. Envie para revisão.");
+        return;
+      }
+
+      onChanged({ ...pauta, board_column: target, status });
+      moveDone.current = false;
+      setDragMove({ pauta: previous, status });
     }
   }
 
+  function closeDragMove(open: boolean) {
+    if (open || !dragMove) return;
+    if (!moveDone.current) onChanged(dragMove.pauta);
+    setDragMove(null);
+  }
+
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}>
-      <div
-        className="grid h-[calc(100dvh-15rem)] min-h-[520px] auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto pb-2 snap-x snap-mandatory sm:auto-cols-[46%] md:grid-flow-row md:auto-cols-auto md:overflow-visible md:snap-none md:pb-0 md:[grid-template-columns:repeat(var(--lanes),minmax(0,1fr))]"
-        style={{ "--lanes": lanes.length } as CSSProperties}
-      >
-        {lanes.map((lane) => {
-          const items = sortedIn(lane.key);
-          const blocked = isBlocked(lane.key);
-          return (
-            <KanbanLane
-              key={lane.key}
-              id={lane.key}
-              label={lane.label}
-              tone={lane.tone}
-              count={items.length}
-              emptyLabel="Nada aqui."
-              blocked={blocked}
-              blockedLabel={dimension === "squad" ? "Não muda de squad" : "Sem permissão para mudar"}
-            >
-              {items.map((pauta) => (
-                <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} menu={menuFor?.(pauta)} />
-              ))}
-            </KanbanLane>
-          );
-        })}
-      </div>
-      <DragOverlay>
-        {activePauta ? (
-          <PautaCard pauta={activePauta} onOpen={() => {}} dragging />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+    <>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveId(null)}>
+        <div
+          className="grid h-[calc(100dvh-15rem)] min-h-[520px] auto-cols-[88%] grid-flow-col gap-4 overflow-x-auto pb-2 snap-x snap-mandatory sm:auto-cols-[46%] md:grid-flow-row md:auto-cols-auto md:overflow-visible md:snap-none md:pb-0 md:[grid-template-columns:repeat(var(--lanes),minmax(0,1fr))]"
+          style={{ "--lanes": lanes.length } as CSSProperties}
+        >
+          {lanes.map((lane) => {
+            const items = sortedIn(lane.key);
+            const blocked = isBlocked(lane.key);
+            return (
+              <KanbanLane
+                key={lane.key}
+                id={lane.key}
+                label={lane.label}
+                tone={lane.tone}
+                count={items.length}
+                emptyLabel="Nada aqui."
+                blocked={blocked}
+                blockedLabel={dimension === "squad" ? "Não muda de squad" : "Sem permissão para mudar"}
+              >
+                {items.map((pauta) => (
+                  <PautaCard key={pauta.id} pauta={pauta} onOpen={() => onOpen(pauta.id!)} menu={menuFor?.(pauta)} />
+                ))}
+              </KanbanLane>
+            );
+          })}
+        </div>
+        <DragOverlay>
+          {activePauta ? (
+            <PautaCard pauta={activePauta} onOpen={() => {}} dragging />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+      {dragMove ? (
+        <HandoverDialog
+          pauta={dragMove.pauta}
+          members={members}
+          open
+          initialStatus={dragMove.status}
+          canApprove={dragMove.pauta.created_by === currentUserId || (canManage && !dragMove.pauta.created_by)}
+          onOpenChange={closeDragMove}
+          onDone={(updated) => {
+            moveDone.current = true;
+            onChanged(updated);
+          }}
+        />
+      ) : null}
+    </>
   );
 }

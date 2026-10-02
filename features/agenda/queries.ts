@@ -66,7 +66,54 @@ export async function getAgendaEvents({ from, to, people, onlyMine = false }: Fe
     p_only_mine: onlyMine,
   });
   if (error) throw new Error("Falha ao carregar a agenda.");
-  return (data ?? []).map(mapFeedRow);
+  const events = (data ?? []).map(mapFeedRow);
+
+  // Eventos do Google da própria pessoa (a RLS só devolve os dela) — quando a visão inclui ela.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user && (!people || people.length === 0 || people.includes(user.id))) {
+    const { data: google } = await supabase
+      .from("google_calendar_events")
+      .select("google_event_id, title, starts_at, ends_at, all_day, location, html_link")
+      .lt("starts_at", to)
+      .gt("ends_at", from);
+    for (const row of google ?? []) {
+      events.push({
+        key: `g:${row.google_event_id}`,
+        source: "google",
+        externalUrl: row.html_link,
+        commitmentId: null,
+        pautaId: null,
+        startsAt: row.starts_at,
+        endsAt: row.ends_at,
+        allDay: row.all_day,
+        title: row.title,
+        kind: "interno",
+        status: "agendado",
+        busyOnly: false,
+        visibility: "privado",
+        ownerId: user.id,
+        ownerName: "Você",
+        attendees: [],
+        externalAttendees: [],
+        location: row.location,
+        notes: null,
+        companyId: null,
+        companyName: null,
+        companyLogoUrl: null,
+        projectId: null,
+        projectName: null,
+        dealId: null,
+        recurrenceRule: null,
+        reminderMinutes: [],
+        canEdit: false,
+        googleSyncStatus: "sincronizado",
+      });
+    }
+    events.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.endsAt.localeCompare(b.endsAt));
+  }
+  return events;
 }
 
 /** Próximos compromissos da pessoa (dono ou participante), para o card do início. */

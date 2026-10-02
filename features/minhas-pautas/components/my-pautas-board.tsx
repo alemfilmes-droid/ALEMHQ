@@ -247,6 +247,7 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
           onOpen={setOpenId}
           onChanged={handleChanged}
           menuFor={menuFor}
+          members={options.members}
         />
       ) : (
         <MyPautasCalendar

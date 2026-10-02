@@ -8,6 +8,7 @@ import type {
   PautaFormOptions,
   PautaHistoryEntry,
   PautaMemberDetail,
+  PautaLogEntry,
 } from "@/features/pautas/types";
 
 /**
@@ -62,7 +63,7 @@ export async function getPautaFormOptions(): Promise<PautaFormOptions> {
 
 export async function getPautaDetail(id: string): Promise<PautaDetail | null> {
   const supabase = await createClient();
-  const [pautaResult, membersResult, commentsResult, historyResult] = await Promise.all([
+  const [pautaResult, membersResult, commentsResult, historyResult, logsResult] = await Promise.all([
     supabase.from("pautas_with_details").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("pauta_members")
@@ -79,6 +80,11 @@ export async function getPautaDetail(id: string): Promise<PautaDetail | null> {
       .select(
         "id, from_status, to_status, from_assignee, to_assignee, note, created_at, changed_by_profile:profiles!pauta_status_history_changed_by_fkey(full_name), to_assignee_profile:profiles!pauta_status_history_to_assignee_fkey(full_name)",
       )
+      .eq("pauta_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("pauta_logs")
+      .select("id, kind, body, link_url, status, created_at, author_id, author:profiles!pauta_logs_author_id_fkey(id, full_name, avatar_url)")
       .eq("pauta_id", id)
       .order("created_at", { ascending: false }),
   ]);
@@ -112,5 +118,16 @@ export async function getPautaDetail(id: string): Promise<PautaDetail | null> {
     to_assignee_name: row.to_assignee_profile?.full_name ?? null,
   }));
 
-  return { pauta: pautaResult.data, members, comments, history };
+  const logs: PautaLogEntry[] = (logsResult.data ?? []).map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    body: row.body,
+    link_url: row.link_url,
+    status: row.status,
+    created_at: row.created_at,
+    author_id: row.author_id,
+    author: row.author,
+  }));
+
+  return { pauta: pautaResult.data, members, comments, history, logs };
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
-import { movePautaColumnAction } from "@/features/pautas/actions";
+import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
 import { KanbanColumn } from "@/features/pautas/components/kanban-column";
 import { PautaCreateDialog } from "@/features/pautas/components/pauta-create-dialog";
 import { PautaCard } from "@/features/pautas/components/pauta-card";
@@ -12,7 +12,7 @@ import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/componen
 import { groupPautasByColumn } from "@/features/pautas/board";
 import type { PautaFormOptions } from "@/features/pautas/types";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
-import type { PautaColumn, PautaWithDetails, Squad } from "@/types";
+import type { PautaColumn, PautaStatus, PautaWithDetails, Squad } from "@/types";
 
 interface KanbanBoardProps {
   initialPautas: PautaWithDetails[];
@@ -71,6 +71,11 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
     setActiveId(String(event.active.id));
   }
 
+  // Arrastar não muda a pauta sozinho: o card vai para a coluna e abre o "passar adiante" para
+  // escolher a etapa, para quem vai e o prazo. Cancelar devolve o card.
+  const [dragMove, setDragMove] = useState<{ pauta: PautaWithDetails; status: PautaStatus } | null>(null);
+  const moveDone = useRef(false);
+
   function handleDragEnd(event: DragEndEvent) {
     setActiveId(null);
     const { active, over } = event;
@@ -80,21 +85,24 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
     const current = pautas.find((item) => item.id === pautaId);
     if (!current || current.board_column === targetColumn) return;
 
-    const previous = pautas;
-    setPautas((rows) =>
-      rows.map((row) =>
-        row.id === pautaId
-          ? { ...row, board_column: targetColumn, status: defaultStatusForColumn(targetColumn, row.status ?? undefined) }
-          : row,
-      ),
-    );
+    if (targetColumn === "entregue" && current.created_by !== currentUser.id && !(canManage && !current.created_by)) {
+      toast.error("Só quem criou a pauta pode aprovar. Envie para revisão.");
+      return;
+    }
 
-    void movePautaColumnAction({ id: pautaId, column: targetColumn }).then((result) => {
-      if (!result.ok) {
-        setPautas(previous);
-        toast.error(result.error);
-      }
-    });
+    const status = defaultStatusForColumn(targetColumn, current.status ?? undefined, current.squad);
+    setPautas((rows) => rows.map((row) => (row.id === pautaId ? { ...row, board_column: targetColumn, status } : row)));
+    moveDone.current = false;
+    setDragMove({ pauta: current, status });
+  }
+
+  function closeDragMove(open: boolean) {
+    if (open || !dragMove) return;
+    if (!moveDone.current) {
+      const original = dragMove.pauta;
+      setPautas((rows) => rows.map((row) => (row.id === original.id ? original : row)));
+    }
+    setDragMove(null);
   }
 
   function handleCreated(pauta: PautaWithDetails) {
@@ -146,6 +154,21 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
           onOpenChange={(next) => !next && setOpenId(null)}
           onChanged={(updated) => setPautas((rows) => rows.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)))}
           onRemoved={removeLocally}
+        />
+      ) : null}
+
+      {dragMove ? (
+        <HandoverDialog
+          pauta={dragMove.pauta}
+          members={options.members}
+          open
+          initialStatus={dragMove.status}
+          canApprove={dragMove.pauta.created_by === currentUser.id || (canManage && !dragMove.pauta.created_by)}
+          onOpenChange={closeDragMove}
+          onDone={(updated) => {
+            moveDone.current = true;
+            setPautas((rows) => rows.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+          }}
         />
       ) : null}
 

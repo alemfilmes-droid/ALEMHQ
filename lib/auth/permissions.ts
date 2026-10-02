@@ -69,6 +69,8 @@ export const PUBLIC_ROUTES = [
   "/redefinir-senha",
   "/aceitar-convite",
   "/auth/confirm",
+  "/privacidade",
+  "/termos",
 ] as const;
 
 /** Páginas que só fazem sentido sem sessão: usuário logado é redirecionado. */

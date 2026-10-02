@@ -54,7 +54,7 @@ export async function HomeAgendaCard() {
                       <span className={cn("shrink-0 whitespace-nowrap text-[12px]", label.highlight ? "font-bold text-foreground" : "text-subtle")}>{label.text}</span>
                     </span>
                     <span className="block truncate text-[12px] text-subtle">
-                      {eventTimeLabel(event)} · {event.source === "pauta" ? (event.kind === "entrega" ? "Prazo de pauta" : "Pauta") : COMMITMENT_KIND_LABELS[event.kind]}
+                      {eventTimeLabel(event)} · {event.source === "google" ? "Google Agenda" : event.source === "pauta" ? (event.kind === "entrega" ? "Prazo de pauta" : "Pauta") : COMMITMENT_KIND_LABELS[event.kind]}
                       {event.companyName ? ` · ${event.companyName}` : ""}
                     </span>
                   </Link>

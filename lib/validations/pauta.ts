@@ -110,14 +110,28 @@ export const updatePautaSchema = z.object({
 
 export type UpdatePautaValues = z.infer<typeof updatePautaSchema>;
 
-export const handoverSchema = z.object({
-  pautaId: z.string().uuid(),
-  status: z.enum(PAUTA_STATUSES),
-  assigneeId: z.string().uuid("Selecione o responsável."),
-  functionRole: activitySchema,
-  dueDate: optionalDate,
-  note: z.string().trim().max(500, "Use até 500 caracteres."),
-});
+/**
+ * "Passar adiante": para qualquer etapa, diz para quem vai e o que a pessoa vai fazer — menos para
+ * aprovar, quando a pauta termina e não vai para ninguém. A nota vira um registro da pauta.
+ */
+export const handoverSchema = z
+  .object({
+    pautaId: z.string().uuid(),
+    status: z.enum(PAUTA_STATUSES),
+    assigneeId: z.string().uuid().or(z.literal("")),
+    functionRole: activitySchema.or(z.literal("")),
+    dueDate: optionalDate,
+    dueTime: optionalTime,
+    note: z.string().trim().max(2000, "Use até 2000 caracteres."),
+  })
+  .superRefine((value, ctx) => {
+    if (value.status === "aprovado") return;
+    if (!value.assigneeId) ctx.addIssue({ code: "custom", path: ["assigneeId"], message: "Escolha para quem vai." });
+    if (!value.functionRole) ctx.addIssue({ code: "custom", path: ["functionRole"], message: "Diga o que a pessoa vai fazer." });
+    if (value.status === "reajuste" && !value.note) {
+      ctx.addIssue({ code: "custom", path: ["note"], message: "Diga o que precisa ajustar." });
+    }
+  });
 
 export type HandoverValues = z.infer<typeof handoverSchema>;
 
@@ -125,6 +139,15 @@ export const moveColumnSchema = z.object({
   id: z.string().uuid(),
   column: z.enum(PAUTA_COLUMNS),
 });
+
+/** Registro de execução ("o que eu fiz"), com link opcional (documento, print, planilha). */
+export const pautaLogSchema = z.object({
+  pautaId: z.string().uuid(),
+  body: z.string().trim().min(3, "Conte o que foi feito.").max(4000, "Use até 4000 caracteres."),
+  linkUrl: optionalUrl,
+});
+
+export type PautaLogValues = z.infer<typeof pautaLogSchema>;
 
 export const commentSchema = z.object({
   pautaId: z.string().uuid(),

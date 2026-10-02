@@ -124,7 +124,7 @@ export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardPr
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <PautaStatusBadge status={pauta.status!} />
+        <PautaStatusBadge status={pauta.status!} squad={pauta.squad} />
         <PautaPriorityBadge priority={pauta.priority!} />
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}

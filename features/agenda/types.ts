@@ -15,10 +15,12 @@ export interface ExternalAttendee {
   email: string;
 }
 
-/** Um bloco do calendário — compromisso (uma ocorrência, se recorrente) ou pauta agendada derivada. */
+/** Um bloco do calendário — compromisso (uma ocorrência, se recorrente), pauta derivada ou evento do Google da pessoa. */
 export interface AgendaEvent {
   key: string;
-  source: "commitment" | "pauta";
+  source: "commitment" | "pauta" | "google";
+  /** Evento do Google: link para abrir no Google Agenda. */
+  externalUrl?: string | null;
   commitmentId: string | null;
   pautaId: string | null;
   startsAt: string;

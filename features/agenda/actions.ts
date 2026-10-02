@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { getCommitmentForm } from "@/features/agenda/queries";
 import { toRRule } from "@/features/agenda/recurrence";
@@ -8,6 +9,7 @@ import { commitmentSchema, type CommitmentValues } from "@/features/agenda/schem
 import type { AgendaConflict, CommitmentFormRow } from "@/features/agenda/types";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { appZoneToIso } from "@/lib/calendar";
+import { syncGoogleForProfiles } from "@/lib/google/calendar.server";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult, Tables } from "@/types";
 
@@ -20,6 +22,11 @@ function refresh() {
   revalidatePath("/agenda");
   revalidatePath("/inicio");
   revalidatePath("/minhas-pautas");
+}
+
+/** Depois de responder: atualiza o Google Agenda de quem foi afetado (só quem conectou a conta). */
+function syncGoogleLater(profileIds: readonly string[]) {
+  after(() => syncGoogleForProfiles(profileIds).catch((error) => console.error("[google] sync após mudança falhou", error)));
 }
 
 export async function getCommitmentFormAction(id: string): Promise<CommitmentFormRow | null> {
@@ -70,10 +77,12 @@ export async function saveCommitmentAction(
   const row = toRow(parsed.data);
 
   let ownerId = profile.id;
+  let previousAttendees: string[] = [];
   if (options.id) {
-    const { data: existing } = await supabase.from("commitments").select("owner_id").eq("id", options.id).maybeSingle();
+    const { data: existing } = await supabase.from("commitments").select("owner_id, attendees").eq("id", options.id).maybeSingle();
     if (!existing) return { ok: false, error: "Compromisso não encontrado." };
     ownerId = existing.owner_id;
+    previousAttendees = existing.attendees;
   }
 
   if (!row.all_day && !options.confirmConflicts) {
@@ -106,12 +115,14 @@ export async function saveCommitmentAction(
     if (error) return { ok: false, error: error.code === "23514" ? error.message : "Não foi possível salvar o compromisso." };
     if (!data) return { ok: false, error: "Só quem criou, o dono ou a diretoria editam este compromisso." };
     refresh();
+    syncGoogleLater([ownerId, ...row.attendees, ...previousAttendees]);
     return { ok: true, message: "Compromisso atualizado." };
   }
 
   const { error } = await supabase.from("commitments").insert({ ...row, owner_id: profile.id, created_by: profile.id });
   if (error) return { ok: false, error: error.code === "23514" ? error.message : "Não foi possível criar o compromisso." };
   refresh();
+  syncGoogleLater([profile.id, ...row.attendees]);
   return { ok: true, message: "Compromisso criado." };
 }
 
@@ -122,9 +133,10 @@ export async function cancelCommitmentAction(id: string): Promise<ActionResult> 
   if (!profile) return UNAUTHENTICATED;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("commitments").update({ status: "cancelado" }).eq("id", id).select("id").maybeSingle();
+  const { data, error } = await supabase.from("commitments").update({ status: "cancelado" }).eq("id", id).select("id, owner_id, attendees").maybeSingle();
   if (error) return { ok: false, error: "Não foi possível cancelar o compromisso." };
   if (!data) return { ok: false, error: "Só quem criou, o dono ou a diretoria cancelam este compromisso." };
   refresh();
+  syncGoogleLater([data.owner_id, ...data.attendees]);
   return { ok: true, message: "Compromisso cancelado." };
 }

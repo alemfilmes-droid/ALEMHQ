@@ -102,7 +102,7 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {pauta.status ? <PautaStatusBadge status={pauta.status} /> : null}
+        {pauta.status ? <PautaStatusBadge status={pauta.status} squad={pauta.squad} /> : null}
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}

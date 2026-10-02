@@ -1,4 +1,7 @@
 import type { PautaColumn, PautaStatus, PautaWithDetails, ProductionFunction, ProjectPriority, Squad } from "@/types";
+import type { Database } from "@/types/database";
+
+export type PautaLogKind = Database["public"]["Enums"]["pauta_log_kind"];
 
 export interface PautaFilters {
   projectIds?: string[];
@@ -85,11 +88,24 @@ export interface PautaHistoryEntry {
   to_assignee_name: string | null;
 }
 
+/** Registro de execução: o que foi feito, pedido de ajuste, entrega para revisão ou aprovação. */
+export interface PautaLogEntry {
+  id: string;
+  kind: PautaLogKind;
+  body: string;
+  link_url: string | null;
+  status: PautaStatus | null;
+  created_at: string;
+  author_id: string | null;
+  author: PautaOptionMember | null;
+}
+
 export interface PautaDetail {
   pauta: PautaWithDetails;
   members: PautaMemberDetail[];
   comments: PautaCommentDetail[];
   history: PautaHistoryEntry[];
+  logs: PautaLogEntry[];
 }
 
 /** Card do quadro, agrupado por coluna. */

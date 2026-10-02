@@ -7,6 +7,7 @@ import { getPautaDetailAction } from "@/features/pautas/actions";
 import { PautaActivityTab } from "@/features/pautas/components/pauta-activity-tab";
 import { PautaCommentsTab } from "@/features/pautas/components/pauta-comments-tab";
 import { PautaDetailsTab } from "@/features/pautas/components/pauta-details-tab";
+import { PautaLogsTab } from "@/features/pautas/components/pauta-logs-tab";
 import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import { StandaloneTaskDetailsTab } from "@/features/pautas/components/standalone-task-details-tab";
 import type { PautaDetail, PautaFormOptions } from "@/features/pautas/types";
@@ -29,7 +30,7 @@ interface PautaDetailModalProps {
   onRemoved?: (id: string) => void;
 }
 
-type TabKey = "detalhes" | "comentarios" | "atividade";
+type TabKey = "detalhes" | "registros" | "comentarios" | "atividade";
 
 export function PautaDetailModal({ pautaId, options, canManage, currentUser, open, onOpenChange, onChanged, onRemoved }: PautaDetailModalProps) {
   const [detail, setDetail] = useState<PautaDetail | null>(null);
@@ -52,9 +53,17 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
     };
   }, [pautaId]);
 
+  function reload() {
+    getPautaDetailAction(pautaId).then((data) => {
+      if (data) setDetail(data);
+    });
+  }
+
   function handleChanged(pauta: PautaWithDetails) {
     setDetail((current) => (current ? { ...current, pauta: { ...current.pauta, ...pauta } } : current));
     onChanged(pauta);
+    // Registros e atividade mudam junto (ex.: "passar adiante" grava a nota como registro).
+    reload();
   }
 
   return (
@@ -130,12 +139,14 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
               onChange={setTab}
               tabs={[
                 { value: "detalhes", label: "Detalhes" },
+                { value: "registros", label: `Registros${detail.logs.length ? ` (${detail.logs.length})` : ""}` },
                 { value: "comentarios", label: `Comentários${detail.comments.length ? ` (${detail.comments.length})` : ""}` },
                 { value: "atividade", label: "Atividade" },
               ]}
             />
 
-            <div className="min-h-0 flex-1 overflow-y-auto pt-5">
+            {/* -mx/px: folga para o anel colorido dos avatares não ser cortado pela rolagem. */}
+            <div className="-mx-1.5 min-h-0 flex-1 overflow-y-auto px-1.5 pt-5">
               {tab === "detalhes" ? (
                 detail.pauta.is_standalone ? (
                   <StandaloneTaskDetailsTab pauta={detail.pauta} onChanged={handleChanged} />
@@ -161,9 +172,26 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
                       detail.pauta.created_by === currentUser.id ||
                       (currentUser.managedSquads ?? []).includes(detail.pauta.squad ?? "audiovisual")
                     }
+                    // Aprovar: só quem criou a pauta (ou a gestão quando a pauta não tem mais autor).
+                    canApprove={detail.pauta.created_by === currentUser.id || (canManage && !detail.pauta.created_by)}
                     onChanged={handleChanged}
                   />
                 )
+              ) : tab === "registros" ? (
+                <PautaLogsTab
+                  pautaId={pautaId}
+                  squad={detail.pauta.squad}
+                  logs={detail.logs}
+                  canWrite={
+                    canManage ||
+                    detail.pauta.lead_id === currentUser.id ||
+                    detail.pauta.current_assignee_id === currentUser.id ||
+                    detail.pauta.created_by === currentUser.id ||
+                    detail.pauta.created_for === currentUser.id ||
+                    detail.members.some((member) => member.profile_id === currentUser.id)
+                  }
+                  onAdded={reload}
+                />
               ) : tab === "comentarios" ? (
                 <PautaCommentsTab
                   pautaId={pautaId}
@@ -172,7 +200,7 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
                   onAdded={(comment) => setDetail((current) => (current ? { ...current, comments: [...current.comments, comment] } : current))}
                 />
               ) : (
-                <PautaActivityTab history={detail.history} />
+                <PautaActivityTab history={detail.history} squad={detail.pauta.squad} />
               )}
             </div>
           </>

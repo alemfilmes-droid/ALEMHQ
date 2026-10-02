@@ -3,10 +3,11 @@
 import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { ArrowRightCircle, Check, Clapperboard, ExternalLink, FileText, FolderOpen, MapPin, Package, Pencil, X } from "lucide-react";
+import { ArrowRightCircle, Check, CheckCircle2, Clapperboard, ExternalLink, FileText, FolderOpen, MapPin, Package, Pencil, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { updatePautaAction } from "@/features/pautas/actions";
 import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
+import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import type { PautaDetail, PautaFormOptions } from "@/features/pautas/types";
 import { OwnerSelect } from "@/components/projects/owner-select";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -18,15 +19,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SquadBadge } from "@/components/ui/squad-badge";
-import { StatusDot } from "@/components/ui/status-dot";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FUNCTION_LABELS } from "@/lib/auth/roles";
 import { appZoneToIso, dateInAppZone, timeInAppZone } from "@/lib/calendar";
 import { INTERNAL_PROJECT_LABEL, PRIORITIES, PRIORITY_LABELS } from "@/lib/domain";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { PAUTA_CAPTURE_TYPES, PAUTA_CAPTURE_TYPE_LABELS, PAUTA_STATUSES, PAUTA_STATUS_LABELS } from "@/lib/pautas";
-import { PAUTA_STATUS_TONE } from "@/lib/status";
+import { PAUTA_CAPTURE_TYPES, PAUTA_CAPTURE_TYPE_LABELS } from "@/lib/pautas";
 import type { PautaCaptureType, PautaStatus, PautaWithDetails, ProjectPriority } from "@/types";
 
 const NO_FREELANCER = "__sem_freelancer__";
@@ -41,6 +40,8 @@ interface PautaDetailsTabProps {
   canEditOperationally: boolean;
   /** Quem criou a pauta ou a gestão do squad: o lápis abre a edição de todos os dados. */
   canEditAll: boolean;
+  /** Quem criou a pauta: só essa pessoa aprova (o banco repete a regra). */
+  canApprove: boolean;
   onChanged: (pauta: PautaWithDetails) => void;
 }
 
@@ -399,10 +400,11 @@ function PautaEditForm({
  * gestão do squad — tem o lápis para editar tudo. Quem está na pauta atualiza o andamento: status,
  * links, freelancer e "com quem está a bola" no cliente. O banco repete a regra (pautas_guard_update).
  */
-export function PautaDetailsTab({ detail, options, canEditOperationally, canEditAll, onChanged }: PautaDetailsTabProps) {
+export function PautaDetailsTab({ detail, options, canEditOperationally, canEditAll, canApprove, onChanged }: PautaDetailsTabProps) {
   const { pauta, members } = detail;
   const [editing, setEditing] = useState(false);
-  const [handoverOpen, setHandoverOpen] = useState(false);
+  // Etapa com que o "passar adiante" abre (null = fechado; "atual" = mantém o status de agora).
+  const [handover, setHandover] = useState<PautaStatus | "atual" | null>(null);
   const [quickPending, startQuickTransition] = useTransition();
 
   const isProduction = (pauta.squad ?? "audiovisual") === "audiovisual";
@@ -445,43 +447,44 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
     );
   }
 
+  const inReview = pauta.status === "revisao_interna" || pauta.status === "revisao_cliente";
   const dueLabel = pauta.due_date ? `${formatDate(pauta.due_date)}${pauta.due_time ? ` até ${pauta.due_time.slice(0, 5)}` : ""}` : "—";
 
   return (
     <div className="space-y-7">
       <div className="flex flex-wrap items-center gap-2">
-        {canEditOperationally ? (
-          <Button type="button" onClick={() => setHandoverOpen(true)}>
-            <ArrowRightCircle aria-hidden />
-            Passar adiante
-          </Button>
-        ) : null}
-        {canEditAll ? (
-          <Button type="button" variant="secondary" onClick={() => setEditing(true)}>
-            <Pencil aria-hidden />
-            Editar pauta
-          </Button>
-        ) : null}
-        <div className="ml-auto w-full sm:w-56">
-          <Select
-            value={pauta.status ?? undefined}
-            disabled={!canEditOperationally || quickPending}
-            onValueChange={(value) => saveQuick({ status: value as PautaStatus }, "Status atualizado.", { status: value as PautaStatus })}
-          >
-            <SelectTrigger aria-label="Status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAUTA_STATUSES.map((status) => (
-                <SelectItem key={status} value={status}>
-                  <span className="flex items-center gap-2">
-                    <StatusDot tone={PAUTA_STATUS_TONE[status]} />
-                    {PAUTA_STATUS_LABELS[status]}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {pauta.status ? <PautaStatusBadge status={pauta.status} squad={pauta.squad} /> : null}
+        <div className="ml-auto flex flex-wrap gap-2">
+          {canApprove && inReview ? (
+            <>
+              <Button type="button" onClick={() => setHandover("aprovado")}>
+                <CheckCircle2 aria-hidden />
+                Aprovar
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setHandover("reajuste")}>
+                <RotateCcw aria-hidden />
+                Pedir ajuste
+              </Button>
+            </>
+          ) : null}
+          {canEditOperationally && pauta.status !== "aprovado" ? (
+            <Button type="button" variant={canApprove && inReview ? "secondary" : "primary"} onClick={() => setHandover("atual")}>
+              <ArrowRightCircle aria-hidden />
+              Passar adiante
+            </Button>
+          ) : null}
+          {canApprove && pauta.status === "aprovado" ? (
+            <Button type="button" variant="secondary" onClick={() => setHandover("reajuste")}>
+              <RotateCcw aria-hidden />
+              Reabrir
+            </Button>
+          ) : null}
+          {canEditAll ? (
+            <Button type="button" variant="secondary" onClick={() => setEditing(true)}>
+              <Pencil aria-hidden />
+              Editar
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -617,8 +620,8 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
           <ul className="flex flex-wrap gap-2" aria-label="Responsáveis">
             {members.map((member) => (
               <li key={`${member.profile_id}-${member.production_function}`}>
-                <Badge variant="muted">
-                  <UserAvatar name={member.profile?.full_name ?? "—"} src={member.profile?.avatar_url ?? null} profileId={member.profile_id} className="size-4" />
+                <Badge variant="muted" className="gap-2 py-1 pl-1.5">
+                  <UserAvatar name={member.profile?.full_name ?? "—"} src={member.profile?.avatar_url ?? null} profileId={member.profile_id} className="size-5" />
                   {member.profile?.full_name} · {FUNCTION_LABELS[member.production_function]}
                 </Badge>
               </li>
@@ -704,8 +707,16 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
         Criada {pauta.created_by_name ? `por ${pauta.created_by_name} ` : ""}em {formatDateTime(pauta.created_at!)}. Código {pauta.code}.
       </p>
 
-      {handoverOpen ? (
-        <HandoverDialog pauta={pauta} members={options.members} open={handoverOpen} onOpenChange={setHandoverOpen} onDone={onChanged} />
+      {handover ? (
+        <HandoverDialog
+          pauta={pauta}
+          members={options.members}
+          open
+          onOpenChange={(next) => !next && setHandover(null)}
+          onDone={onChanged}
+          initialStatus={handover === "atual" ? undefined : handover}
+          canApprove={canApprove}
+        />
       ) : null}
     </div>
   );

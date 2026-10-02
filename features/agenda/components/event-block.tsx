@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 function describe(event: AgendaEvent): string {
   if (event.busyOnly) return `Ocupado — ${event.ownerName}, ${eventTimeLabel(event)}`;
-  return `${event.title}, ${eventTimeLabel(event)}, ${COMMITMENT_KIND_LABELS[event.kind]}${event.source === "pauta" ? ", pauta" : ""}`;
+  return `${event.title}, ${eventTimeLabel(event)}, ${COMMITMENT_KIND_LABELS[event.kind]}${event.source === "pauta" ? ", pauta" : event.source === "google" ? ", Google Agenda" : ""}`;
 }
 
 interface EventBlockProps {

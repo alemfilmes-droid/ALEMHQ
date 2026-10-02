@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, Building, CalendarSync, ChevronRight, Lock, Moon, User } from "lucide-react";
+import { Bell, Building, ChevronRight, Moon, User } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AvatarUploader } from "@/components/profile/avatar-uploader";
 import { ProfileForm } from "@/components/profile/profile-form";
@@ -12,7 +12,10 @@ import { listCommissionRules } from "@/features/crm/queries";
 import { CompanySettingsForm } from "@/features/settings/components/company-settings-form";
 import { NotificationPreferencesForm } from "@/features/settings/components/notification-preferences-form";
 import { getCompanySettings, getNotificationPreferences } from "@/features/settings/queries";
+import { GoogleCalendarSettings } from "@/features/google/components/google-calendar-settings";
 import { hasCapability } from "@/lib/auth/permissions";
+import { googleConfigured } from "@/lib/google/calendar.server";
+import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Configurações" };
@@ -24,14 +27,23 @@ const SECTIONS = [
   { id: "google-agenda", label: "Google Agenda" },
 ] as const;
 
-export default async function SettingsPage() {
+type SearchParams = Promise<{ google?: string }>;
+
+export default async function SettingsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
+  const params = await searchParams;
   const canManageCompany = hasCapability(profile, "manageCompany");
-  const [preferences, company, commissionRules] = await Promise.all([
+  const supabase = await createClient();
+  const [preferences, company, commissionRules, googleResult] = await Promise.all([
     getNotificationPreferences(profile.id),
     canManageCompany ? getCompanySettings() : Promise.resolve(null),
     canManageCompany ? listCommissionRules() : Promise.resolve([]),
+    supabase.rpc("my_google_account"),
   ]);
+  const googleRow = googleResult.data?.[0];
+  const googleAccount = googleRow
+    ? { email: googleRow.google_email ?? null, connectedAt: googleRow.connected_at, lastSyncAt: googleRow.last_sync_at ?? null, lastError: googleRow.last_error ?? null }
+    : null;
   const sections = canManageCompany ? [...SECTIONS, { id: "empresa", label: "Empresa" } as const] : SECTIONS;
 
   return (
@@ -93,40 +105,7 @@ export default async function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/*
-            Reservado para a sincronização com o Google Agenda, que será ligada DEPOIS da configuração do
-            domínio de produção (o OAuth exige o domínio). O banco já tem as colunas (commitments.
-            google_event_id, google_calendar_id, google_sync_status) — nenhum código de OAuth existe ainda.
-          */}
-          <section id="google-agenda" aria-labelledby="google-agenda-title" className="scroll-mt-24 rounded-lg border border-dashed border-border-strong bg-surface p-6 opacity-80">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border-strong bg-surface-raised">
-                <CalendarSync className="size-4 text-muted-foreground" aria-hidden />
-              </span>
-              <div className="flex-1 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 id="google-agenda-title" className="section-title">
-                    Google Agenda — conectar
-                  </h2>
-                  <Badge variant="outline">Disponível após a configuração do domínio</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Cada pessoa vai conectar a própria conta Google. Os compromissos do Além HQ (reuniões, captações, entregas e pautas agendadas) passam
-                  a aparecer na sua agenda do Google, e as mudanças feitas lá voltam para cá. A conexão é liberada assim que o domínio de produção
-                  estiver configurado.
-                </p>
-                <ul className="list-disc space-y-1 pl-5 text-[13px] text-subtle">
-                  <li>A conexão é individual: ninguém conecta a conta de outra pessoa.</li>
-                  <li>Compromissos privados continuam aparecendo como “Ocupado” para o resto da equipe.</li>
-                  <li>Você pode desconectar a qualquer momento.</li>
-                </ul>
-              </div>
-              <Button variant="secondary" disabled className="shrink-0">
-                <Lock aria-hidden />
-                Conectar conta Google
-              </Button>
-            </div>
-          </section>
+          <GoogleCalendarSettings account={googleAccount} configured={googleConfigured()} result={params.google} />
 
           {canManageCompany && company ? (
             <div id="empresa" className="grid scroll-mt-24 gap-6">
