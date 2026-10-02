@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarRange, Coins, Gauge, Hourglass, TrendingUp, Wallet } from "lucide-react";
+import { CalendarRange, Coins, Gauge, Handshake, Hourglass, TrendingUp, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
@@ -48,6 +48,8 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
   const gapDays = dailyTarget > 0 ? Math.round(pace.gap / dailyTarget) : 0;
   const isActive = goal.status === "ativa";
   const approved = goal.status === "aprovada";
+  const contracts = goal.commissionMode === "contratos_fechados";
+  const belowMin = contracts && goal.lockedRate == null && percent < goal.minAchievementPct;
 
   const paceNote = !isActive
     ? undefined
@@ -171,9 +173,39 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
           <Card variant="static">
             <CardHeading icon={Coins} tone="alert" title="Comissão" sensitive />
             <CardContent className="space-y-4">
+              {contracts ? (
+                <div className={`rounded-md border p-3 text-[13px] ${belowMin ? "border-[var(--status-warning)]" : "border-border"}`}>
+                  {goal.lockedRate != null ? (
+                    <p>
+                      Taxa travada na aprovação: <strong>{pct.format(goal.lockedRate)}%</strong> sobre cada contrato fechado das contas da meta —
+                      inclusive os que fecharem daqui em diante (o pagamento sai sozinho).
+                    </p>
+                  ) : belowMin ? (
+                    <p>
+                      <strong>Abaixo do mínimo ({pct.format(goal.minAchievementPct)}%):</strong> mesmo que o cliente feche, a comissão é só a fixa de{" "}
+                      <strong>{pct.format(goal.fallbackRate)}%</strong>. Batendo o mínimo, sobe para <strong>{pct.format(goal.commissionRate)}%</strong>.
+                    </p>
+                  ) : (
+                    <p>
+                      Mínimo batido: <strong>{pct.format(goal.commissionRate)}%</strong> sobre cada contrato fechado das contas da meta.
+                    </p>
+                  )}
+                </div>
+              ) : null}
               <MetricGrid min="8rem">
-                {approved ? (
+                {contracts ? (
+                  <Metric
+                    label="Contratos fechados"
+                    icon={Handshake}
+                    value={goal.closedValue}
+                    format="cents"
+                    note={`${goal.closedCount} ${goal.closedCount === 1 ? "contrato" : "contratos"} das contas da meta`}
+                  />
+                ) : null}
+                {approved && !contracts ? (
                   <Metric label="Comissão final" icon={Wallet} value={goal.finalCommission ?? 0} format="cents" tone="success" />
+                ) : approved ? (
+                  <Metric label="Comissão" icon={Wallet} value={goal.commissionConfirmed} format="cents" tone="success" />
                 ) : (
                   <>
                     <Metric label="Confirmada" icon={Wallet} value={goal.commissionConfirmed} format="cents" tone={goal.commissionConfirmed > 0 ? "success" : undefined} />

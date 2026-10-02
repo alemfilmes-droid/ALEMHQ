@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseMoneyToCents } from "@/features/finance/money";
-import { BANK_ACCOUNT_TYPES, GOAL_METRICS, PAYOUT_METHODS, PIX_KEY_TYPES } from "@/features/goals/types";
+import { BANK_ACCOUNT_TYPES, DEAL_METRICS, GOAL_METRICS, PAYOUT_METHODS, PIX_KEY_TYPES } from "@/features/goals/types";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.");
 
@@ -35,8 +35,10 @@ export const goalSchema = z
     target: positiveNumber("Informe o alvo."),
     startsOn: isoDate,
     endsOn: isoDate,
-    commissionMode: z.enum(["percentual", "por_unidade"]),
+    commissionMode: z.enum(["percentual", "por_unidade", "contratos_fechados"]),
     commissionRate: nonNegativeNumber,
+    /** contratos_fechados: % pago abaixo do mínimo (comissão fixa). */
+    fallbackRate: nonNegativeNumber,
     minAchievementPct: z
       .string()
       .trim()
@@ -51,7 +53,16 @@ export const goalSchema = z
     message: "Percentual só vale para metas em R$. Use valor por unidade.",
     path: ["commissionMode"],
   })
-  .refine((values) => values.commissionMode !== "percentual" || (parseHundredths(values.commissionRate || "0") ?? 0) <= 10000, {
+  .refine((values) => values.commissionMode !== "contratos_fechados" || DEAL_METRICS.includes(values.metric), {
+    message: "Contratos fechados valem para metas de negócios, reuniões ou vendas fechadas.",
+    path: ["commissionMode"],
+  })
+  .refine((values) => values.commissionMode !== "contratos_fechados" || values.autoFromCrm, {
+    message: "Ligue “Alimentar pelo CRM”: cada conta lançada precisa ser um negócio do CRM.",
+    path: ["autoFromCrm"],
+  })
+  .refine((values) => (parseHundredths(values.fallbackRate || "0") ?? 0) <= 10000, { message: "Use de 0 a 100%.", path: ["fallbackRate"] })
+  .refine((values) => values.commissionMode === "por_unidade" || (parseHundredths(values.commissionRate || "0") ?? 0) <= 10000, {
     message: "Use de 0 a 100%.",
     path: ["commissionRate"],
   })

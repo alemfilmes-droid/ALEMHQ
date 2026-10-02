@@ -6,7 +6,7 @@ import { CARD_LINK_CLASS, CardIcon } from "@/components/ui/card";
 import { Money } from "@/components/ui/money";
 import { StatusDot } from "@/components/ui/status-dot";
 import { GoalProgressBar } from "@/features/goals/components/goal-progress-bar";
-import { formatGoalValue, goalPace, percentOf } from "@/features/goals/progress";
+import { contractRate, formatGoalValue, goalPace, percentOf } from "@/features/goals/progress";
 import { GOAL_METRIC_LABELS, GOAL_STATUS_LABELS, GOAL_STATUS_TONE, type GoalItem } from "@/features/goals/types";
 import { todayInAppZone } from "@/lib/calendar";
 import { formatDateShort } from "@/lib/format";
@@ -49,6 +49,14 @@ export function GoalCard({ goal, showOwner = false, highlight = false, className
   const pace = goal.status === "ativa" ? goalPace(goal, today) : null;
   const percent = percentOf(goal.approved, goal.target);
   const commissionReleased = percent >= goal.minAchievementPct;
+  const contracts = goal.commissionMode === "contratos_fechados";
+  const commissionLabel = contracts
+    ? `${goal.closedCount} ${goal.closedCount === 1 ? "contrato fechado" : "contratos fechados"} · ${pct.format(contractRate(goal, goal.approved))}%${
+        commissionReleased || goal.lockedRate != null ? "" : " (abaixo do mínimo)"
+      }`
+    : commissionReleased
+      ? "Comissão confirmada"
+      : `Comissão a partir de ${pct.format(goal.minAchievementPct)}%`;
 
   return (
     <Link
@@ -102,9 +110,9 @@ export function GoalCard({ goal, showOwner = false, highlight = false, className
 
       <div className="mt-auto flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-t border-border pt-3 text-[13px]">
         <div className="space-y-0.5">
-          <p className="text-[12px] font-semibold text-muted-foreground">{commissionReleased ? "Comissão confirmada" : `Comissão a partir de ${pct.format(goal.minAchievementPct)}%`}</p>
+          <p className="text-[12px] font-semibold text-muted-foreground">{commissionLabel}</p>
           <p className="font-bold">
-            <Money cents={goal.status === "aprovada" ? goal.finalCommission ?? 0 : goal.commissionConfirmed} />
+            <Money cents={goal.status === "aprovada" && !contracts ? goal.finalCommission ?? 0 : goal.commissionConfirmed} />
             {goal.commissionPotential > goal.commissionConfirmed && goal.status !== "aprovada" ? (
               <span className="ml-2 font-semibold text-muted-foreground">
                 + <Money cents={goal.commissionPotential - goal.commissionConfirmed} /> a confirmar

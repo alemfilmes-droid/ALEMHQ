@@ -62,6 +62,7 @@ function goalRow(values: GoalValues) {
     ends_on: values.endsOn,
     commission_mode: values.commissionMode,
     commission_rate: hundredthsToNumber(values.commissionRate || "0"),
+    fallback_rate: hundredthsToNumber(values.fallbackRate || "0"),
     min_achievement_pct: hundredthsToNumber(values.minAchievementPct || "0"),
     auto_from_crm: values.metric !== "personalizada" && values.autoFromCrm,
   } satisfies Tables["goals"]["Update"];

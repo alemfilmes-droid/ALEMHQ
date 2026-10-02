@@ -17,7 +17,7 @@ import { centsToInput, formatCents } from "@/features/finance/money";
 import { saveGoalAction } from "@/features/goals/actions";
 import { goalCommission } from "@/features/goals/progress";
 import { goalSchema, parseHundredths, type GoalValues } from "@/features/goals/schemas";
-import { COMMISSION_MODE_LABELS, CRM_METRICS, GOAL_METRICS, GOAL_METRIC_LABELS, type GoalItem } from "@/features/goals/types";
+import { COMMISSION_MODE_LABELS, CRM_METRICS, DEAL_METRICS, GOAL_METRICS, GOAL_METRIC_LABELS, type GoalItem } from "@/features/goals/types";
 import { addDays, addMonths, startOfMonth, todayInAppZone } from "@/lib/calendar";
 
 interface GoalFormDialogProps {
@@ -41,7 +41,8 @@ function defaults(goal?: GoalItem): GoalValues {
       startsOn: goal.startsOn,
       endsOn: goal.endsOn,
       commissionMode: goal.commissionMode,
-      commissionRate: goal.commissionMode === "percentual" ? decimal.format(goal.commissionRate) : centsToInput(goal.commissionRate),
+      commissionRate: goal.commissionMode === "por_unidade" ? centsToInput(goal.commissionRate) : decimal.format(goal.commissionRate),
+      fallbackRate: decimal.format(goal.fallbackRate),
       minAchievementPct: decimal.format(goal.minAchievementPct),
       autoFromCrm: goal.autoFromCrm,
     };
@@ -59,6 +60,7 @@ function defaults(goal?: GoalItem): GoalValues {
     endsOn: addDays(addMonths(monthStart, 1), -1),
     commissionMode: "percentual",
     commissionRate: "",
+    fallbackRate: "3",
     minAchievementPct: "70",
     autoFromCrm: true,
   };
@@ -76,18 +78,21 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
     formState: { errors },
   } = useForm<GoalValues>({ resolver: zodResolver(goalSchema), defaultValues: defaults(goal) });
 
-  const [metric, isMoney, mode, target, rate, minPct] = useWatch({
+  const [metric, isMoney, mode, target, rate, minPct, fallback] = useWatch({
     control,
-    name: ["metric", "isMoney", "commissionMode", "target", "commissionRate", "minAchievementPct"],
+    name: ["metric", "isMoney", "commissionMode", "target", "commissionRate", "minAchievementPct", "fallbackRate"],
   });
   const money = metric === "vendas_valor" || (metric === "personalizada" && isMoney);
   const crmCapable = CRM_METRICS.includes(metric);
+  const dealMetric = DEAL_METRICS.includes(metric);
+  const contracts = mode === "contratos_fechados";
+  const fallbackH = parseHundredths(fallback || "") ?? 0;
 
   // Simulação: comissão no gatilho e em 100% (centésimos).
   const targetH = parseHundredths(target || "") ?? 0;
   const rateH = parseHundredths(rate || "") ?? 0;
   const minH = parseHundredths(minPct || "") ?? 0;
-  const rateForCalc = mode === "percentual" ? rateH / 100 : rateH;
+  const rateForCalc = mode === "por_unidade" ? rateH : rateH / 100;
   const atMin = goalCommission(rateForCalc, minH / 100, targetH, Math.ceil((targetH * minH) / 10000));
   const atFull = goalCommission(rateForCalc, minH / 100, targetH, targetH);
 
@@ -133,8 +138,12 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
                 {...register("metric", {
                   onChange: (event) => {
                     const next = event.target.value as GoalValues["metric"];
-                    if (next !== "vendas_valor" && !(next === "personalizada" && isMoney)) setValue("commissionMode", "por_unidade");
-                    if (next === "vendas_valor") setValue("commissionMode", "percentual");
+                    if (DEAL_METRICS.includes(next)) {
+                      // Contas/reuniões: o padrão é pagar sobre os contratos que fecharem (garante margem).
+                      setValue("commissionMode", "contratos_fechados");
+                      setValue("autoFromCrm", true);
+                    } else if (next === "vendas_valor") setValue("commissionMode", "percentual");
+                    else if (!(next === "personalizada" && isMoney)) setValue("commissionMode", "por_unidade");
                   },
                 })}
               >
@@ -198,15 +207,35 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
                     {COMMISSION_MODE_LABELS.percentual}
                   </option>
                   <option value="por_unidade">{COMMISSION_MODE_LABELS.por_unidade}</option>
+                  <option value="contratos_fechados" disabled={!dealMetric}>
+                    {COMMISSION_MODE_LABELS.contratos_fechados}
+                  </option>
                 </NativeSelect>
               </FormField>
-              <FormField id="meta-taxa" label={mode === "percentual" ? "Percentual (%)" : "Valor por unidade (R$)"} error={errors.commissionRate?.message}>
-                <Input id="meta-taxa" inputMode="decimal" placeholder={mode === "percentual" ? "5" : "30,00"} aria-invalid={!!errors.commissionRate} {...register("commissionRate")} />
+              <FormField
+                id="meta-taxa"
+                label={contracts ? "Bateu o mínimo (%)" : mode === "percentual" ? "Percentual (%)" : "Valor por unidade (R$)"}
+                error={errors.commissionRate?.message}
+              >
+                <Input id="meta-taxa" inputMode="decimal" placeholder={mode === "por_unidade" ? "30,00" : "5"} aria-invalid={!!errors.commissionRate} {...register("commissionRate")} />
               </FormField>
               <FormField id="meta-gatilho" label="Paga a partir de (%)" error={errors.minAchievementPct?.message}>
                 <Input id="meta-gatilho" inputMode="decimal" aria-invalid={!!errors.minAchievementPct} {...register("minAchievementPct")} />
               </FormField>
             </div>
+            {contracts ? (
+              <FormField id="meta-fixa" label="Abaixo do mínimo, paga só (%)" hint="A comissão fixa padrão do CRM." error={errors.fallbackRate?.message} className="sm:max-w-[12rem]">
+                <Input id="meta-fixa" inputMode="decimal" aria-invalid={!!errors.fallbackRate} {...register("fallbackRate")} />
+              </FormField>
+            ) : null}
+            {contracts ? (
+              <p className="text-[13px] text-muted-foreground">
+                A barra mede as contas cadastradas, mas a comissão é sobre os <strong className="text-foreground">contratos que fecharem</strong> dessas
+                contas — inclusive depois do fim da meta. Bateu {decimal.format(minH / 100)}% da meta:{" "}
+                <strong className="text-foreground">{decimal.format(rateH / 100)}%</strong> sobre cada contrato. Abaixo disso: só{" "}
+                <strong className="text-foreground">{decimal.format(fallbackH / 100)}%</strong>, mesmo que o cliente feche.
+              </p>
+            ) : (
             <p className="text-[13px] text-muted-foreground">
               Abaixo de {decimal.format(minH / 100)}% da meta não há comissão. A partir daí, paga proporcional ao atingido
               {targetH > 0 && rateH > 0 ? (
@@ -218,6 +247,7 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
                 "."
               )}
             </p>
+            )}
           </fieldset>
 
           {crmCapable ? (
@@ -226,7 +256,7 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
               name="autoFromCrm"
               render={({ field }) => (
                 <div className="flex items-start gap-3">
-                  <Switch id="meta-crm" checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" />
+                  <Switch id="meta-crm" checked={field.value} onCheckedChange={field.onChange} disabled={contracts && field.value} className="mt-0.5" />
                   <Label htmlFor="meta-crm" className="font-normal leading-snug">
                     Alimentar pelo CRM
                     <span className="block text-[13px] text-muted-foreground">

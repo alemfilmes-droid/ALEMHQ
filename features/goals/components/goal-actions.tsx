@@ -14,7 +14,7 @@ import { Money } from "@/components/ui/money";
 import { formatCents } from "@/features/finance/money";
 import { approveGoalAction, deleteGoalAction, setGoalStatusAction, syncGoalAction } from "@/features/goals/actions";
 import { GoalFormDialog } from "@/features/goals/components/goal-form-dialog";
-import { formatGoalValue, percentOf } from "@/features/goals/progress";
+import { contractRate, formatGoalValue, percentOf } from "@/features/goals/progress";
 import type { GoalItem } from "@/features/goals/types";
 import { addMonths, startOfMonth, todayInAppZone } from "@/lib/calendar";
 import type { ActionResult } from "@/types";
@@ -41,6 +41,8 @@ function ApproveDialog({ goal, payeeHasDetails, onOpenChange }: { goal: GoalItem
   const [pending, startTransition] = useTransition();
   const blocked = goal.pendingCount > 0;
   const percent = percentOf(goal.approved, goal.target);
+  const contracts = goal.commissionMode === "contratos_fechados";
+  const rate = contractRate(goal, goal.approved);
 
   function approve() {
     startTransition(async () => {
@@ -77,6 +79,12 @@ function ApproveDialog({ goal, payeeHasDetails, onOpenChange }: { goal: GoalItem
           </div>
         </dl>
 
+        {contracts && !blocked ? (
+          <Alert title={rate === goal.commissionRate ? `Bateu o mínimo: ${pct.format(rate)}% travados.` : `Abaixo do mínimo: só ${pct.format(rate)}% (comissão fixa).`}>
+            A taxa fica travada. {goal.closedCount > 0 ? `Os ${goal.closedCount} contratos já fechados viram pagamento agora; ` : "Nenhum contrato fechou ainda; "}
+            os que fecharem depois entram sozinhos no financeiro.
+          </Alert>
+        ) : null}
         {blocked ? (
           <Alert variant="error" title="Ainda há lançamentos a confirmar.">
             Aprove ou recuse os {goal.pendingCount} pendentes antes de fechar a meta.
@@ -92,7 +100,7 @@ function ApproveDialog({ goal, payeeHasDetails, onOpenChange }: { goal: GoalItem
               </Alert>
             ) : null}
           </>
-        ) : (
+        ) : contracts ? null : (
           <Alert title="Sem comissão a pagar.">
             Ficou abaixo de {pct.format(goal.minAchievementPct)}% da meta. A meta é fechada sem gerar pagamento.
           </Alert>

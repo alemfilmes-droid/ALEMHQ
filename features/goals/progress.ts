@@ -12,6 +12,15 @@ export function goalCommission(rate: number, minPct: number, target: number, ach
   return Math.round((achieved * rate) / 100);
 }
 
+/**
+ * Comissão sobre contratos fechados: a taxa da meta se bater o mínimo, senão a fixa (fallback).
+ * Depois da aprovação vale a taxa travada. Espelha goal_contract_rate() no banco.
+ */
+export function contractRate(goal: Pick<GoalItem, "commissionRate" | "fallbackRate" | "lockedRate" | "minAchievementPct" | "target">, achieved: number): number {
+  if (goal.lockedRate != null) return goal.lockedRate;
+  return goal.target > 0 && (achieved * 100) / goal.target >= goal.minAchievementPct ? goal.commissionRate : goal.fallbackRate;
+}
+
 export function percentOf(value: number, target: number): number {
   return target > 0 ? (value * 100) / target : 0;
 }
@@ -54,7 +63,11 @@ export function goalPace(goal: GoalItem, today: string): GoalPace {
     gap: goal.approved - expected,
     perDayNeeded: daysLeft > 0 ? Math.ceil(remaining / daysLeft) : remaining,
     projected,
-    projectedCommission: goalCommission(goal.commissionRate, goal.minAchievementPct, goal.target, projected),
+    // Contratos: a projeção é a taxa que a meta alcançaria no ritmo atual sobre o que já fechou.
+    projectedCommission:
+      goal.commissionMode === "contratos_fechados"
+        ? Math.round((goal.closedValuePotential * contractRate(goal, projected)) / 100)
+        : goalCommission(goal.commissionRate, goal.minAchievementPct, goal.target, projected),
   };
 }
 
@@ -68,7 +81,10 @@ export function formatGoalValue(goal: Pick<GoalItem, "isMoney" | "metric" | "uni
   return withUnit && unit ? `${text} ${unit}` : text;
 }
 
-export function formatCommissionRule(goal: Pick<GoalItem, "commissionMode" | "commissionRate" | "minAchievementPct">): string {
+export function formatCommissionRule(goal: Pick<GoalItem, "commissionMode" | "commissionRate" | "minAchievementPct" | "fallbackRate">): string {
+  if (goal.commissionMode === "contratos_fechados") {
+    return `${qty.format(goal.commissionRate)}% sobre os contratos fechados das contas da meta se bater ${qty.format(goal.minAchievementPct)}%; abaixo disso, só a comissão fixa de ${qty.format(goal.fallbackRate)}%`;
+  }
   const rate =
     goal.commissionMode === "percentual" ? `${qty.format(goal.commissionRate)}% sobre o atingido` : `${formatCents(goal.commissionRate)} por unidade`;
   return `${rate}, a partir de ${qty.format(goal.minAchievementPct)}% da meta`;

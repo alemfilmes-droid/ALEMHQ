@@ -38,6 +38,9 @@ export const GOAL_METRIC_UNITS: Record<GoalMetric, string> = {
   personalizada: "",
 };
 
+/** Métricas em que cada lançamento é um negócio do CRM — as que aceitam comissão sobre contratos. */
+export const DEAL_METRICS: readonly GoalMetric[] = ["novos_negocios", "reunioes_agendadas", "reunioes_realizadas", "vendas_quantidade"];
+
 /** Métricas que o CRM consegue alimentar sozinho. */
 export const CRM_METRICS: readonly GoalMetric[] = ["vendas_valor", "vendas_quantidade", "reunioes_agendadas", "reunioes_realizadas", "novos_negocios"];
 
@@ -58,6 +61,7 @@ export const GOAL_STATUS_TONE: Record<GoalStatus, StatusTone> = {
 export const COMMISSION_MODE_LABELS: Record<GoalCommissionMode, string> = {
   percentual: "% sobre o valor atingido",
   por_unidade: "R$ por unidade atingida",
+  contratos_fechados: "% sobre contratos fechados",
 };
 
 export const ENTRY_STATUS_LABELS: Record<GoalEntryStatus, string> = {
@@ -114,14 +118,23 @@ export interface GoalItem {
   startsOn: string;
   endsOn: string;
   commissionMode: GoalCommissionMode;
-  /** percentual: 0–100. por_unidade: centavos por unidade. */
+  /** percentual/contratos_fechados: 0–100. por_unidade: centavos por unidade. */
   commissionRate: number;
+  /** contratos_fechados: % pago abaixo do mínimo (a comissão fixa padrão). */
+  fallbackRate: number;
+  /** contratos_fechados: taxa travada na aprovação. */
+  lockedRate: number | null;
   minAchievementPct: number;
   autoFromCrm: boolean;
   status: GoalStatus;
   approved: number;
   pending: number;
   pendingCount: number;
+  /** contratos_fechados: valor (centavos) e quantidade dos contratos fechados das contas aprovadas. */
+  closedValue: number;
+  closedCount: number;
+  /** Idem, contando também os lançamentos a confirmar. */
+  closedValuePotential: number;
   commissionConfirmed: number;
   commissionPotential: number;
   approvedAt: string | null;

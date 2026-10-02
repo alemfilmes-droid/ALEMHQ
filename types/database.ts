@@ -1575,6 +1575,96 @@ export type Database = {
           },
         ]
       }
+      goal_contract_payouts: {
+        Row: {
+          amount: number
+          contract_value: number
+          created_at: string
+          deal_id: string
+          goal_id: string
+          id: string
+          payable_id: string | null
+          rate: number
+        }
+        Insert: {
+          amount: number
+          contract_value: number
+          created_at?: string
+          deal_id: string
+          goal_id: string
+          id?: string
+          payable_id?: string | null
+          rate: number
+        }
+        Update: {
+          amount?: number
+          contract_value?: number
+          created_at?: string
+          deal_id?: string
+          goal_id?: string
+          id?: string
+          payable_id?: string | null
+          rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contract_payouts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contract_payouts_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_entries: {
         Row: {
           amount: number
@@ -1700,10 +1790,12 @@ export type Database = {
           created_by: string | null
           description: string | null
           ends_on: string
+          fallback_rate: number
           final_achieved: number | null
           final_commission: number | null
           id: string
           is_money: boolean
+          locked_rate: number | null
           metric: Database["public"]["Enums"]["goal_metric"]
           milestones_notified: number[]
           min_achievement_pct: number
@@ -1726,10 +1818,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           ends_on: string
+          fallback_rate?: number
           final_achieved?: number | null
           final_commission?: number | null
           id?: string
           is_money?: boolean
+          locked_rate?: number | null
           metric: Database["public"]["Enums"]["goal_metric"]
           milestones_notified?: number[]
           min_achievement_pct?: number
@@ -1752,10 +1846,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           ends_on?: string
+          fallback_rate?: number
           final_achieved?: number | null
           final_commission?: number | null
           id?: string
           is_money?: boolean
+          locked_rate?: number | null
           metric?: Database["public"]["Enums"]["goal_metric"]
           milestones_notified?: number[]
           min_achievement_pct?: number
@@ -3823,6 +3919,9 @@ export type Database = {
           approved_by: string | null
           approved_value: number | null
           auto_from_crm: boolean | null
+          closed_count: number | null
+          closed_value: number | null
+          closed_value_potential: number | null
           commission_confirmed: number | null
           commission_mode:
             | Database["public"]["Enums"]["goal_commission_mode"]
@@ -3833,10 +3932,12 @@ export type Database = {
           created_by: string | null
           description: string | null
           ends_on: string | null
+          fallback_rate: number | null
           final_achieved: number | null
           final_commission: number | null
           id: string | null
           is_money: boolean | null
+          locked_rate: number | null
           metric: Database["public"]["Enums"]["goal_metric"] | null
           milestones_notified: number[] | null
           min_achievement_pct: number | null
@@ -4806,11 +4907,29 @@ export type Database = {
         Returns: string
       }
       goal_check_milestones: { Args: { p_goal_id: string }; Returns: undefined }
+      goal_closed_contracts: {
+        Args: { p_goal_id: string; p_include_pending: boolean }
+        Returns: {
+          contract_value: number
+          deal_id: string
+        }[]
+      }
       goal_commission: {
         Args: {
           p_achieved: number
           p_min_pct: number
           p_mode: Database["public"]["Enums"]["goal_commission_mode"]
+          p_rate: number
+          p_target: number
+        }
+        Returns: number
+      }
+      goal_contract_rate: {
+        Args: {
+          p_achieved: number
+          p_fallback: number
+          p_locked: number
+          p_min_pct: number
           p_rate: number
           p_target: number
         }
@@ -4829,6 +4948,10 @@ export type Database = {
       goal_deal_value: { Args: { p_deal_id: string }; Returns: number }
       goal_fmt: {
         Args: { p_is_money: boolean; p_value: number }
+        Returns: string
+      }
+      goal_pay_contracts: {
+        Args: { p_due_date: string; p_goal_id: string }
         Returns: string
       }
       goal_reviewers: { Args: { p_goal_id: string }; Returns: string[] }
@@ -5219,7 +5342,7 @@ export type Database = {
         | "enviar_material"
         | "aguardar_retorno"
         | "descartar"
-      goal_commission_mode: "percentual" | "por_unidade"
+      goal_commission_mode: "percentual" | "por_unidade" | "contratos_fechados"
       goal_entry_source: "manual" | "crm"
       goal_entry_status: "pendente" | "aprovado" | "recusado"
       goal_metric:
@@ -5580,7 +5703,7 @@ export const Constants = {
         "aguardar_retorno",
         "descartar",
       ],
-      goal_commission_mode: ["percentual", "por_unidade"],
+      goal_commission_mode: ["percentual", "por_unidade", "contratos_fechados"],
       goal_entry_source: ["manual", "crm"],
       goal_entry_status: ["pendente", "aprovado", "recusado"],
       goal_metric: [
