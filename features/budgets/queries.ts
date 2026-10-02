@@ -1,5 +1,5 @@
 import "server-only";
-import { parsePresentation, parseProposalProfile, type BudgetRecord, type BudgetStatus, type CatalogItem, type ProposalProfile } from "@/features/budgets/types";
+import { parseDeliverables, parsePresentation, parseProposalProfile, type BudgetRecord, type BudgetStatus, type CatalogItem, type ProposalProfile } from "@/features/budgets/types";
 import { computeBudget, type BudgetLineInput } from "@/features/budgets/pricing";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,6 +18,7 @@ export interface BudgetListItem {
   decidedAt: string | null;
   statusNote: string | null;
   status: BudgetStatus;
+  archivedAt: string | null;
   total: number;
   marginPct: number;
 }
@@ -36,16 +37,18 @@ function toLines(items: ItemRow[]): BudgetLineInput[] {
   }));
 }
 
-export async function listBudgets(): Promise<BudgetListItem[]> {
+/** Lista de orçamentos: os ativos, ou só os arquivados. Mais recentes primeiro (o número é aleatório). */
+export async function listBudgets(archived = false): Promise<BudgetListItem[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("budgets")
     .select(
-      "id, number, version, client_name, title, issue_date, valid_until, sent_at, decided_at, status_note, status, fee_pct, tax_pct, deal_id, project:projects(name), deal:deals(title), items:budget_items(id, section, description, unit, quantity, unit_cost, unit_price_override)",
+      "id, number, version, client_name, title, issue_date, valid_until, sent_at, decided_at, status_note, status, archived_at, fee_pct, tax_pct, deal_id, project:projects(name), deal:deals(title), items:budget_items(id, section, description, unit, quantity, unit_cost, unit_price_override)",
     )
-    .order("number", { ascending: false })
-    .order("version", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(300);
+  query = archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
+  const { data } = await query;
   return (data ?? []).map((row) => {
     const { totals } = computeBudget(toLines(row.items), Number(row.fee_pct), Number(row.tax_pct));
     return {
@@ -63,6 +66,7 @@ export async function listBudgets(): Promise<BudgetListItem[]> {
       decidedAt: row.decided_at,
       statusNote: row.status_note,
       status: row.status,
+      archivedAt: row.archived_at,
       total: totals.final,
       marginPct: totals.marginPct,
     };
@@ -89,7 +93,9 @@ export async function getBudget(id: string): Promise<BudgetRecord | null> {
     projectName: data.project?.name ?? null,
     dealId: data.deal_id,
     dealTitle: data.deal?.title ?? null,
-    deliverables: data.deliverables,
+    deliverables: parseDeliverables(data.deliverable_items),
+    deliveryTerms: data.delivery_terms ?? "",
+    archivedAt: data.archived_at,
     sentAt: data.sent_at,
     decidedAt: data.decided_at,
     statusNote: data.status_note ?? "",

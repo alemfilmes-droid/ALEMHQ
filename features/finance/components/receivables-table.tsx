@@ -4,10 +4,11 @@ import { Money } from "@/components/ui/money";
 import { useState } from "react";
 import Link from "next/link";
 import { ClientAvatar } from "@/components/companies/client-avatar";
-import { ArrowDownLeft, CheckCircle2, MoreHorizontal, Pencil, XCircle } from "lucide-react";
-import { cancelReceivableAction } from "@/features/finance/actions";
+import { ArrowDownLeft, CheckCircle2, ExternalLink, MoreHorizontal, Paperclip, Pencil, XCircle } from "lucide-react";
+import { attachReceivableInvoiceAction, cancelReceivableAction } from "@/features/finance/actions";
 import { CancelDialog } from "@/features/finance/components/cancel-dialog";
 import { CsvExportButton } from "@/features/finance/components/csv-export-button";
+import { AttachInvoiceDialog, InvoiceFileButton } from "@/features/finance/components/invoice-controls";
 import { ReceivableDialog } from "@/features/finance/components/receivable-dialog";
 import { SettleReceivableDialog } from "@/features/finance/components/settle-dialogs";
 import { DirectionIcon, StatusBadge } from "@/features/finance/components/status-badge";
@@ -18,6 +19,7 @@ import type { FinanceOptions, ReceivableItem } from "@/features/finance/types";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
+import { NFSE_EMISSOR_URL } from "@/lib/links";
 
 interface ReceivablesTableProps {
   rows: ReceivableItem[];
@@ -34,7 +36,10 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
   const [settleOpen, setSettleOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  if (item.status !== "pendente" && item.status !== "atrasado") return null;
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  if (item.status === "cancelado") return null;
+  // Nota fiscal vale antes e depois do recebimento; receber/editar/cancelar só em aberto.
+  const open = item.status === "pendente" || item.status === "atrasado";
 
   return (
     <>
@@ -45,21 +50,48 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setSettleOpen(true)}>
-            <CheckCircle2 aria-hidden />
-            Marcar como recebido
+          {open ? (
+            <DropdownMenuItem onSelect={() => setSettleOpen(true)}>
+              <CheckCircle2 aria-hidden />
+              Marcar como recebido
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem asChild>
+            <a href={NFSE_EMISSOR_URL} target="_blank" rel="noopener noreferrer">
+              <ExternalLink aria-hidden />
+              Emitir NFS-e (Emissor Nacional)
+            </a>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            <Pencil aria-hidden />
-            Editar
+          <DropdownMenuItem onSelect={() => setInvoiceOpen(true)}>
+            <Paperclip aria-hidden />
+            {item.invoiceFilePath || item.invoiceNumber ? "Trocar nota fiscal" : "Anexar nota fiscal"}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setCancelOpen(true)}>
-            <XCircle aria-hidden />
-            Cancelar
-          </DropdownMenuItem>
+          {open ? (
+            <>
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                <Pencil aria-hidden />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setCancelOpen(true)}>
+                <XCircle aria-hidden />
+                Cancelar
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {invoiceOpen ? (
+        <AttachInvoiceDialog
+          title="Nota fiscal do recebimento."
+          description={`${item.companyName} · ${item.description} · ${formatCents(item.amount)}`}
+          folder={`receivables/${item.id}`}
+          initialNumber={item.invoiceNumber}
+          hasFile={!!item.invoiceFilePath}
+          onSave={(input) => attachReceivableInvoiceAction(item.id, input)}
+          onOpenChange={setInvoiceOpen}
+        />
+      ) : null}
       {settleOpen ? <SettleReceivableDialog receivable={item} open onOpenChange={setSettleOpen} today={today} /> : null}
       {editOpen ? <ReceivableDialog mode="edit" receivable={item} options={options} today={today} open onOpenChange={setEditOpen} /> : null}
       <CancelDialog
@@ -155,7 +187,12 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
                 {compact && showProject && item.projectName ? (
                   <span className="block text-[13px] text-muted-foreground">{item.projectName}</span>
                 ) : null}
-                {item.invoiceNumber ? <span className="block text-[13px] text-muted-foreground">NF {item.invoiceNumber}</span> : null}
+                {item.invoiceNumber || item.invoiceFilePath ? (
+                  <span className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
+                    {item.invoiceNumber ? `NF ${item.invoiceNumber}` : "NF anexada"}
+                    {item.invoiceFilePath ? <InvoiceFileButton path={item.invoiceFilePath} label="abrir" size="sm" variant="link" /> : null}
+                  </span>
+                ) : null}
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">
                 <Money cents={item.status === "recebido" && item.receivedAmount != null ? item.receivedAmount : item.amount} />

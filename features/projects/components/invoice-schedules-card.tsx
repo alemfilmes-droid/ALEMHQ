@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { FileCheck2, Plus, Receipt, Trash2 } from "lucide-react";
+import { FileCheck2, Paperclip, Plus, Receipt, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createInvoiceScheduleAction, deleteInvoiceScheduleAction, markInvoiceIssuedAction, type InvoiceScheduleValues } from "@/features/projects/invoice-actions";
+import { AttachInvoiceDialog, InvoiceFileButton, NfseEmitButton } from "@/features/finance/components/invoice-controls";
+import {
+  attachIssuanceFileAction,
+  createInvoiceScheduleAction,
+  deleteInvoiceScheduleAction,
+  markInvoiceIssuedAction,
+  type InvoiceScheduleValues,
+} from "@/features/projects/invoice-actions";
 import type { InvoiceScheduleView } from "@/features/projects/invoices";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +53,7 @@ export function InvoiceSchedulesCard({ projectId, schedules, canManage, members,
     notes: "",
   });
   const [numbers, setNumbers] = useState<Record<string, string>>({});
+  const [attaching, setAttaching] = useState<InvoiceScheduleView | null>(null);
 
   function set<K extends keyof InvoiceScheduleValues>(key: K, value: InvoiceScheduleValues[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -135,6 +143,14 @@ export function InvoiceSchedulesCard({ projectId, schedules, canManage, members,
                     </p>
                   ) : null}
                   {schedule.notes ? <p className="text-[13px] text-subtle">{schedule.notes}</p> : null}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <NfseEmitButton />
+                    <Button type="button" size="sm" variant="secondary" onClick={() => setAttaching(schedule)} disabled={pending}>
+                      <Paperclip aria-hidden />
+                      {schedule.issued?.filePath ? "Trocar arquivo da nota" : "Anexar nota"}
+                    </Button>
+                    {schedule.issued?.filePath ? <InvoiceFileButton path={schedule.issued.filePath} /> : null}
+                  </div>
                   {!schedule.issued ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <Input
@@ -228,6 +244,24 @@ export function InvoiceSchedulesCard({ projectId, schedules, canManage, members,
           </div>
         ) : null}
       </CardContent>
+
+      {attaching ? (
+        <AttachInvoiceDialog
+          title="Nota fiscal do projeto."
+          description={`${whenLabel(attaching)} · emite: ${attaching.responsibleName}. Anexar já marca a nota do período como emitida.`}
+          folder={`issuances/${attaching.id}`}
+          initialNumber={attaching.issued?.number}
+          hasFile={!!attaching.issued?.filePath}
+          onSave={async ({ filePath, invoiceNumber }) => {
+            if (!filePath) {
+              if (attaching.issued) return { ok: false, error: "Escolha o arquivo da nota." };
+              return markInvoiceIssuedAction({ scheduleId: attaching.id, projectId, period: attaching.period, invoiceNumber });
+            }
+            return attachIssuanceFileAction({ scheduleId: attaching.id, projectId, period: attaching.period, filePath, invoiceNumber });
+          }}
+          onOpenChange={(next) => !next && setAttaching(null)}
+        />
+      ) : null}
     </Card>
   );
 }

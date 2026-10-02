@@ -88,3 +88,15 @@ export type CompanySettings = Tables["company_settings"]["Row"];
 export type UserSettings = Tables["user_settings"]["Row"];
 export type CostScope = Database["public"]["Enums"]["cost_scope"];
 export type Freelancer = Tables["freelancers"]["Row"];
+
+export type Goal = Tables["goals"]["Row"];
+export type GoalWithProgress = Database["public"]["Views"]["goals_with_progress"]["Row"];
+export type GoalEntry = Tables["goal_entries"]["Row"];
+export type GoalMetric = Database["public"]["Enums"]["goal_metric"];
+export type GoalStatus = Database["public"]["Enums"]["goal_status"];
+export type GoalCommissionMode = Database["public"]["Enums"]["goal_commission_mode"];
+export type GoalEntryStatus = Database["public"]["Enums"]["goal_entry_status"];
+export type GoalEntrySource = Database["public"]["Enums"]["goal_entry_source"];
+export type PaymentDetails = Tables["payment_details"]["Row"];
+export type PixKeyType = Database["public"]["Enums"]["pix_key_type"];
+export type BankAccountType = Database["public"]["Enums"]["bank_account_type"];

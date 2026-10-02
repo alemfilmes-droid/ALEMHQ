@@ -11,7 +11,7 @@ function quantity(value: number) {
 
 /**
  * Nota de orçamento (visão do cliente): IDV da Além, itens com quantidade e valor, total, condições
- * e validade, além das entregas para o cliente conferir. Mostra valor do serviço, imposto e valor
+ * e validade, além das entregas (com prazo) logo no início para o cliente conferir. Mostra valor do serviço, imposto e valor
  * final; nunca custos internos ou margem.
  */
 export function BudgetNote({ budget, profile }: { budget: BudgetRecord; profile: ProposalProfile }) {
@@ -60,6 +60,41 @@ export function BudgetNote({ budget, profile }: { budget: BudgetRecord; profile:
           ) : null}
         </div>
       </section>
+
+      {budget.deliverables.length > 0 || budget.deliveryTerms ? (
+        <section className="break-inside-avoid px-12 pt-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>
+            O que você recebe
+          </p>
+          {budget.deliverables.length > 0 ? (
+            <table className="mt-3 w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b-2 border-[#141414] text-left text-[11px] uppercase tracking-[0.12em] text-[#555]">
+                  <th className="w-10 py-2 font-bold">#</th>
+                  <th className="py-2 font-bold">Entrega</th>
+                  <th className="w-[38%] py-2 font-bold">Prazo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {budget.deliverables.map((entry, index) => (
+                  <tr key={`${entry.item}-${index}`} className="border-b border-[#ececec] align-top">
+                    <td className="py-2.5 font-bold tabular-nums" style={{ color: accent }}>
+                      {String(index + 1).padStart(2, "0")}
+                    </td>
+                    <td className="py-2.5 pr-4 font-medium">{entry.item}</td>
+                    <td className="py-2.5 text-[#555]">{entry.deadline || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+          {budget.deliveryTerms ? (
+            <p className="mt-3 text-sm text-[#333]">
+              <strong className="text-[#141414]">Prazo de entrega:</strong> {budget.deliveryTerms}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="px-12 pt-10">
         <table className="w-full border-collapse text-sm">
@@ -117,22 +152,6 @@ export function BudgetNote({ budget, profile }: { budget: BudgetRecord; profile:
           <p className="font-display text-4xl font-black tracking-tight tabular-nums">{brl(totals.final)}</p>
         </div>
       </section>
-
-      {budget.deliverables.length > 0 ? (
-        <section className="break-inside-avoid px-12 pt-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>
-            O que você recebe
-          </p>
-          <ul className="mt-3 grid grid-cols-2 gap-x-10 gap-y-2 text-sm">
-            {budget.deliverables.map((item) => (
-              <li key={item} className="flex items-start gap-2.5 border-b border-[#ececec] pb-2">
-                <span className="mt-[7px] size-1.5 shrink-0 rounded-full" style={{ background: accent }} />
-                <span className="text-[#222]">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       <section className="grid grid-cols-2 gap-10 px-12 pb-10 pt-10 text-sm">
         <div className="space-y-2">

@@ -89,6 +89,7 @@ function mapReceivable(row: ReceivableRow): ReceivableItem | null {
     receivedAmount: row.received_amount == null ? null : toCents(row.received_amount),
     paymentMethod: row.payment_method,
     invoiceNumber: row.invoice_number,
+    invoiceFilePath: row.invoice_file_path,
     notes: row.notes,
     status,
   };

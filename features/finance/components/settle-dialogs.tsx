@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { settlePayableAction, settleReceivableAction } from "@/features/finance/actions";
 import { requestProjectFinalizeCheck } from "@/features/projects/finalize-events";
 import { MethodSelect } from "@/features/finance/components/method-select";
+import { PayeePaymentDetails } from "@/features/goals/components/payee-payment-details";
 import { centsToInput } from "@/features/finance/money";
 import {
   settlePayableSchema,
@@ -153,6 +154,7 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
           {error ? <Alert variant="error">{error}</Alert> : null}
+          {payable.payeeProfileId ? <PayeePaymentDetails profileId={payable.payeeProfileId} /> : null}
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="pay-date" label="Data do pagamento" error={errors.paidAt?.message}>
               <Input id="pay-date" type="date" {...register("paidAt")} />

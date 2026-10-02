@@ -25,6 +25,8 @@ export interface ReceivableItem {
   receivedAmount: Cents | null;
   paymentMethod: PaymentMethod | null;
   invoiceNumber: string | null;
+  /** Arquivo da nota no bucket privado "invoices" (download por link assinado). */
+  invoiceFilePath: string | null;
   notes: string | null;
   status: ReceivableStatus;
 }

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, MoreHorizontal, Pencil, XCircle } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Landmark, MoreHorizontal, Pencil, XCircle } from "lucide-react";
 import { cancelPayableAction } from "@/features/finance/actions";
 import { CancelDialog } from "@/features/finance/components/cancel-dialog";
 import { CsvExportButton } from "@/features/finance/components/csv-export-button";
 import { PayableDialog } from "@/features/finance/components/payable-dialog";
 import { SettlePayableDialog } from "@/features/finance/components/settle-dialogs";
+import { PayeePaymentDetailsDialog } from "@/features/goals/components/payee-payment-details";
 import { DirectionIcon, StatusBadge } from "@/features/finance/components/status-badge";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
 import { FIXED_VARIABLE_LABELS, PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, STATUS_LABELS } from "@/features/finance/labels";
@@ -31,6 +32,7 @@ function RowActions({ item, options, today }: { item: PayableItem; options: Fina
   const [settleOpen, setSettleOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   if (item.status !== "pendente" && item.status !== "atrasado") return null;
 
   return (
@@ -46,6 +48,12 @@ function RowActions({ item, options, today }: { item: PayableItem; options: Fina
             <CheckCircle2 aria-hidden />
             Marcar como pago
           </DropdownMenuItem>
+          {item.payeeProfileId ? (
+            <DropdownMenuItem onSelect={() => setDetailsOpen(true)}>
+              <Landmark aria-hidden />
+              Dados para pagamento
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem onSelect={() => setEditOpen(true)}>
             <Pencil aria-hidden />
             Editar
@@ -57,6 +65,9 @@ function RowActions({ item, options, today }: { item: PayableItem; options: Fina
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {detailsOpen && item.payeeProfileId ? (
+        <PayeePaymentDetailsDialog profileId={item.payeeProfileId} name={item.payeeLabel} onOpenChange={setDetailsOpen} />
+      ) : null}
       {settleOpen ? <SettlePayableDialog payable={item} open onOpenChange={setSettleOpen} today={today} /> : null}
       {editOpen ? (
         <PayableDialog mode="edit" payable={item} options={options} today={today} lockedProjectId={item.projectId ?? undefined} open onOpenChange={setEditOpen} />

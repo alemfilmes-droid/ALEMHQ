@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { AnnouncementsBoard } from "@/features/announcements/components/announcements-board";
 import { listAnnouncements } from "@/features/announcements/queries";
+import { MyGoalsHighlight } from "@/features/goals/components/home-goal-cards";
 import { ANNOUNCEMENT_TABS, ANNOUNCEMENT_TAB_LABELS, type AnnouncementTab } from "@/features/announcements/types";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
@@ -28,6 +29,13 @@ export default async function AnnouncementsPage({ searchParams }: { searchParams
         title="Avisos."
         description="Comunicados da diretoria para a equipe. Os fixados aparecem primeiro."
       />
+
+      {/* Meta ativa da pessoa em destaque no topo dos avisos (some quando não há). */}
+      {tab === "ativos" ? (
+        <div className="mb-8 grid gap-4 empty:hidden lg:grid-cols-2">
+          <MyGoalsHighlight profileId={profile.id} />
+        </div>
+      ) : null}
 
       {canManage ? (
         <div className="mb-6">

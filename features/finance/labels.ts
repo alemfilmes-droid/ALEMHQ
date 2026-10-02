@@ -4,6 +4,8 @@ export const PAYMENT_METHODS = ["pix", "boleto", "transferencia", "cartao", "din
 
 export const PAYABLE_CATEGORIES = [
   "pessoal",
+  "comissao",
+  "pro_labore",
   "freelancer",
   "equipamento",
   "locacao",
@@ -29,6 +31,8 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export const PAYABLE_CATEGORY_LABELS: Record<PayableCategory, string> = {
   pessoal: "Pessoal/Equipe",
+  comissao: "Comissão",
+  pro_labore: "Pró-labore",
   freelancer: "Freelancer",
   equipamento: "Equipamento",
   locacao: "Locação",
@@ -62,6 +66,8 @@ export const COMPANY_COST_GROUP_LABELS: Record<CompanyCostGroup, string> = {
 
 export const COMPANY_COST_GROUP_OF: Record<PayableCategory, CompanyCostGroup> = {
   pessoal: "equipe",
+  comissao: "equipe",
+  pro_labore: "equipe",
   freelancer: "equipe",
   software: "software",
   estrutura: "estrutura",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkVapidKeys, ensureWebPush, webpush } from "@/lib/push.server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SQUAD_LABELS } from "@/lib/auth/squads";
 import type { Squad } from "@/types";
 
 /** Diagnóstico: diz se as chaves VAPID da Vercel estão certas (sem mostrar as chaves). */
@@ -26,16 +27,10 @@ function describeServerKey(): string {
 const bodySchema = z.object({ id: z.string().uuid() });
 
 /**
- * Cor do squad no push. O iPhone não permite mudar a cor/fundo do cartão da notificação, então o
- * título começa com o círculo na cor do squad (as mesmas cores do sistema).
+ * Squad no push: o iPhone não deixa mudar cor, fundo nem tamanho do cartão da notificação (e um
+ * emoji colorido tem tamanho fixo), então o título começa com o nome do squad em texto —
+ * "Audiovisual · Pauta atrasada". O "from Além HQ" abaixo do título é a Apple que põe; não sai.
  */
-const SQUAD_MARK: Record<Squad, string> = {
-  comercial: "🟠",
-  audiovisual: "🟡",
-  financeiro: "🟢",
-  diretoria: "🔴",
-};
-
 async function squadOf(
   admin: ReturnType<typeof createAdminClient>,
   notification: { type: string; entity_type: string | null; entity_id: string | null },
@@ -86,7 +81,7 @@ export async function POST(request: Request) {
   const squad = await squadOf(admin, notification);
   const payload = JSON.stringify({
     id: notification.id,
-    title: squad ? `${SQUAD_MARK[squad]} ${notification.title}` : notification.title,
+    title: squad ? `${SQUAD_LABELS[squad]} · ${notification.title}` : notification.title,
     squad,
     body: notification.body ?? "",
     url: notification.url ?? "/inicio",

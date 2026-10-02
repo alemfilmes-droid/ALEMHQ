@@ -14,7 +14,7 @@ export interface InvoiceScheduleView {
   notes: string | null;
   /** Período vigente (1º do mês, ou a data única) e se a nota dele já foi emitida. */
   period: string;
-  issued: { at: string; number: string | null } | null;
+  issued: { at: string; number: string | null; filePath: string | null } | null;
 }
 
 function todayInFortaleza() {
@@ -26,7 +26,7 @@ export async function getInvoiceSchedules(projectId: string): Promise<InvoiceSch
   const { data } = await supabase
     .from("project_invoice_schedules")
     .select(
-      "id, frequency, day_of_month, issue_date, responsible_id, send_to_email, notes, responsible:profiles!project_invoice_schedules_responsible_id_fkey(full_name), contact:contacts(full_name, email), issuances:invoice_issuances(period, issued_at, invoice_number)",
+      "id, frequency, day_of_month, issue_date, responsible_id, send_to_email, notes, responsible:profiles!project_invoice_schedules_responsible_id_fkey(full_name), contact:contacts(full_name, email), issuances:invoice_issuances(period, issued_at, invoice_number, file_path)",
     )
     .eq("project_id", projectId)
     .eq("active", true)
@@ -47,7 +47,7 @@ export async function getInvoiceSchedules(projectId: string): Promise<InvoiceSch
       sendToEmail: row.send_to_email,
       notes: row.notes,
       period,
-      issued: issuance ? { at: issuance.issued_at, number: issuance.invoice_number } : null,
+      issued: issuance ? { at: issuance.issued_at, number: issuance.invoice_number, filePath: issuance.file_path } : null,
     };
   });
 }

@@ -27,6 +27,8 @@ import { INTERNAL_PROJECT_LABEL, PRIORITIES, PRIORITY_LABELS } from "@/lib/domai
 import { formatDate, formatDateTime } from "@/lib/format";
 import { PAUTA_CAPTURE_TYPES, PAUTA_CAPTURE_TYPE_LABELS } from "@/lib/pautas";
 import type { PautaCaptureType, PautaStatus, PautaWithDetails, ProjectPriority } from "@/types";
+import { InvoiceTaskCallout } from "@/features/finance/components/invoice-controls";
+import { isInvoiceTaskTitle } from "@/lib/links";
 
 const NO_FREELANCER = "__sem_freelancer__";
 const NO_WAITING = "__ninguem__";
@@ -615,6 +617,10 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
             </span>
           </Item>
         </dl>
+
+        {members.some((member) => member.production_function === "nota_fiscal") || isInvoiceTaskTitle(pauta.title ?? "") ? (
+          <InvoiceTaskCallout projectId={pauta.project_is_internal ? null : pauta.project_id} />
+        ) : null}
 
         {members.length > 0 ? (
           <ul className="flex flex-wrap gap-2" aria-label="Responsáveis">

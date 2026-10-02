@@ -86,3 +86,38 @@ export async function markInvoiceIssuedAction(input: { scheduleId: string; proje
   refresh(parsed.data.projectId);
   return { ok: true, message: "Nota marcada como emitida." };
 }
+
+/** Anexa (ou troca) o arquivo da nota já marcada como emitida. */
+export async function attachIssuanceFileAction(input: { scheduleId: string; projectId: string; period: string; filePath: string; invoiceNumber: string }): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      scheduleId: z.string().uuid(),
+      projectId: z.string().uuid(),
+      period: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      filePath: z.string().max(300).regex(/^issuances\/[0-9a-f-]{36}\/[\w.-]+$/i),
+      invoiceNumber: z.string().trim().max(60),
+    })
+    .safeParse(input);
+  if (!parsed.success || !parsed.data.filePath.startsWith(`issuances/${parsed.data.scheduleId}/`)) return { ok: false, error: "Arquivo inválido." };
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false, error: "Sessão expirada. Entre novamente." };
+  const supabase = await createClient();
+  const d = parsed.data;
+  // Ainda não marcada: marca como emitida já com o arquivo.
+  const { data: existing } = await supabase.from("invoice_issuances").select("id").eq("schedule_id", d.scheduleId).eq("period", d.period).maybeSingle();
+  const { error } = existing
+    ? await supabase
+        .from("invoice_issuances")
+        .update({ file_path: d.filePath, ...(d.invoiceNumber ? { invoice_number: d.invoiceNumber } : {}) })
+        .eq("id", existing.id)
+    : await supabase.from("invoice_issuances").insert({
+        schedule_id: d.scheduleId,
+        period: d.period,
+        invoice_number: d.invoiceNumber || null,
+        file_path: d.filePath,
+        issued_by: profile.id,
+      });
+  if (error) return { ok: false, error: "Não foi possível anexar a nota." };
+  refresh(d.projectId);
+  return { ok: true, message: existing ? "Arquivo da nota anexado." : "Nota marcada como emitida, com o arquivo." };
+}

@@ -9,16 +9,17 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Orçamentos" };
 
-type SearchParams = Promise<{ aba?: string }>;
+type SearchParams = Promise<{ aba?: string; arquivados?: string }>;
 
 export default async function BudgetsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
   if (!hasCapability(profile, "budgets")) redirect("/inicio");
-  const { aba } = await searchParams;
+  const { aba, arquivados } = await searchParams;
+  const showArchived = arquivados === "1";
 
   const supabase = await createClient();
   const [budgets, catalog, proposalProfile, companies] = await Promise.all([
-    listBudgets(),
+    listBudgets(showArchived),
     listCatalog(),
     getProposalProfile(),
     supabase.from("companies").select("id, name").order("name"),
@@ -26,13 +27,15 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Sear
 
   return (
     <>
-      <PageHeader panel="/orcamentos" title="Orçamentos." description="Orçamentos, notas de orçamento e apresentações comerciais. Só você tem acesso." />
+      <PageHeader panel="/orcamentos" title="Orçamentos." description="Orçamentos, notas de orçamento e apresentações comerciais. Acesso do master e do financeiro." />
       <BudgetsHome
         budgets={budgets}
         catalog={catalog}
         profile={proposalProfile}
         companies={companies.data ?? []}
-        initialTab={aba === "catalogo" || aba === "perfil" ? aba : "orcamentos"}
+        showArchived={showArchived}
+        canEditProfile={hasCapability(profile, "manageCompany")}
+        initialTab={aba === "catalogo" || (aba === "perfil" && hasCapability(profile, "manageCompany")) ? aba : "orcamentos"}
       />
     </>
   );

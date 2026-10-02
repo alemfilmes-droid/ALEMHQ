@@ -21,6 +21,8 @@ import { formatDate } from "@/lib/format";
 import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
+import { NfseChip } from "@/features/finance/components/invoice-controls";
+import { isInvoiceTaskTitle } from "@/lib/links";
 
 export type PautaCardMenu = { canDelete: boolean; canArchive: boolean; onRemove: (mode: "delete" | "archive") => void };
 
@@ -128,6 +130,7 @@ export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardPr
         <PautaPriorityBadge priority={pauta.priority!} />
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}
+        {pauta.title && isInvoiceTaskTitle(pauta.title) ? <NfseChip /> : null}
       </div>
 
       <div className="flex items-center justify-between gap-2">

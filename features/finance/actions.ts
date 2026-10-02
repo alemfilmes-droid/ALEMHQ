@@ -308,3 +308,41 @@ export async function checkOverdueFinanceAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.rpc("notify_overdue_finance");
 }
+
+// ---------------------------------------------------------------------------
+// Nota fiscal anexada (bucket privado "invoices")
+// ---------------------------------------------------------------------------
+
+const invoiceFilePath = z
+  .string()
+  .max(300)
+  .regex(/^(receivables|issuances)\/[0-9a-f-]{36}\/[\w.-]+$/i, "Arquivo inválido.");
+
+/** Número e arquivo da nota de um recebimento (vale também depois de recebido). */
+export async function attachReceivableInvoiceAction(id: string, input: { invoiceNumber: string; filePath: string | null }): Promise<ActionResult> {
+  if (!(await requireFinance())) return FORBIDDEN;
+  const parsed = z
+    .object({ invoiceNumber: z.string().trim().max(60), filePath: invoiceFilePath.nullable() })
+    .safeParse(input);
+  if (!idSchema.safeParse(id).success || !parsed.success) return INVALID;
+  if (parsed.data.filePath && !parsed.data.filePath.startsWith(`receivables/${id}/`)) return INVALID;
+
+  const supabase = await createClient();
+  const patch: { invoice_number: string | null; invoice_file_path?: string } = { invoice_number: parsed.data.invoiceNumber || null };
+  if (parsed.data.filePath) patch.invoice_file_path = parsed.data.filePath;
+  const { error } = await supabase.from("receivables").update(patch).eq("id", id);
+  if (error) return { ok: false, error: "Não foi possível salvar a nota fiscal." };
+  refresh();
+  return { ok: true, message: "Nota fiscal anexada ao recebimento." };
+}
+
+/** Link temporário (5 min) para baixar o arquivo da nota. A RLS do Storage decide quem pode. */
+export async function getInvoiceFileUrlAction(path: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false, error: "Sessão expirada. Entre novamente." };
+  if (!invoiceFilePath.safeParse(path).success) return { ok: false, error: "Arquivo inválido." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage.from("invoices").createSignedUrl(path, 300);
+  if (error || !data) return { ok: false, error: "Não foi possível abrir a nota (sem acesso ou arquivo removido)." };
+  return { ok: true, url: data.signedUrl };
+}

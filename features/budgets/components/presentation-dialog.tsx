@@ -68,7 +68,6 @@ interface PresentationDialogProps {
  */
 export function PresentationDialog({ budgetId, initial, companyLogoUrl, open, onOpenChange, beforeOpen }: PresentationDialogProps) {
   const [content, setContent] = useState<PresentationContent>({ ...initial, clientLogoUrl: initial.clientLogoUrl || companyLogoUrl || "" });
-  const [deliverables, setDeliverables] = useState(initial.deliverables.join("\n"));
   const [timeline, setTimeline] = useState(initial.timeline.map((item) => `${item.step} | ${item.when}`).join("\n"));
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -108,7 +107,6 @@ export function PresentationDialog({ budgetId, initial, companyLogoUrl, open, on
   function generate() {
     const payload: PresentationContent = {
       ...content,
-      deliverables: linesToList(deliverables).slice(0, 20),
       timeline: linesToList(timeline)
         .slice(0, 12)
         .map((line) => {
@@ -227,14 +225,13 @@ export function PresentationDialog({ budgetId, initial, companyLogoUrl, open, on
               <Textarea id="pres-narrative" rows={4} value={content.narrative} onChange={(event) => set("narrative", event.target.value)} />
             </FormField>
           ) : null}
-          <div className="grid gap-5 md:grid-cols-2">
-            <FormField id="pres-deliverables" label="Entregáveis" hint="Um por linha. Ex.: 1 filme de 60s.">
-              <Textarea id="pres-deliverables" rows={5} value={deliverables} onChange={(event) => setDeliverables(event.target.value)} />
-            </FormField>
-            <FormField id="pres-timeline" label="Cronograma" hint="Um por linha: etapa | quando. Ex.: Captação | 10/09">
-              <Textarea id="pres-timeline" rows={5} value={timeline} onChange={(event) => setTimeline(event.target.value)} />
-            </FormField>
-          </div>
+          <FormField
+            id="pres-timeline"
+            label="Cronograma"
+            hint="Um por linha: etapa | quando. Ex.: Captação | 10/09. Os entregáveis e prazos vêm de “O que o cliente recebe”, no orçamento."
+          >
+            <Textarea id="pres-timeline" rows={5} value={timeline} onChange={(event) => setTimeline(event.target.value)} />
+          </FormField>
 
           <FormField id="pres-refs" label="Referências visuais" hint="Até 8 imagens (moodboard, frames de referência).">
             <div className="space-y-3">

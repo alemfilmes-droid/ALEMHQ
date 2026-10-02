@@ -16,6 +16,8 @@ import { SQUAD_TONE } from "@/lib/status";
 import { SURFACE, squadBarStyle } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails } from "@/types";
+import { NfseChip } from "@/features/finance/components/invoice-controls";
+import { isInvoiceTaskTitle } from "@/lib/links";
 
 interface MyPautaRowProps {
   pauta: PautaWithDetails;
@@ -106,6 +108,7 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}
+        {pauta.title && isInvoiceTaskTitle(pauta.title) ? <NfseChip /> : null}
       </div>
 
       <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">

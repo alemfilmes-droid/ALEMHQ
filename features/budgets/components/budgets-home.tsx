@@ -394,9 +394,7 @@ function ProfileForm({ initial }: { initial: ProposalProfile }) {
         <FormField id="pp-bio" label="Bio" hint="Trajetória, olhar, o que move o trabalho.">
           <Textarea id="pp-bio" rows={4} value={profile.founderBio} onChange={(event) => set("founderBio", event.target.value)} />
         </FormField>
-        <FormField id="pp-photo" label="Foto (URL)" hint="Link de uma foto vertical de boa qualidade.">
-          <Input id="pp-photo" value={profile.founderPhotoUrl} onChange={(event) => set("founderPhotoUrl", event.target.value)} />
-        </FormField>
+        <p className="text-[13px] text-muted-foreground">A foto das apresentações é fixa: public/brand/fundador.jpg.</p>
         <div className="grid gap-4 md:grid-cols-2">
           <FormField id="pp-proof" label="Números" hint="Ex.: +300 projetos · 8 anos">
             <Input id="pp-proof" value={profile.proof} onChange={(event) => set("proof", event.target.value)} />
@@ -433,12 +431,18 @@ export function BudgetsHome({
   profile,
   companies,
   initialTab,
+  showArchived,
+  canEditProfile,
 }: {
   budgets: BudgetListItem[];
   catalog: CatalogItem[];
   profile: ProposalProfile;
   companies: { id: string; name: string }[];
   initialTab: Tab;
+  /** Lista mostrando só os arquivados (?arquivados=1). */
+  showArchived: boolean;
+  /** "Perfil da Além" (identidade das propostas): só quem administra a empresa. */
+  canEditProfile: boolean;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -454,22 +458,31 @@ export function BudgetsHome({
           tabs={[
             { value: "orcamentos", label: "Orçamentos" },
             { value: "catalogo", label: "Catálogo" },
-            { value: "perfil", label: "Perfil da Além" },
+            ...(canEditProfile ? [{ value: "perfil" as const, label: "Perfil da Além" }] : []),
           ]}
         />
         {tab === "orcamentos" ? (
-          <Button type="button" onClick={() => setCreating(true)}>
-            <Plus aria-hidden />
-            Novo orçamento
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="ghost">
+              <Link href={showArchived ? "/orcamentos" : "/orcamentos?arquivados=1"}>{showArchived ? "Ver ativos" : "Ver arquivados"}</Link>
+            </Button>
+            <Button type="button" onClick={() => setCreating(true)}>
+              <Plus aria-hidden />
+              Novo orçamento
+            </Button>
+          </div>
         ) : null}
       </div>
 
       {tab === "orcamentos" ? (
         budgets.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border-strong px-6 py-14 text-center">
-            <p className="font-bold">Nenhum orçamento ainda.</p>
-            <p className="mt-1 text-sm text-muted-foreground">Comece pelo Catálogo com os custos da Além e crie o primeiro orçamento.</p>
+            <p className="font-bold">{showArchived ? "Nenhum orçamento arquivado." : "Nenhum orçamento ainda."}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {showArchived
+                ? "Arquivados ficam aqui e continuam com o número reservado."
+                : "Comece pelo Catálogo com os custos da Além e crie o primeiro orçamento."}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">

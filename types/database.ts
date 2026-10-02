@@ -264,6 +264,7 @@ export type Database = {
       }
       budgets: {
         Row: {
+          archived_at: string | null
           client_name: string
           company_id: string | null
           created_at: string
@@ -271,7 +272,8 @@ export type Database = {
           deal_id: string | null
           deal_proposal_id: string | null
           decided_at: string | null
-          deliverables: string[]
+          deliverable_items: Json
+          delivery_terms: string | null
           fee_pct: number
           id: string
           issue_date: string
@@ -291,6 +293,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          archived_at?: string | null
           client_name: string
           company_id?: string | null
           created_at?: string
@@ -298,7 +301,8 @@ export type Database = {
           deal_id?: string | null
           deal_proposal_id?: string | null
           decided_at?: string | null
-          deliverables?: string[]
+          deliverable_items?: Json
+          delivery_terms?: string | null
           fee_pct?: number
           id?: string
           issue_date?: string
@@ -318,6 +322,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          archived_at?: string | null
           client_name?: string
           company_id?: string | null
           created_at?: string
@@ -325,7 +330,8 @@ export type Database = {
           deal_id?: string | null
           deal_proposal_id?: string | null
           decided_at?: string | null
-          deliverables?: string[]
+          deliverable_items?: Json
+          delivery_terms?: string | null
           fee_pct?: number
           id?: string
           issue_date?: string
@@ -1569,6 +1575,237 @@ export type Database = {
           },
         ]
       }
+      goal_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          entry_date: string
+          goal_id: string
+          id: string
+          link_url: string | null
+          note: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: Database["public"]["Enums"]["goal_entry_source"]
+          source_key: string | null
+          status: Database["public"]["Enums"]["goal_entry_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          entry_date?: string
+          goal_id: string
+          id?: string
+          link_url?: string | null
+          note?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: Database["public"]["Enums"]["goal_entry_source"]
+          source_key?: string | null
+          status?: Database["public"]["Enums"]["goal_entry_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          entry_date?: string
+          goal_id?: string
+          id?: string
+          link_url?: string | null
+          note?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: Database["public"]["Enums"]["goal_entry_source"]
+          source_key?: string | null
+          status?: Database["public"]["Enums"]["goal_entry_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "goal_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_entries_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auto_from_crm: boolean
+          commission_mode: Database["public"]["Enums"]["goal_commission_mode"]
+          commission_rate: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_on: string
+          final_achieved: number | null
+          final_commission: number | null
+          id: string
+          is_money: boolean
+          metric: Database["public"]["Enums"]["goal_metric"]
+          milestones_notified: number[]
+          min_achievement_pct: number
+          owner_id: string
+          payable_id: string | null
+          starts_on: string
+          status: Database["public"]["Enums"]["goal_status"]
+          target_value: number
+          title: string
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_from_crm?: boolean
+          commission_mode?: Database["public"]["Enums"]["goal_commission_mode"]
+          commission_rate?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_on: string
+          final_achieved?: number | null
+          final_commission?: number | null
+          id?: string
+          is_money?: boolean
+          metric: Database["public"]["Enums"]["goal_metric"]
+          milestones_notified?: number[]
+          min_achievement_pct?: number
+          owner_id: string
+          payable_id?: string | null
+          starts_on: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          target_value: number
+          title: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_from_crm?: boolean
+          commission_mode?: Database["public"]["Enums"]["goal_commission_mode"]
+          commission_rate?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_on?: string
+          final_achieved?: number | null
+          final_commission?: number | null
+          id?: string
+          is_money?: boolean
+          metric?: Database["public"]["Enums"]["goal_metric"]
+          milestones_notified?: number[]
+          min_achievement_pct?: number
+          owner_id?: string
+          payable_id?: string | null
+          starts_on?: string
+          status?: Database["public"]["Enums"]["goal_status"]
+          target_value?: number
+          title?: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_accounts: {
         Row: {
           access_token: string | null
@@ -1759,6 +1996,7 @@ export type Database = {
       }
       invoice_issuances: {
         Row: {
+          file_path: string | null
           id: string
           invoice_number: string | null
           issued_at: string
@@ -1767,6 +2005,7 @@ export type Database = {
           schedule_id: string
         }
         Insert: {
+          file_path?: string | null
           id?: string
           invoice_number?: string | null
           issued_at?: string
@@ -1775,6 +2014,7 @@ export type Database = {
           schedule_id: string
         }
         Update: {
+          file_path?: string | null
           id?: string
           invoice_number?: string | null
           issued_at?: string
@@ -2461,6 +2701,62 @@ export type Database = {
           },
         ]
       }
+      payment_details: {
+        Row: {
+          account_number: string | null
+          account_type: Database["public"]["Enums"]["bank_account_type"] | null
+          agency: string | null
+          bank_code: string | null
+          bank_name: string | null
+          holder_document: string | null
+          holder_name: string | null
+          notes: string | null
+          pix_key: string | null
+          pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
+          preferred_method: Database["public"]["Enums"]["payment_method"]
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: Database["public"]["Enums"]["bank_account_type"] | null
+          agency?: string | null
+          bank_code?: string | null
+          bank_name?: string | null
+          holder_document?: string | null
+          holder_name?: string | null
+          notes?: string | null
+          pix_key?: string | null
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
+          preferred_method?: Database["public"]["Enums"]["payment_method"]
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: Database["public"]["Enums"]["bank_account_type"] | null
+          agency?: string | null
+          bank_code?: string | null
+          bank_name?: string | null
+          holder_document?: string | null
+          holder_name?: string | null
+          notes?: string | null
+          pix_key?: string | null
+          pix_key_type?: Database["public"]["Enums"]["pix_key_type"] | null
+          preferred_method?: Database["public"]["Enums"]["payment_method"]
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_squads: {
         Row: {
           created_at: string
@@ -2947,6 +3243,7 @@ export type Database = {
           id: string
           installment_number: number | null
           installment_total: number | null
+          invoice_file_path: string | null
           invoice_number: string | null
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -2970,6 +3267,7 @@ export type Database = {
           id?: string
           installment_number?: number | null
           installment_total?: number | null
+          invoice_file_path?: string | null
           invoice_number?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -2993,6 +3291,7 @@ export type Database = {
           id?: string
           installment_number?: number | null
           installment_total?: number | null
+          invoice_file_path?: string | null
           invoice_number?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -3518,6 +3817,80 @@ export type Database = {
         }
         Relationships: []
       }
+      goals_with_progress: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_value: number | null
+          auto_from_crm: boolean | null
+          commission_confirmed: number | null
+          commission_mode:
+            | Database["public"]["Enums"]["goal_commission_mode"]
+            | null
+          commission_potential: number | null
+          commission_rate: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          ends_on: string | null
+          final_achieved: number | null
+          final_commission: number | null
+          id: string | null
+          is_money: boolean | null
+          metric: Database["public"]["Enums"]["goal_metric"] | null
+          milestones_notified: number[] | null
+          min_achievement_pct: number | null
+          owner_avatar_url: string | null
+          owner_id: string | null
+          owner_name: string | null
+          payable_id: string | null
+          pending_count: number | null
+          pending_value: number | null
+          starts_on: string | null
+          status: Database["public"]["Enums"]["goal_status"] | null
+          target_value: number | null
+          title: string | null
+          unit_label: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pautas_with_details: {
         Row: {
           archived_at: string | null
@@ -3832,6 +4205,7 @@ export type Database = {
           id: string | null
           installment_number: number | null
           installment_total: number | null
+          invoice_file_path: string | null
           invoice_number: string | null
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -4012,6 +4386,7 @@ export type Database = {
       }
       announcements_unread_count: { Args: never; Returns: number }
       budget_final_total: { Args: { p_budget_id: string }; Returns: number }
+      budget_random_number: { Args: never; Returns: number }
       budget_set_proposal_status: {
         Args: {
           p_budget_id: string
@@ -4025,6 +4400,7 @@ export type Database = {
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       can_finalize_project: { Args: { p_project_id: string }; Returns: boolean }
       can_fully_manage_pauta: { Args: never; Returns: boolean }
+      can_manage_budgets: { Args: never; Returns: boolean }
       can_manage_company: { Args: never; Returns: boolean }
       can_manage_company_logos: { Args: never; Returns: boolean }
       can_manage_freelancers: { Args: never; Returns: boolean }
@@ -4045,6 +4421,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_view_goal: { Args: { p_goal_id: string }; Returns: boolean }
       can_view_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       check_project_payment: {
         Args: { p_project_id: string }
@@ -4348,6 +4725,8 @@ export type Database = {
           weighted_amount: number
         }[]
       }
+      fmt_brl: { Args: { p_value: number }; Returns: string }
+      fmt_qty: { Args: { p_value: number }; Returns: string }
       generate_installments: {
         Args: {
           p_company_id?: string | null
@@ -4372,6 +4751,7 @@ export type Database = {
           id: string
           installment_number: number | null
           installment_total: number | null
+          invoice_file_path: string | null
           invoice_number: string | null
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -4421,6 +4801,43 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      goal_approve: {
+        Args: { p_due_date: string; p_goal_id: string }
+        Returns: string
+      }
+      goal_check_milestones: { Args: { p_goal_id: string }; Returns: undefined }
+      goal_commission: {
+        Args: {
+          p_achieved: number
+          p_min_pct: number
+          p_mode: Database["public"]["Enums"]["goal_commission_mode"]
+          p_rate: number
+          p_target: number
+        }
+        Returns: number
+      }
+      goal_crm_candidates: {
+        Args: { p_goal_id: string }
+        Returns: {
+          amount: number
+          deal_id: string
+          entry_date: string
+          note: string
+          source_key: string
+        }[]
+      }
+      goal_deal_value: { Args: { p_deal_id: string }; Returns: number }
+      goal_fmt: {
+        Args: { p_is_money: boolean; p_value: number }
+        Returns: string
+      }
+      goal_reviewers: { Args: { p_goal_id: string }; Returns: string[] }
+      goal_sync_crm: { Args: { p_goal_id: string }; Returns: undefined }
+      goal_sync_crm_internal: {
+        Args: { p_goal_id: string }
+        Returns: undefined
+      }
+      goal_sync_owner: { Args: { p_owner_id: string }; Returns: undefined }
       google_sync_dispatch: { Args: never; Returns: undefined }
       has_finance_access: { Args: never; Returns: boolean }
       in_squad: {
@@ -4675,6 +5092,7 @@ export type Database = {
           em_andamento: number
         }[]
       }
+      payment_details_text: { Args: { p_profile_id: string }; Returns: string }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
       project_finalization_status: {
         Args: { p_project_id: string }
@@ -4699,6 +5117,7 @@ export type Database = {
       }
       run_daily_all: { Args: never; Returns: undefined }
       run_daily_reminders: { Args: never; Returns: undefined }
+      run_goal_reminders: { Args: never; Returns: undefined }
       set_company_logo: {
         Args: { p_company_id: string; p_logo_url: string }
         Returns: undefined
@@ -4727,6 +5146,7 @@ export type Database = {
         | "proposta"
         | "nota"
         | "outro"
+      bank_account_type: "corrente" | "poupanca" | "pagamento"
       budget_item_section: "profissional" | "custo"
       budget_status:
         | "rascunho"
@@ -4799,6 +5219,17 @@ export type Database = {
         | "enviar_material"
         | "aguardar_retorno"
         | "descartar"
+      goal_commission_mode: "percentual" | "por_unidade"
+      goal_entry_source: "manual" | "crm"
+      goal_entry_status: "pendente" | "aprovado" | "recusado"
+      goal_metric:
+        | "vendas_valor"
+        | "vendas_quantidade"
+        | "reunioes_agendadas"
+        | "reunioes_realizadas"
+        | "novos_negocios"
+        | "personalizada"
+      goal_status: "ativa" | "em_revisao" | "aprovada" | "cancelada"
       google_sync_status:
         | "nao_sincronizado"
         | "pendente"
@@ -4843,6 +5274,8 @@ export type Database = {
         | "outro"
         | "pessoal"
         | "estrutura"
+        | "comissao"
+        | "pro_labore"
       payable_recurrence: "none" | "mensal" | "trimestral" | "anual"
       payment_method:
         | "pix"
@@ -4851,6 +5284,7 @@ export type Database = {
         | "cartao"
         | "dinheiro"
         | "outro"
+      pix_key_type: "cpf" | "cnpj" | "email" | "telefone" | "aleatoria"
       production_function:
         | "captacao"
         | "edicao"
@@ -5065,6 +5499,7 @@ export const Constants = {
         "nota",
         "outro",
       ],
+      bank_account_type: ["corrente", "poupanca", "pagamento"],
       budget_item_section: ["profissional", "custo"],
       budget_status: [
         "rascunho",
@@ -5145,6 +5580,18 @@ export const Constants = {
         "aguardar_retorno",
         "descartar",
       ],
+      goal_commission_mode: ["percentual", "por_unidade"],
+      goal_entry_source: ["manual", "crm"],
+      goal_entry_status: ["pendente", "aprovado", "recusado"],
+      goal_metric: [
+        "vendas_valor",
+        "vendas_quantidade",
+        "reunioes_agendadas",
+        "reunioes_realizadas",
+        "novos_negocios",
+        "personalizada",
+      ],
+      goal_status: ["ativa", "em_revisao", "aprovada", "cancelada"],
       google_sync_status: [
         "nao_sincronizado",
         "pendente",
@@ -5192,6 +5639,8 @@ export const Constants = {
         "outro",
         "pessoal",
         "estrutura",
+        "comissao",
+        "pro_labore",
       ],
       payable_recurrence: ["none", "mensal", "trimestral", "anual"],
       payment_method: [
@@ -5202,6 +5651,7 @@ export const Constants = {
         "dinheiro",
         "outro",
       ],
+      pix_key_type: ["cpf", "cnpj", "email", "telefone", "aleatoria"],
       production_function: [
         "captacao",
         "edicao",

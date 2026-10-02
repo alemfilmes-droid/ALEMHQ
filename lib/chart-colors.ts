@@ -23,6 +23,8 @@ export const CHART_CATEGORY_COLORS: Record<PayableCategory, string> = {
   imposto: "#8A6BB0",
   marketing: "#C97A96",
   pessoal: "#6FA8DC",
+  comissao: "#5FB37F",
+  pro_labore: "#A3C4E8",
   estrutura: "#B08D6A",
   outro: "#8A8A8A",
 };

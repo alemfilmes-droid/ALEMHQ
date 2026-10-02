@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { AvatarUploader } from "@/components/profile/avatar-uploader";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { PaymentDetailsForm } from "@/features/goals/components/payment-details-form";
+import { getPaymentDetails } from "@/features/goals/queries";
 import { PushSettings } from "@/features/push/components/push-settings";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +16,7 @@ export const metadata: Metadata = { title: "Perfil" };
 
 export default async function ProfilePage() {
   const profile = await requireProfile();
+  const paymentDetails = await getPaymentDetails(profile.id);
 
   return (
     <>
@@ -34,6 +37,18 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <ProfileForm defaultValues={{ fullName: profile.full_name, phone: profile.phone ?? "" }} />
+          </CardContent>
+        </Card>
+
+        <Card variant="static" id="dados-pagamento" className="scroll-mt-24">
+          <CardHeader>
+            <CardTitle>Dados para pagamento</CardTitle>
+            <CardDescription>
+              Usados pelo financeiro para pagar salário, comissão e pró-labore. Só você e quem tem acesso ao financeiro veem.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PaymentDetailsForm details={paymentDetails} fullName={profile.full_name} />
           </CardContent>
         </Card>
 

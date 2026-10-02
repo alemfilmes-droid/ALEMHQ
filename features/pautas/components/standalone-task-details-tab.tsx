@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/format";
 import { PRIORITIES, PRIORITY_LABELS } from "@/lib/domain";
 import type { PautaWithDetails, ProjectPriority } from "@/types";
+import { InvoiceTaskCallout } from "@/features/finance/components/invoice-controls";
+import { isInvoiceTaskTitle } from "@/lib/links";
 
 interface FormValues {
   title: string;
@@ -67,6 +69,7 @@ export function StandaloneTaskDetailsTab({ pauta, onChanged }: StandaloneTaskDet
 
   return (
     <div className="space-y-6">
+      {isInvoiceTaskTitle(pauta.title ?? "") ? <InvoiceTaskCallout projectId={pauta.project_id} /> : null}
       <FormField id="task-priority" label="Prioridade">
         <Select value={pauta.priority ?? undefined} disabled={pending} onValueChange={(value) => setPriority(value as ProjectPriority)}>
           <SelectTrigger id="task-priority">

@@ -35,7 +35,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
         <ProposalDeck
           budget={budget}
           profile={proposalProfile}
-          content={{ ...budget.presentation, deliverables: budget.presentation.deliverables.length ? budget.presentation.deliverables : budget.deliverables }}
+          content={budget.presentation}
         />
       </div>
     </div>

@@ -43,8 +43,10 @@ export const ROUTE_ACCESS: Record<string, readonly AccessRole[]> = {
   "/financeiro": ALL_ROLES,
   // Banco de horas é de todo mundo; a aba "Equipe" (diretoria/admin) é escondida na própria página.
   "/banco-de-horas": ALL_ROLES,
-  // Orçamentos: só o master (capability "budgets"; a RLS repete com is_master()).
+  // Orçamentos: master e squad Financeiro (capability "budgets"; a RLS repete com can_manage_budgets()).
   "/orcamentos": ALL_ROLES,
+  // Metas: todo mundo pode ter uma; a RLS devolve só as da pessoa (ou todas para a diretoria).
+  "/metas": INTERNAL_ROLES,
 };
 
 /** Rotas que dependem de uma capability (squad/flag do profile), além do papel. */
@@ -153,8 +155,8 @@ const CAPABILITIES = {
    */
   manageCompany: (subject: CapabilitySubject) =>
     subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria"),
-  /** Painel de orçamentos e propostas comerciais: só o master. */
-  budgets: (subject: CapabilitySubject) => subject.org_level === "master",
+  /** Painel de orçamentos e propostas comerciais: master e squad Financeiro (espelha can_manage_budgets()). */
+  budgets: (subject: CapabilitySubject) => subject.org_level === "master" || subject.squads.includes("financeiro"),
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;

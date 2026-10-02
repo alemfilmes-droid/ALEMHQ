@@ -20,7 +20,7 @@ export default async function BudgetPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <PageHeader panel="/orcamentos" eyebrow={`Orçamento nº ${String(budget.number).padStart(4, "0")}`} title={budget.title} description={budget.clientName} />
+      <PageHeader panel="/orcamentos" eyebrow={`Orçamento nº ${String(budget.number).padStart(4, "0")}${budget.version > 1 ? ` · v${budget.version}` : ""}${budget.archivedAt ? " · Arquivado" : ""}`} title={budget.title} description={budget.clientName} />
       <BudgetEditor budget={budget} catalog={catalog} companies={companies.data ?? []} />
     </>
   );

@@ -41,7 +41,6 @@ export const presentationSchema = z.object({
   objective: z.string().max(2000).default(""),
   concept: z.string().max(3000).default(""),
   narrative: z.string().max(3000).default(""),
-  deliverables: z.array(z.string().max(200)).max(20).default([]),
   timeline: z.array(z.object({ step: z.string().max(120), when: z.string().max(60) })).max(12).default([]),
   references: z.array(z.string().url()).max(8).default([]),
   closing: z.string().max(1000).default(""),
@@ -78,6 +77,19 @@ export function parseProposalProfile(value: unknown): ProposalProfile {
   return parsed.success ? parsed.data : proposalProfileSchema.parse({});
 }
 
+/** Uma entrega do orçamento: o que o cliente recebe e em quanto tempo. */
+export const deliverableItemSchema = z.object({
+  item: z.string().trim().min(1, "descreva a entrega").max(200, "use até 200 caracteres"),
+  deadline: z.string().trim().max(120, "use até 120 caracteres").default(""),
+});
+
+export type DeliverableItem = z.infer<typeof deliverableItemSchema>;
+
+export function parseDeliverables(value: unknown): DeliverableItem[] {
+  const parsed = z.array(deliverableItemSchema).safeParse(value ?? []);
+  return parsed.success ? parsed.data : [];
+}
+
 export interface BudgetRecord {
   id: string;
   number: number;
@@ -87,7 +99,10 @@ export interface BudgetRecord {
   projectName: string | null;
   dealId: string | null;
   dealTitle: string | null;
-  deliverables: string[];
+  deliverables: DeliverableItem[];
+  /** Prazo geral de entrega (ex.: "Até 10 dias úteis após a captação"). */
+  deliveryTerms: string;
+  archivedAt: string | null;
   sentAt: string | null;
   decidedAt: string | null;
   statusNote: string;

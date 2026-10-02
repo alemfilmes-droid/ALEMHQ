@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, FileText, Presentation, Save, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Copy, FileText, Plus, Presentation, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { createQuickProjectAction } from "@/app/(app)/projetos/actions";
-import { deleteBudgetAction, duplicateBudgetAction, getClientLinksAction, saveBudgetAction, type BudgetHeaderValues } from "@/features/budgets/actions";
+import { archiveBudgetAction, deleteBudgetAction, duplicateBudgetAction, getClientLinksAction, saveBudgetAction, type BudgetHeaderValues } from "@/features/budgets/actions";
 import { BudgetStatusPanel } from "@/features/budgets/components/budget-status-panel";
 import { PresentationDialog } from "@/features/budgets/components/presentation-dialog";
 import { brl, computeBudget, pct, pctNumber, SECTION_LABELS, type BudgetLineInput, type BudgetSection } from "@/features/budgets/pricing";
-import type { BudgetRecord, CatalogItem } from "@/features/budgets/types";
+import type { BudgetRecord, CatalogItem, DeliverableItem } from "@/features/budgets/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
@@ -89,8 +89,11 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
     taxPct: budget.taxPct,
     paymentTerms: budget.paymentTerms,
     notes: budget.notes,
+    deliveryTerms: budget.deliveryTerms,
   });
-  const [deliverables, setDeliverables] = useState(budget.deliverables.join("\n"));
+  const [deliverables, setDeliverables] = useState<(DeliverableItem & { key: string })[]>(() =>
+    budget.deliverables.map((entry) => ({ ...entry, key: crypto.randomUUID() })),
+  );
   const [rows, setRows] = useState<Row[]>(budget.items.map((item) => ({ ...item, catalogItemId: null })));
   const [dirty, setDirty] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
@@ -173,9 +176,8 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
       companyId: header.companyId || null,
       projectId: header.projectId || null,
       deliverables: deliverables
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+        .map((entry) => ({ item: entry.item.trim(), deadline: entry.deadline.trim() }))
+        .filter((entry) => entry.item),
     };
     const result = await saveBudgetAction(
       budget.id,
@@ -222,6 +224,24 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
     });
   }
 
+  function updateDeliverable(key: string, patch: Partial<DeliverableItem>) {
+    setDeliverables((current) => current.map((entry) => (entry.key === key ? { ...entry, ...patch } : entry)));
+    setDirty(true);
+  }
+
+  function toggleArchive() {
+    const archiving = !budget.archivedAt;
+    if (archiving && !window.confirm("Arquivar este orçamento? Ele sai da lista, mas o número continua reservado (só apagar libera o número).")) return;
+    startSaving(async () => {
+      const result = await archiveBudgetAction(budget.id, archiving);
+      if (!result.ok) toast.error(result.error);
+      else {
+        toast.success(result.message);
+        router.refresh();
+      }
+    });
+  }
+
   function remove() {
     if (!window.confirm("Apagar este orçamento? Não dá para desfazer.")) return;
     startSaving(async () => {
@@ -254,6 +274,10 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
           <Button type="button" variant="ghost" onClick={duplicate} disabled={saving}>
             <Copy aria-hidden />
             Duplicar
+          </Button>
+          <Button type="button" variant="ghost" onClick={toggleArchive} disabled={saving}>
+            {budget.archivedAt ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
+            {budget.archivedAt ? "Desarquivar" : "Arquivar"}
           </Button>
           <Button type="button" variant="ghost" onClick={remove} disabled={saving}>
             <Trash2 aria-hidden />
@@ -470,19 +494,75 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
         linha (borda vermelha); apague para voltar ao cálculo automático.
       </p>
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <FormField id="budget-deliverables" label="Entregas para o cliente" hint="Uma por linha. Aparece na nota para o cliente conferir o que recebe.">
-          <Textarea
-            id="budget-deliverables"
-            rows={6}
-            value={deliverables}
-            placeholder={"Meia diária de captação\nEdição do vídeo principal\n3 cortes para stories\n7 cartelas de motion\n4 GCs de motion\nRoteiro\nCapa para Reels"}
-            onChange={(event) => {
-              setDeliverables(event.target.value);
-              setDirty(true);
-            }}
-          />
-        </FormField>
+      <Card variant="static">
+        <CardContent className="space-y-4 p-6">
+          <div>
+            <h2 className="section-title">O que o cliente recebe</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Cada entrega com o prazo dela. Aparece na nota de orçamento e na apresentação.</p>
+          </div>
+          {deliverables.length > 0 ? (
+            <ol className="space-y-2">
+              {deliverables.map((entry, index) => (
+                <li key={entry.key} className="grid items-center gap-2 sm:grid-cols-[2rem_minmax(0,3fr)_minmax(0,2fr)_2.5rem]">
+                  <span className="hidden text-right text-[12px] tabular-nums text-subtle sm:block">{String(index + 1).padStart(2, "0")}</span>
+                  <Input
+                    aria-label={`Entrega ${index + 1}`}
+                    value={entry.item}
+                    maxLength={200}
+                    placeholder="1 reels de 2 minutos"
+                    onChange={(event) => updateDeliverable(entry.key, { item: event.target.value })}
+                  />
+                  <Input
+                    aria-label={`Prazo da entrega ${index + 1}`}
+                    value={entry.deadline}
+                    maxLength={120}
+                    placeholder="7 dias úteis após a captação"
+                    onChange={(event) => updateDeliverable(entry.key, { deadline: event.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remover entrega ${index + 1}`}
+                    onClick={() => {
+                      setDeliverables((current) => current.filter((item) => item.key !== entry.key));
+                      setDirty(true);
+                    }}
+                  >
+                    <X aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          <div className="flex flex-wrap items-end gap-4">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={deliverables.length >= 40}
+              onClick={() => {
+                setDeliverables((current) => [...current, { key: crypto.randomUUID(), item: "", deadline: "" }]);
+                setDirty(true);
+              }}
+            >
+              <Plus aria-hidden />
+              Adicionar entrega
+            </Button>
+            <FormField id="budget-delivery-terms" label="Prazo geral de entrega (opcional)" className="min-w-[16rem] flex-1">
+              <Input
+                id="budget-delivery-terms"
+                maxLength={500}
+                value={header.deliveryTerms}
+                placeholder="Entrega final em até 10 dias úteis após a captação."
+                onChange={(event) => setField("deliveryTerms", event.target.value)}
+              />
+            </FormField>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-5 md:grid-cols-2">
         <FormField id="budget-terms" label="Condições de pagamento" hint="Aparece na nota e na apresentação.">
           <Textarea id="budget-terms" rows={6} value={header.paymentTerms} onChange={(event) => setField("paymentTerms", event.target.value)} />
         </FormField>
@@ -494,7 +574,7 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
       {presentationOpen ? (
         <PresentationDialog
           budgetId={budget.id}
-          initial={{ ...budget.presentation, deliverables: budget.presentation.deliverables.length ? budget.presentation.deliverables : budget.deliverables }}
+          initial={budget.presentation}
           companyLogoUrl={budget.companyLogoUrl}
           open
           onOpenChange={setPresentationOpen}

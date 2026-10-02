@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { computeBudget } from "@/features/budgets/pricing";
 import { getBudget } from "@/features/budgets/queries";
-import { parsePresentation, presentationSchema, proposalProfileSchema, type PresentationContent, type ProposalProfile } from "@/features/budgets/types";
+import { deliverableItemSchema, parsePresentation, presentationSchema, proposalProfileSchema, type PresentationContent, type ProposalProfile } from "@/features/budgets/types";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/types";
+import type { Json } from "@/types/database";
 
-const FORBIDDEN: ActionResult = { ok: false, error: "Só o master acessa os orçamentos." };
+const FORBIDDEN: ActionResult = { ok: false, error: "Sem acesso aos orçamentos." };
 
 async function requireMaster() {
   const profile = await getCurrentProfile();
@@ -44,6 +45,9 @@ const LABELS: Record<string, string> = {
   paymentTerms: "Condições",
   notes: "Observações",
   deliverables: "Entregas",
+  item: "Entrega",
+  deadline: "Prazo da entrega",
+  deliveryTerms: "Prazo de entrega",
   description: "Item",
   unit: "Unidade",
   quantity: "Quantidade",
@@ -65,7 +69,8 @@ const headerSchema = z.object({
   taxPct: number.pipe(z.number().min(0, "não pode ser negativo").max(99, "use até 99%")),
   paymentTerms: z.string().trim().max(1000, "use até 1000 caracteres").default(""),
   notes: z.string().trim().max(2000, "use até 2000 caracteres").default(""),
-  deliverables: z.array(z.string().trim().max(300)).max(40).default([]),
+  deliverables: z.array(deliverableItemSchema).max(40, "use até 40 entregas").default([]),
+  deliveryTerms: z.string().trim().max(500, "use até 500 caracteres").default(""),
 });
 
 const itemSchema = z.object({
@@ -135,7 +140,8 @@ export async function saveBudgetAction(id: string, header: BudgetHeaderValues, i
       tax_pct: h.taxPct,
       payment_terms: h.paymentTerms || null,
       notes: h.notes || null,
-      deliverables: h.deliverables.filter(Boolean),
+      deliverable_items: h.deliverables.filter((entry) => entry.item),
+      delivery_terms: h.deliveryTerms || null,
     })
     .eq("id", id);
   if (error) return { ok: false, error: `Não foi possível salvar o orçamento (${error.message}).` };
@@ -287,7 +293,8 @@ interface SourceBudget {
   payment_terms: string | null;
   notes: string | null;
   presentation: unknown;
-  deliverables: string[];
+  deliverable_items: unknown;
+  delivery_terms: string | null;
   items: { section: "profissional" | "custo"; catalog_item_id: string | null; description: string; unit: string; quantity: number; unit_cost: number; unit_price_override: number | null; position: number }[];
 }
 
@@ -312,7 +319,8 @@ async function copyBudget(
       payment_terms: row.payment_terms,
       notes: row.notes,
       presentation: parsePresentation(row.presentation),
-      deliverables: row.deliverables,
+      deliverable_items: row.deliverable_items as Json,
+      delivery_terms: row.delivery_terms,
       created_by: options.profileId,
     })
     .select("id")
@@ -335,6 +343,17 @@ async function copyBudget(
   }
   refresh();
   return { ok: true, id: created.id, message: options.parentId ? `Versão ${options.version} criada.` : "Orçamento duplicado." };
+}
+
+/** Arquivar tira da lista mas mantém o orçamento — e o número dele continua reservado. */
+export async function archiveBudgetAction(id: string, archived: boolean): Promise<ActionResult> {
+  if (!(await requireMaster())) return FORBIDDEN;
+  if (!z.string().uuid().safeParse(id).success) return { ok: false, error: "Orçamento inválido." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("budgets").update({ archived_at: archived ? new Date().toISOString() : null }).eq("id", id);
+  if (error) return { ok: false, error: "Não foi possível atualizar." };
+  refresh(id);
+  return { ok: true, message: archived ? "Orçamento arquivado. O número continua reservado." : "Orçamento desarquivado." };
 }
 
 export async function deleteBudgetAction(id: string): Promise<ActionResult> {
@@ -408,6 +427,8 @@ export async function deleteCatalogItemAction(id: string): Promise<ActionResult>
 export async function saveProposalProfileAction(values: ProposalProfile): Promise<ActionResult> {
   const profile = await requireMaster();
   if (!profile) return FORBIDDEN;
+  // A identidade das propostas é da empresa (company_settings): só quem administra a empresa edita.
+  if (!hasCapability(profile, "manageCompany")) return { ok: false, error: "Só a diretoria edita o Perfil da Além." };
   const parsed = proposalProfileSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revise os campos." };
   const supabase = await createClient();

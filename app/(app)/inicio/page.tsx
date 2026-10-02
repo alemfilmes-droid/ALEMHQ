@@ -7,6 +7,7 @@ import { syncCrmAlertsAction } from "@/features/crm/actions";
 import { EssenciaCards } from "@/features/essencia/components/essencia-cards";
 import { checkOverdueFinanceAction } from "@/features/finance/actions";
 import { HomeFinanceCard } from "@/features/finance/components/home-finance-card";
+import { MyGoalsHighlight, TeamGoalsCard } from "@/features/goals/components/home-goal-cards";
 import { PautaHomeCards } from "@/features/pautas/components/home-cards";
 import { closeStaleTimeSessionsAction } from "@/features/time-tracking/actions";
 import { PontoCard } from "@/features/time-tracking/components/ponto-card";
@@ -55,6 +56,8 @@ export default async function HomePage() {
       </header>
 
       <section aria-label="Resumo" className="card-grid-lg gap-5">
+        {/* Meta ativa em destaque, antes de tudo. */}
+        <MyGoalsHighlight profileId={profile.id} className="card-span-2" />
         <PontoCard profileId={profile.id} />
         <PautaHomeCards profileId={profile.id} />
         <HomeAgendaCard />
@@ -62,6 +65,7 @@ export default async function HomePage() {
         {hasCapability(profile, "crmOverview") ? <DirectorCommercialCard canSeeFinance={hasCapability(profile, "finance")} /> : null}
         {hasCapability(profile, "crmWorkday") ? <MyCommercialDayCard profileId={profile.id} showCommissions={!canManageAllDeals(profile) && hasCapability(profile, "finance")} /> : null}
 
+        {hasCapability(profile, "manageCompany") ? <TeamGoalsCard /> : null}
         {hasCapability(profile, "canSeeFinanceHomeCard") ? <HomeFinanceCard /> : null}
       </section>
 

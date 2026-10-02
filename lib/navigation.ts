@@ -10,6 +10,7 @@ import {
   ListChecks,
   Megaphone,
   Settings,
+  Target,
   TrendingUp,
   Users,
   type LucideIcon,
@@ -51,6 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/crm", label: "CRM", icon: TrendingUp },
       { href: "/orcamentos", label: "Orçamentos", icon: Calculator },
+      { href: "/metas", label: "Metas", icon: Target },
     ],
   },
   {

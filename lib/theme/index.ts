@@ -84,6 +84,7 @@ export const PANEL_TONE: Record<string, PanelTone> = {
   "/configuracoes": "neutral",
   "/essencia": "accent",
   "/orcamentos": "alert",
+  "/metas": "success",
 };
 
 export function panelToneColor(tone: PanelTone): string | undefined {
