@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
+import type { CommitmentKind, Squad } from "@/types";
 
 /**
  * Google Agenda por pessoa (OAuth 2.0 + Calendar API v3 via fetch).
@@ -151,6 +152,27 @@ interface DesiredEvent {
   end: GoogleTime;
   recurrence?: string[];
   reminders?: { useDefault: false; overrides: { method: "popup"; minutes: number }[] };
+  /** Cor do evento na paleta fixa do Google (1–11); sem cor = azul padrão da agenda. */
+  colorId?: string;
+}
+
+/**
+ * Cores no Google Agenda (paleta fixa do Google): captação amarela, reunião vermelha, prazos e
+ * entregas na cor do squad da pauta; compromissos internos/avisos ficam no azul padrão.
+ */
+const GOOGLE_COLOR = { banana: "5", tomato: "11", tangerine: "6", basil: "10" } as const;
+const SQUAD_GOOGLE_COLOR: Record<Squad, string> = {
+  audiovisual: GOOGLE_COLOR.banana,
+  comercial: GOOGLE_COLOR.tangerine,
+  financeiro: GOOGLE_COLOR.basil,
+  diretoria: GOOGLE_COLOR.tomato,
+};
+
+function commitmentColor(kind: CommitmentKind, pautaSquad: Squad | null, hasDeal: boolean): string | undefined {
+  if (kind === "captacao") return GOOGLE_COLOR.banana;
+  if (kind === "reuniao_comercial") return GOOGLE_COLOR.tomato;
+  if (kind === "entrega") return pautaSquad ? SQUAD_GOOGLE_COLOR[pautaSquad] : hasDeal ? SQUAD_GOOGLE_COLOR.comercial : SQUAD_GOOGLE_COLOR.audiovisual;
+  return undefined;
 }
 
 function dateInZone(iso: string): string {
@@ -188,6 +210,11 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
   const commitments = new Map([...(owned.data ?? []), ...(attending.data ?? [])].map((row) => [row.id, row]));
   const events: DesiredEvent[] = [];
 
+  // Squad das pautas ligadas a compromissos (para a cor das entregas).
+  const linkedIds = [...new Set([...commitments.values()].map((row) => row.pauta_id).filter((id): id is string => Boolean(id)))];
+  const { data: linkedSquads } = linkedIds.length ? await admin.from("pautas").select("id, squad").in("id", linkedIds) : { data: [] };
+  const squadOfPauta = new Map((linkedSquads ?? []).map((row) => [row.id, row.squad]));
+
   for (const row of commitments.values()) {
     if (!row.recurrence_rule && new Date(row.ends_at) < windowStart) continue;
     const base = {
@@ -197,6 +224,7 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
       location: row.location_or_link ?? undefined,
       recurrence: row.recurrence_rule ? [`RRULE:${row.recurrence_rule}`] : undefined,
       reminders: { useDefault: false as const, overrides: row.reminder_minutes.slice(0, 5).map((minutes) => ({ method: "popup" as const, minutes })) },
+      colorId: commitmentColor(row.kind, row.pauta_id ? (squadOfPauta.get(row.pauta_id) ?? null) : null, Boolean(row.deal_id)),
     };
     if (row.all_day) {
       const startDay = dateInZone(row.starts_at);
@@ -211,7 +239,7 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
   const people = `lead_id.eq.${profileId},current_assignee_id.eq.${profileId},created_for.eq.${profileId}${memberIds.length ? `,id.in.(${memberIds.join(",")})` : ""}`;
   const { data: pautas } = await admin
     .from("pautas_with_details")
-    .select("id, title, status, board_column, scheduled_at, duration_minutes, due_date, due_time, location_address, company_name")
+    .select("id, title, status, board_column, scheduled_at, duration_minutes, due_date, due_time, location_address, company_name, squad")
     .or(people)
     .is("archived_at", null);
   const linkedPautas = new Set([...commitments.values()].map((row) => row.pauta_id).filter(Boolean));
@@ -229,6 +257,7 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
         location: pauta.location_address ?? undefined,
         start: { dateTime: pauta.scheduled_at, timeZone: ZONE },
         end: { dateTime: end, timeZone: ZONE },
+        colorId: GOOGLE_COLOR.banana,
       });
     }
     const done = pauta.board_column === "entregue" || pauta.status === "aprovado";
@@ -240,6 +269,7 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
             description: `Entrega${client}\n\nAlém HQ: ${url}`,
             start: { dateTime: new Date(new Date(fortalezaToIso(pauta.due_date, pauta.due_time)).getTime() - 30 * 60_000).toISOString(), timeZone: ZONE },
             end: { dateTime: fortalezaToIso(pauta.due_date, pauta.due_time), timeZone: ZONE },
+            colorId: pauta.squad ? SQUAD_GOOGLE_COLOR[pauta.squad] : undefined,
           }
         : {
             key: `d:${pauta.id}`,
@@ -247,6 +277,7 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
             description: `Entrega${client}\n\nAlém HQ: ${url}`,
             start: { date: pauta.due_date },
             end: { date: addDaysIso(pauta.due_date, 1) },
+            colorId: pauta.squad ? SQUAD_GOOGLE_COLOR[pauta.squad] : undefined,
           };
       events.push(dueEvent);
     }
@@ -268,6 +299,7 @@ function toGoogleBody(event: DesiredEvent) {
     end: event.end,
     recurrence: event.recurrence,
     reminders: event.reminders ?? { useDefault: true },
+    colorId: event.colorId,
     source: { title: "Além HQ", url: publicEnv.NEXT_PUBLIC_SITE_URL },
     extendedProperties: { private: { [HQ_KEY]: event.key } },
   };
