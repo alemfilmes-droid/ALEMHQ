@@ -1,9 +1,10 @@
 /**
- * Conta do orçamento (mesma regra na tela, na nota e na apresentação).
+ * Conta do orçamento (mesma regra na tela, na nota, na apresentação e no banco — ver
+ * budget_final_total()).
  *
- * Preço unitário ao cliente = custo × (1 + FEE%) ÷ (1 − imposto%) — o total ao cliente já embute o
- * FEE da empresa e o imposto. Um item pode ter o preço fixado à mão (override).
- * Por item: imposto = preço × imposto%; ganho = preço − custo − imposto.
+ * Valor do serviço por item = custo × (1 + FEE%), salvo quando o item tem preço fixado à mão.
+ * Imposto = valor do serviço × imposto% (aparece para o cliente). Valor final = serviço + imposto.
+ * Ganho da empresa = serviço − custo (o imposto é repassado).
  */
 
 export type BudgetSection = "profissional" | "custo";
@@ -19,18 +20,21 @@ export interface BudgetLineInput {
 }
 
 export interface BudgetLine extends BudgetLineInput {
+  /** Valor unitário do serviço (sem imposto). */
   unitPrice: number;
   price: number;
   cost: number;
-  tax: number;
   profit: number;
   marginPct: number;
 }
 
 export interface BudgetTotals {
-  price: number;
-  cost: number;
+  /** Soma do valor dos serviços (sem imposto). */
+  services: number;
   tax: number;
+  /** Valor final para pagamento (serviços + imposto). */
+  final: number;
+  cost: number;
   profit: number;
   marginPct: number;
   bySection: Record<BudgetSection, { price: number; cost: number }>;
@@ -38,36 +42,31 @@ export interface BudgetTotals {
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
-export function priceFactor(feePct: number, taxPct: number): number {
-  const tax = Math.min(Math.max(taxPct, 0), 99.99) / 100;
-  return (1 + Math.max(feePct, 0) / 100) / (1 - tax);
-}
-
 export function computeBudget(lines: BudgetLineInput[], feePct: number, taxPct: number): { lines: BudgetLine[]; totals: BudgetTotals } {
-  const factor = priceFactor(feePct, taxPct);
-  const taxRate = taxPct / 100;
+  const factor = 1 + Math.max(feePct, 0) / 100;
   const computed = lines.map((line) => {
     const unitPrice = line.unitPriceOverride ?? round2(line.unitCost * factor);
     const price = round2(unitPrice * line.quantity);
     const cost = round2(line.unitCost * line.quantity);
-    const tax = round2(price * taxRate);
-    const profit = round2(price - cost - tax);
-    return { ...line, unitPrice, price, cost, tax, profit, marginPct: price > 0 ? profit / price : 0 };
+    const profit = round2(price - cost);
+    return { ...line, unitPrice, price, cost, profit, marginPct: price > 0 ? profit / price : 0 };
   });
 
-  const sum = (key: "price" | "cost" | "tax" | "profit", section?: BudgetSection) =>
+  const sum = (key: "price" | "cost" | "profit", section?: BudgetSection) =>
     round2(computed.filter((line) => !section || line.section === section).reduce((total, line) => total + line[key], 0));
 
-  const price = sum("price");
+  const services = sum("price");
+  const tax = round2(services * (Math.max(taxPct, 0) / 100));
   const profit = sum("profit");
   return {
     lines: computed,
     totals: {
-      price,
+      services,
+      tax,
+      final: round2(services + tax),
       cost: sum("cost"),
-      tax: sum("tax"),
       profit,
-      marginPct: price > 0 ? profit / price : 0,
+      marginPct: services > 0 ? profit / services : 0,
       bySection: {
         profissional: { price: sum("price", "profissional"), cost: sum("cost", "profissional") },
         custo: { price: sum("price", "custo"), cost: sum("cost", "custo") },
@@ -87,4 +86,8 @@ export function brl(value: number): string {
 
 export function pct(value: number): string {
   return `${(value * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}
+
+export function pctNumber(value: number): string {
+  return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 }

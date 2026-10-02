@@ -1,11 +1,12 @@
 import { z } from "zod";
 import type { BudgetLineInput } from "@/features/budgets/pricing";
 
-export type BudgetStatus = "rascunho" | "enviado" | "aprovado" | "recusado";
+export type BudgetStatus = "rascunho" | "enviado" | "em_ajuste" | "aprovado" | "recusado";
 
 export const BUDGET_STATUS_LABELS: Record<BudgetStatus, string> = {
   rascunho: "Rascunho",
-  enviado: "Enviado",
+  enviado: "Enviado ao cliente",
+  em_ajuste: "Em ajuste",
   aprovado: "Aprovado",
   recusado: "Recusado",
 };
@@ -80,6 +81,16 @@ export function parseProposalProfile(value: unknown): ProposalProfile {
 export interface BudgetRecord {
   id: string;
   number: number;
+  version: number;
+  parentId: string | null;
+  projectId: string | null;
+  projectName: string | null;
+  dealId: string | null;
+  dealTitle: string | null;
+  deliverables: string[];
+  sentAt: string | null;
+  decidedAt: string | null;
+  statusNote: string;
   companyId: string | null;
   companyLogoUrl: string | null;
   clientName: string;
@@ -97,6 +108,7 @@ export interface BudgetRecord {
 
 export interface CatalogItem {
   id: string;
+  position: number;
   section: "profissional" | "custo";
   name: string;
   unit: string;

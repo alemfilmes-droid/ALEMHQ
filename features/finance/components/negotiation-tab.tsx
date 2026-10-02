@@ -6,7 +6,8 @@ import { PROPOSAL_STATUS_LABELS } from "@/features/crm/labels";
 import { StageProbabilitiesForm } from "@/features/finance/components/stage-probabilities-form";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
 import { formatCents } from "@/features/finance/money";
-import { getDealsInNegotiation, getStageProbabilities, summarizeNegotiation } from "@/features/finance/queries";
+import { getBudgetsInNegotiation, getDealsInNegotiation, getStageProbabilities, summarizeNegotiation } from "@/features/finance/queries";
+import { sumCents } from "@/features/finance/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricValue } from "@/components/ui/metric-value";
 import { formatDate } from "@/lib/format";
@@ -16,15 +17,20 @@ import { formatDate } from "@/lib/format";
  * previsão (valor × probabilidade da etapa) — nunca entra em recebimentos reais.
  */
 export async function NegotiationTab({ canEditProbabilities }: { canEditProbabilities: boolean }) {
-  const [items, probabilities] = await Promise.all([getDealsInNegotiation(), canEditProbabilities ? getStageProbabilities() : Promise.resolve([])]);
+  const [items, probabilities, budgets] = await Promise.all([
+    getDealsInNegotiation(),
+    canEditProbabilities ? getStageProbabilities() : Promise.resolve([]),
+    getBudgetsInNegotiation(),
+  ]);
   const totals = summarizeNegotiation(items);
+  const budgetsTotal = sumCents(budgets.map((item) => item.total));
 
   return (
     <div className="space-y-6">
       <div className="card-grid">
         {[
           { title: "Negócios com proposta", value: totals.count, format: "number" as const },
-          { title: "Valor em negociação", value: totals.total, format: "cents" as const },
+          { title: "Valor em negociação", value: sumCents([totals.total, budgetsTotal]), format: "cents" as const },
           { title: "Previsão ponderada", value: totals.weighted, format: "cents" as const },
         ].map((item) => (
           <Card key={item.title}>
@@ -84,6 +90,39 @@ export async function NegotiationTab({ canEditProbabilities }: { canEditProbabil
           </tbody>
         </TableShell>
       )}
+
+      {budgets.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="section-title">Orçamentos enviados (fora do CRM)</h2>
+          <TableShell minWidth="min-w-[720px]">
+            <thead>
+              <tr>
+                <Th>Cliente / orçamento</Th>
+                <Th>Situação</Th>
+                <Th>Enviado em</Th>
+                <Th>Validade</Th>
+                <Th align="right">Valor</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {budgets.map((item) => (
+                <tr key={item.budgetId}>
+                  <td className="px-4 py-3">
+                    <span className="font-semibold">{item.clientName}</span>
+                    <span className="block text-[13px] text-muted-foreground">
+                      {item.label} · {item.title}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{item.status === "em_ajuste" ? "Em ajuste" : "Aguardando resposta"}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.sentAt ? formatDate(item.sentAt) : "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatDate(item.validUntil)}</td>
+                  <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TableShell>
+        </section>
+      ) : null}
 
       {canEditProbabilities ? <StageProbabilitiesForm probabilities={probabilities} /> : null}
     </div>

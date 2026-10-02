@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { brl, computeBudget, SECTION_LABELS, type BudgetSection } from "@/features/budgets/pricing";
+import { brl, computeBudget, pctNumber, SECTION_LABELS, type BudgetSection } from "@/features/budgets/pricing";
 import type { BudgetRecord, PresentationContent, ProposalProfile } from "@/features/budgets/types";
 
 /*
@@ -34,12 +34,32 @@ function longDate(value: string) {
 // Primitivas
 // ---------------------------------------------------------------------------
 
-function Slide({ children, accent, page, client, tone = "dark", bare = false }: { children: ReactNode; accent: string; page: number; client: string; tone?: "dark" | "light"; bare?: boolean }) {
-  const dark = tone === "dark";
+/** Cor escura de destaque (preto, grafite, marinho…) não aparece no fundo preto: o deck vira claro. */
+export function isDarkAccent(hex: string): boolean {
+  const value = hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16) / 255);
+  const luminance = 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (b ?? 0);
+  return luminance < 0.22;
+}
+
+function Slide({ children, accent, page, client, tone = "base", bare = false }: { children: ReactNode; accent: string; page: number; client: string; tone?: "base" | "alt"; bare?: boolean }) {
+  // Deck escuro por padrão; claro quando o destaque é escuro. "alt" inverte (slide de respiro).
+  const lightDeck = isDarkAccent(accent);
+  const dark = tone === "alt" ? lightDeck : !lightDeck;
   return (
     <section
       className="deck-slide relative mx-auto mb-8 aspect-video w-full max-w-[1280px] overflow-hidden print:mb-0"
-      style={{ background: dark ? "#0A0A0A" : "#F4F2EE", color: dark ? "#F0F0F0" : "#0A0A0A", containerType: "inline-size", ["--accent" as string]: accent } as CSSProperties}
+      data-tone={dark ? "dark" : "light"}
+      style={
+        {
+          background: dark ? "#0A0A0A" : "#F4F2EE",
+          color: dark ? "#F0F0F0" : "#0A0A0A",
+          containerType: "inline-size",
+          ["--accent" as string]: accent,
+          ["--line" as string]: dark ? "rgba(255,255,255,0.14)" : "rgba(10,10,10,0.14)",
+          ["--soft" as string]: dark ? "rgba(255,255,255,0.05)" : "rgba(10,10,10,0.05)",
+        } as CSSProperties
+      }
     >
       <div className="absolute inset-0 flex flex-col p-[5cqw]">{children}</div>
       {bare ? null : (
@@ -72,7 +92,7 @@ function Body({ children, className = "" }: { children: ReactNode; className?: s
 
 function AlemLogo({ className = "w-[16cqw]" }: { className?: string }) {
   // eslint-disable-next-line @next/next/no-img-element -- logo da marca na apresentação impressa
-  return <img src="/brand/alem-filmes_texto-branco.png" alt="Além Filmes" className={`h-auto ${className}`} />;
+  return <img src="/brand/alem-filmes_texto-branco.png" alt="Além Filmes" className={`deck-logo h-auto ${className}`} />;
 }
 
 function ClientLogo({ url, name, className = "h-[6cqw] w-[6cqw]" }: { url: string; name: string; className?: string }) {
@@ -100,7 +120,7 @@ function Cover({ data, page, variant }: { data: DeckData; page: number; variant:
           Para {budget.clientName} · {longDate(budget.issueDate)}
         </p>
       </div>
-      <div className="mt-[3cqw] flex items-center justify-between border-t border-white/15 pt-[1.6cqw] text-[1cqw] uppercase tracking-[0.3em] opacity-60">
+      <div className="mt-[3cqw] flex items-center justify-between border-t border-[color:var(--line)] pt-[1.6cqw] text-[1cqw] uppercase tracking-[0.3em] opacity-60">
         <span>{profile.tagline}</span>
         <span>Nº {String(budget.number).padStart(4, "0")}</span>
       </div>
@@ -115,7 +135,7 @@ function Founder({ data, page, kicker = "A mente por trás" }: { data: DeckData;
   return (
     <Slide accent={content.accent} page={page} client={budget.clientName}>
       <div className="grid h-full grid-cols-[2fr_3fr] gap-[5cqw]">
-        <div className="relative overflow-hidden rounded-[0.8cqw] bg-white/5">
+        <div className="relative overflow-hidden rounded-[0.8cqw] bg-[var(--soft)]">
           {profile.founderPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- foto do fundador
             <img src={profile.founderPhotoUrl} alt={profile.founderName} className="absolute inset-0 size-full object-cover grayscale" />
@@ -140,7 +160,7 @@ function Founder({ data, page, kicker = "A mente por trás" }: { data: DeckData;
   );
 }
 
-function TextSlide({ data, page, kicker, title, text, tone }: { data: DeckData; page: number; kicker: string; title: string; text: string; tone?: "dark" | "light" }) {
+function TextSlide({ data, page, kicker, title, text, tone }: { data: DeckData; page: number; kicker: string; title: string; text: string; tone?: "base" | "alt" }) {
   if (!text.trim()) return null;
   return (
     <Slide accent={data.content.accent} page={page} client={data.budget.clientName} tone={tone}>
@@ -186,7 +206,7 @@ function Deliverables({ data, page }: { data: DeckData; page: number }) {
         </div>
         <ol className="space-y-[1.4cqw] self-center">
           {items.map((item, index) => (
-            <li key={item} className="flex items-baseline gap-[2cqw] border-b border-white/10 pb-[1.2cqw]">
+            <li key={item} className="flex items-baseline gap-[2cqw] border-b border-[color:var(--line)] pb-[1.2cqw]">
               <span className="font-display text-[1.6cqw] font-black" style={{ color: "var(--accent)" }}>
                 {String(index + 1).padStart(2, "0")}
               </span>
@@ -209,7 +229,7 @@ function Timeline({ data, page }: { data: DeckData; page: number }) {
         <Title size="md">Do briefing à entrega</Title>
       </div>
       <div className="relative mt-auto mb-[5cqw]">
-        <span className="absolute inset-x-0 top-[0.6cqw] h-[0.12cqw] bg-white/20" />
+        <span className="absolute inset-x-0 top-[0.6cqw] h-[0.12cqw] bg-[var(--line)]" />
         <ol className="relative grid gap-[1.5cqw]" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
           {steps.map((step) => (
             <li key={`${step.step}-${step.when}`} className="space-y-[1.2cqw]">
@@ -236,7 +256,7 @@ function Team({ data, page, kicker = "Equipe dedicada", title = "Quem faz aconte
         </div>
         <ul className="grid grid-cols-2 content-center gap-x-[3cqw] gap-y-[1.6cqw]">
           {roles.map((role) => (
-            <li key={role.id} className="flex items-baseline gap-[1.2cqw] border-b border-white/10 pb-[1cqw]">
+            <li key={role.id} className="flex items-baseline gap-[1.2cqw] border-b border-[color:var(--line)] pb-[1cqw]">
               <span className="font-display text-[2cqw] font-black" style={{ color: "var(--accent)" }}>
                 {role.quantity.toLocaleString("pt-BR")}×
               </span>
@@ -262,18 +282,28 @@ function Investment({ data, page }: { data: DeckData; page: number }) {
             {sections
               .filter((section) => totals.bySection[section].price > 0)
               .map((section) => (
-                <div key={section} className="flex items-baseline justify-between gap-[2cqw] border-b border-white/10 pb-[1.2cqw]">
+                <div key={section} className="flex items-baseline justify-between gap-[2cqw] border-b border-[color:var(--line)] pb-[1.2cqw]">
                   <span className="text-[1.7cqw]">{SECTION_LABELS[section]}</span>
                   <span className="text-[1.7cqw] tabular-nums opacity-80">{brl(totals.bySection[section].price)}</span>
                 </div>
               ))}
           </div>
+          <div className="space-y-[0.8cqw]">
+            <div className="flex items-baseline justify-between gap-[2cqw] text-[1.5cqw] opacity-80">
+              <span>Valor do serviço</span>
+              <span className="tabular-nums">{brl(totals.services)}</span>
+            </div>
+            <div className="flex items-baseline justify-between gap-[2cqw] text-[1.5cqw] opacity-80">
+              <span>Imposto ({pctNumber(budget.taxPct)})</span>
+              <span className="tabular-nums">{brl(totals.tax)}</span>
+            </div>
+          </div>
           <div>
             <p className="text-[1.1cqw] uppercase tracking-[0.3em] opacity-60">Investimento total</p>
-            <p className="font-display text-[6cqw] font-black leading-none tracking-tight tabular-nums">{brl(totals.price)}</p>
+            <p className="font-display text-[6cqw] font-black leading-none tracking-tight tabular-nums">{brl(totals.final)}</p>
           </div>
         </div>
-        <div className="flex flex-col justify-center space-y-[2cqw] border-l border-white/15 pl-[4cqw]">
+        <div className="flex flex-col justify-center space-y-[2cqw] border-l border-[color:var(--line)] pl-[4cqw]">
           <div className="space-y-[0.8cqw]">
             <p className="text-[1.1cqw] font-bold uppercase tracking-[0.25em]" style={{ color: "var(--accent)" }}>
               Condições
@@ -366,7 +396,7 @@ function ExecutiveDeck({ data }: { data: DeckData }) {
             {clients.length ? <p className="text-[1.25cqw] uppercase tracking-[0.2em] opacity-60">{clients.join("  ·  ")}</p> : null}
           </div>
           {profile.founderName ? (
-            <div className="flex flex-col justify-center space-y-[1.4cqw] border-l border-white/15 pl-[4cqw]">
+            <div className="flex flex-col justify-center space-y-[1.4cqw] border-l border-[color:var(--line)] pl-[4cqw]">
               {profile.founderPhotoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- foto do fundador
                 <img src={profile.founderPhotoUrl} alt={profile.founderName} className="aspect-square w-[14cqw] rounded-full object-cover grayscale" />
@@ -393,7 +423,7 @@ function ExecutiveDeck({ data }: { data: DeckData }) {
             </div>
             <ol className="flex flex-col justify-center space-y-[1.2cqw]">
               {content.deliverables.map((item, index) => (
-                <li key={item} className="flex items-baseline gap-[1.6cqw] border-b border-white/10 pb-[1cqw]">
+                <li key={item} className="flex items-baseline gap-[1.6cqw] border-b border-[color:var(--line)] pb-[1cqw]">
                   <span className="font-display text-[1.5cqw] font-black" style={{ color: content.accent }}>
                     {String(index + 1).padStart(2, "0")}
                   </span>
@@ -427,7 +457,7 @@ function TreatmentDeck({ data }: { data: DeckData }) {
             <Body>{profile.about || FALLBACK_ABOUT}</Body>
           </div>
           {profile.founderName ? (
-            <div className="flex flex-col justify-center space-y-[1.4cqw] border-l border-white/15 pl-[4cqw]">
+            <div className="flex flex-col justify-center space-y-[1.4cqw] border-l border-[color:var(--line)] pl-[4cqw]">
               <p className="text-[1.1cqw] font-bold uppercase tracking-[0.25em]" style={{ color: content.accent }}>
                 Direção
               </p>
@@ -439,7 +469,7 @@ function TreatmentDeck({ data }: { data: DeckData }) {
         </div>
       </Slide>
       {content.concept ? (
-        <Slide accent={content.accent} page={next()} client={budget.clientName} tone="light">
+        <Slide accent={content.accent} page={next()} client={budget.clientName} tone="alt">
           <div className="mx-auto flex h-full max-w-[80%] flex-col justify-center space-y-[2.4cqw]">
             <Kicker>Carta do diretor</Kicker>
             <p className="whitespace-pre-line font-display text-[2.6cqw] font-black leading-[1.25] tracking-tight">{content.concept}</p>

@@ -22,6 +22,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
   return (
     <div className="min-h-dvh bg-[#1a1a1a] print:bg-black">
       <style>{`@page { size: 1280px 720px; margin: 0; }
+        .deck-slide[data-tone="light"] .deck-logo { filter: brightness(0); }
         @media print {
           html, body { background: #0A0A0A !important; }
           .deck-slide { width: 1280px !important; max-width: none !important; height: 720px; margin: 0 !important; break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -31,7 +32,11 @@ export default async function ProposalPage({ params }: { params: Promise<{ id: s
         hint="Na impressão: “Salvar como PDF”, margens “Nenhuma” e “Gráficos de fundo” ativado."
       />
       <div className="px-4 py-8 print:p-0">
-        <ProposalDeck budget={budget} profile={proposalProfile} content={budget.presentation} />
+        <ProposalDeck
+          budget={budget}
+          profile={proposalProfile}
+          content={{ ...budget.presentation, deliverables: budget.presentation.deliverables.length ? budget.presentation.deliverables : budget.deliverables }}
+        />
       </div>
     </div>
   );

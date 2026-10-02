@@ -14,7 +14,26 @@ import { createClient } from "@/lib/supabase/client";
 import { describeUploadError, IMAGE_ACCEPT, IMAGE_TYPES, validateImage } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
-const ACCENT_PRESETS = ["#E5231B", "#F0F0F0", "#D9A62E", "#2E9E6B", "#3B82F6", "#8B5CF6"];
+/** Paleta da apresentação. Cores escuras (preto, grafite, marinho, vinho) deixam o deck claro. */
+const ACCENT_PRESETS = [
+  { color: "#E5231B", name: "Vermelho Além" },
+  { color: "#0A0A0A", name: "Preto" },
+  { color: "#F0F0F0", name: "Branco" },
+  { color: "#3A3A3A", name: "Grafite" },
+  { color: "#8A8A8A", name: "Cinza" },
+  { color: "#C9A227", name: "Dourado" },
+  { color: "#F2C230", name: "Amarelo" },
+  { color: "#E8742B", name: "Laranja" },
+  { color: "#7A1E2C", name: "Vinho" },
+  { color: "#E0457B", name: "Rosa" },
+  { color: "#7C4DFF", name: "Roxo" },
+  { color: "#2F6FED", name: "Azul" },
+  { color: "#1B2A4A", name: "Azul-marinho" },
+  { color: "#1FA5A0", name: "Turquesa" },
+  { color: "#2E9E6B", name: "Verde" },
+  { color: "#1F5E3A", name: "Verde-escuro" },
+  { color: "#D8C3A5", name: "Bege" },
+];
 
 async function uploadAsset(budgetId: string, file: File): Promise<string> {
   const problem = validateImage(file);
@@ -145,16 +164,20 @@ export function PresentationDialog({ budgetId, initial, companyLogoUrl, open, on
           </fieldset>
 
           <div className="grid gap-5 md:grid-cols-2">
-            <FormField id="pres-accent" label="Cor de destaque (IDV)" hint="O vermelho da Além, ou a cor do cliente.">
+            <FormField id="pres-accent" label="Cor de destaque (IDV)" hint="O vermelho da Além ou a cor do cliente. Cores escuras deixam a apresentação em fundo claro.">
               <div className="flex flex-wrap items-center gap-2">
-                {ACCENT_PRESETS.map((color) => (
+                {ACCENT_PRESETS.map(({ color, name }) => (
                   <button
                     key={color}
                     type="button"
                     onClick={() => set("accent", color)}
-                    aria-label={`Cor ${color}`}
+                    title={name}
+                    aria-label={name}
                     aria-pressed={content.accent.toLowerCase() === color.toLowerCase()}
-                    className={cn("size-8 rounded-full border-2", content.accent.toLowerCase() === color.toLowerCase() ? "border-foreground" : "border-transparent")}
+                    className={cn(
+                      "size-8 rounded-full border-2 ring-1 ring-border-strong",
+                      content.accent.toLowerCase() === color.toLowerCase() ? "border-foreground" : "border-transparent",
+                    )}
                     style={{ background: color }}
                   />
                 ))}

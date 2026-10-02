@@ -656,6 +656,40 @@ export async function getDealsInNegotiation(): Promise<NegotiationItem[]> {
   return withCompanyLogos(supabase, items);
 }
 
+export interface BudgetNegotiationItem {
+  budgetId: string;
+  label: string;
+  clientName: string;
+  title: string;
+  status: "enviado" | "em_ajuste";
+  total: number;
+  sentAt: string | null;
+  validUntil: string;
+}
+
+/** Orçamentos enviados/em ajuste que não viraram proposta de um negócio do CRM (sem duplicar). */
+export async function getBudgetsInNegotiation(): Promise<BudgetNegotiationItem[]> {
+  const supabase = await financeClient();
+  const { data, error } = await supabase.rpc("finance_budgets_in_negotiation");
+  if (error) return [];
+  return (data ?? []).flatMap((row) =>
+    row.status === "enviado" || row.status === "em_ajuste"
+      ? [
+          {
+            budgetId: row.budget_id,
+            label: `Orçamento ${String(row.number).padStart(4, "0")}${row.version > 1 ? ` v${row.version}` : ""}`,
+            clientName: row.client_name,
+            title: row.title,
+            status: row.status,
+            total: toCents(row.total),
+            sentAt: row.sent_at,
+            validUntil: row.valid_until,
+          },
+        ]
+      : [],
+  );
+}
+
 export function summarizeNegotiation(items: NegotiationItem[]): NegotiationTotals {
   return {
     count: items.length,

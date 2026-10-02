@@ -1,24 +1,28 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, FileText, Presentation, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteBudgetAction, duplicateBudgetAction, saveBudgetAction, type BudgetHeaderValues } from "@/features/budgets/actions";
+import { createQuickProjectAction } from "@/app/(app)/projetos/actions";
+import { deleteBudgetAction, duplicateBudgetAction, getClientLinksAction, saveBudgetAction, type BudgetHeaderValues } from "@/features/budgets/actions";
+import { BudgetStatusPanel } from "@/features/budgets/components/budget-status-panel";
 import { PresentationDialog } from "@/features/budgets/components/presentation-dialog";
-import { brl, computeBudget, pct, SECTION_LABELS, type BudgetLineInput, type BudgetSection } from "@/features/budgets/pricing";
-import { BUDGET_STATUS_LABELS, type BudgetRecord, type BudgetStatus, type CatalogItem } from "@/features/budgets/types";
+import { brl, computeBudget, pct, pctNumber, SECTION_LABELS, type BudgetLineInput, type BudgetSection } from "@/features/budgets/pricing";
+import type { BudgetRecord, CatalogItem } from "@/features/budgets/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { SearchSelect } from "@/components/ui/search-select";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const FREE_ITEM = "__livre__";
 const NO_COMPANY = "__sem_cadastro__";
+const NO_PROJECT = "__sem_projeto__";
+const NEW_PROJECT = "__novo_projeto__";
 
 /** "1.234,56" ou "1234.56" → 1234.56 */
 function parseNumber(value: string): number {
@@ -69,32 +73,42 @@ interface BudgetEditorProps {
 
 /**
  * Orçamento como planilha: à esquerda o que o cliente vê (item, quantidade, valor), à direita os
- * valores reais (custo, imposto, ganho e margem por linha). O FEE da empresa e o imposto, definidos
- * aqui, recalculam o valor final para o cliente.
+ * valores reais (custo, ganho e margem por linha). O FEE da empresa e o imposto, definidos aqui,
+ * formam o valor do serviço, o imposto e o valor final para o cliente.
  */
 export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) {
   const router = useRouter();
-  const [header, setHeader] = useState<BudgetHeaderValues>({
+  const [header, setHeader] = useState({
     clientName: budget.clientName,
     companyId: budget.companyId ?? "",
+    projectId: budget.projectId ?? "",
     title: budget.title,
     issueDate: budget.issueDate,
     validUntil: budget.validUntil,
     feePct: budget.feePct,
     taxPct: budget.taxPct,
-    status: budget.status,
     paymentTerms: budget.paymentTerms,
     notes: budget.notes,
   });
+  const [deliverables, setDeliverables] = useState(budget.deliverables.join("\n"));
   const [rows, setRows] = useState<Row[]>(budget.items.map((item) => ({ ...item, catalogItemId: null })));
   const [dirty, setDirty] = useState(false);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [saving, startSaving] = useTransition();
 
   const { lines, totals } = useMemo(() => computeBudget(rows, header.feePct, header.taxPct), [rows, header.feePct, header.taxPct]);
   const lineById = new Map(lines.map((line) => [line.id, line]));
 
-  function setField<K extends keyof BudgetHeaderValues>(key: K, value: BudgetHeaderValues[K]) {
+  useEffect(() => {
+    if (!header.companyId) {
+      setProjects([]);
+      return;
+    }
+    void getClientLinksAction(header.companyId).then((links) => setProjects(links.projects));
+  }, [header.companyId]);
+
+  function setField<K extends keyof typeof header>(key: K, value: (typeof header)[K]) {
     setHeader((current) => ({ ...current, [key]: value }));
     setDirty(true);
   }
@@ -127,15 +141,45 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
     setDirty(true);
   }
 
+  function chooseProject(value: string) {
+    if (value !== NEW_PROJECT) {
+      setField("projectId", value === NO_PROJECT ? "" : value);
+      return;
+    }
+    const name = window.prompt("Nome do novo projeto para este cliente:", header.title);
+    if (!name?.trim()) return;
+    startSaving(async () => {
+      const result = await createQuickProjectAction({ name: name.trim(), companyId: header.companyId || null });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      const project = result.project;
+      if (!project) return;
+      setProjects((current) => [{ id: project.id, name: project.name }, ...current]);
+      setField("projectId", project.id);
+      toast.success("Projeto criado e vinculado.");
+    });
+  }
+
   async function persist(): Promise<boolean> {
-    const invalid = rows.find((row) => !row.description.trim());
-    if (invalid) {
-      toast.error("Há um item sem descrição.");
+    const invalid = rows.findIndex((row) => !row.description.trim());
+    if (invalid >= 0) {
+      toast.error(`O item da linha ${invalid + 1} está sem descrição.`);
       return false;
     }
+    const values: BudgetHeaderValues = {
+      ...header,
+      companyId: header.companyId || null,
+      projectId: header.projectId || null,
+      deliverables: deliverables
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    };
     const result = await saveBudgetAction(
       budget.id,
-      header,
+      values,
       rows.map((row) => ({
         section: row.section,
         catalogItemId: row.catalogItemId,
@@ -191,6 +235,8 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
 
   return (
     <div className="space-y-6">
+      <BudgetStatusPanel budget={budget} total={totals.final} companyId={header.companyId || null} beforeSend={async () => (dirty ? persist() : true)} />
+
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" onClick={save} loading={saving} disabled={!dirty}>
           <Save aria-hidden />
@@ -225,6 +271,7 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
               onChange={(value) => {
                 const company = companies.find((item) => item.id === value);
                 setField("companyId", value === NO_COMPANY ? "" : value);
+                setField("projectId", "");
                 if (company) setField("clientName", company.name);
               }}
               options={[{ value: NO_COMPANY, label: "Sem cadastro (digite o nome)" }, ...companies.map((company) => ({ value: company.id, label: company.name }))]}
@@ -234,8 +281,26 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
           <FormField id="budget-client" label="Nome do cliente no orçamento" className="md:col-span-2">
             <Input id="budget-client" value={header.clientName} onChange={(event) => setField("clientName", event.target.value)} />
           </FormField>
-          <FormField id="budget-title" label="Projeto" className="md:col-span-2">
+          <FormField id="budget-title" label="Título do orçamento" className="md:col-span-2">
             <Input id="budget-title" value={header.title} onChange={(event) => setField("title", event.target.value)} />
+          </FormField>
+          <FormField
+            id="budget-project"
+            label="Projeto vinculado"
+            hint={header.projectId ? undefined : "Opcional: um projeto do cliente, ou crie um novo."}
+            className="md:col-span-2"
+          >
+            <SearchSelect
+              id="budget-project"
+              value={header.projectId || NO_PROJECT}
+              onChange={chooseProject}
+              options={[
+                { value: NO_PROJECT, label: "Sem projeto" },
+                ...(header.companyId ? [{ value: NEW_PROJECT, label: "+ Criar novo projeto para este cliente" }] : []),
+                ...projects.map((project) => ({ value: project.id, label: project.name })),
+              ]}
+              placeholder="Selecione"
+            />
           </FormField>
           <FormField id="budget-issue" label="Data do orçamento" className="md:col-span-2">
             <Input
@@ -251,31 +316,24 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
           <FormField id="budget-valid" label="Válido até" hint="30 dias por padrão." className="md:col-span-2">
             <Input id="budget-valid" type="date" value={header.validUntil} onChange={(event) => setField("validUntil", event.target.value)} />
           </FormField>
-          <FormField id="budget-status" label="Situação" className="md:col-span-2">
-            <Select value={header.status} onValueChange={(value) => setField("status", value as BudgetStatus)}>
-              <SelectTrigger id="budget-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(BUDGET_STATUS_LABELS) as BudgetStatus[]).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {BUDGET_STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+          {header.projectId ? (
+            <p className="text-[12px] text-subtle md:col-span-6">
+              <Link href={`/projetos/${header.projectId}`} className="underline underline-offset-4 hover:text-foreground">
+                Abrir o projeto vinculado
+              </Link>
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[1100px] border-collapse text-sm">
+        <table className="w-full min-w-[1040px] border-collapse text-sm">
           <thead>
             <tr className="text-[12px] text-subtle">
               <th colSpan={5} className="border-b border-border px-3 py-2 text-left font-bold text-foreground">
                 Para o cliente
               </th>
-              <th colSpan={6} className="border-b border-l-2 border-border border-l-brand-accent/50 bg-surface-raised px-3 py-2 text-left font-bold text-foreground">
+              <th colSpan={5} className="border-b border-l-2 border-border border-l-brand-accent/50 bg-surface-raised px-3 py-2 text-left font-bold text-foreground">
                 Valores reais e margens <span className="font-normal text-subtle">· só você vê</span>
               </th>
             </tr>
@@ -287,7 +345,6 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
               <th className="w-32 px-3 py-2 text-right font-semibold">Total</th>
               <th className="w-32 border-l-2 border-l-brand-accent/50 bg-surface-raised px-2 py-2 text-right font-semibold">Custo unit.</th>
               <th className="w-28 bg-surface-raised px-2 py-2 text-right font-semibold">Custo total</th>
-              <th className="w-24 bg-surface-raised px-2 py-2 text-right font-semibold">Imposto</th>
               <th className="w-28 bg-surface-raised px-2 py-2 text-right font-semibold">Ganho</th>
               <th className="w-20 bg-surface-raised px-2 py-2 text-right font-semibold">Margem</th>
               <th className="w-10 bg-surface-raised" />
@@ -302,7 +359,7 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
                   <td colSpan={5} className="border-t border-border px-3 pb-1 pt-4 text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
                     {SECTION_LABELS[section]}
                   </td>
-                  <td colSpan={6} className="border-l-2 border-t border-border border-l-brand-accent/50 bg-surface-raised" />
+                  <td colSpan={5} className="border-l-2 border-t border-border border-l-brand-accent/50 bg-surface-raised" />
                 </tr>
                 {sectionRows.map((row) => {
                   const line = lineById.get(row.id);
@@ -312,7 +369,7 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
                         <Input aria-label="Item" value={row.description} onChange={(event) => updateRow(row.id, { description: event.target.value })} className="h-8" />
                       </td>
                       <td className="px-2 py-1">
-                        <NumberCell label="Quantidade" value={row.quantity} onChange={(value) => updateRow(row.id, { quantity: value ?? 1 })} />
+                        <NumberCell label="Quantidade" value={row.quantity} onChange={(value) => updateRow(row.id, { quantity: value && value > 0 ? value : 1 })} />
                       </td>
                       <td className="px-2 py-1">
                         <Input aria-label="Unidade" value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} className="h-8 px-2" />
@@ -331,7 +388,6 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
                         <NumberCell label="Custo unitário" value={row.unitCost} onChange={(value) => updateRow(row.id, { unitCost: value ?? 0 })} />
                       </td>
                       <td className="bg-surface-raised px-2 py-1 text-right tabular-nums">{brl(line?.cost ?? 0)}</td>
-                      <td className="bg-surface-raised px-2 py-1 text-right tabular-nums text-muted-foreground">{brl(line?.tax ?? 0)}</td>
                       <td className="bg-surface-raised px-2 py-1 text-right font-semibold tabular-nums">{brl(line?.profit ?? 0)}</td>
                       <td className="bg-surface-raised px-2 py-1 text-right tabular-nums text-muted-foreground">{pct(line?.marginPct ?? 0)}</td>
                       <td className="bg-surface-raised px-1 py-1">
@@ -357,59 +413,88 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
                       />
                     </div>
                   </td>
-                  <td colSpan={6} className="border-l-2 border-l-brand-accent/50 bg-surface-raised" />
+                  <td colSpan={5} className="border-l-2 border-l-brand-accent/50 bg-surface-raised" />
                 </tr>
               </tbody>
             );
           })}
           <tfoot>
-            <tr className="border-t-2 border-border">
-              <td colSpan={4} className="px-3 py-4 text-right text-sm font-bold">
-                Valor final para o cliente
+            <tr className="border-t-2 border-border align-top">
+              <td colSpan={5} className="px-3 py-4">
+                <dl className="ml-auto max-w-sm space-y-2 text-sm">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted-foreground">Valor do serviço</dt>
+                    <dd className="font-semibold tabular-nums">{brl(totals.services)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="flex items-center gap-2 text-muted-foreground">
+                      Imposto
+                      <NumberCell label="Imposto (%)" value={header.taxPct} onChange={(value) => setField("taxPct", Math.min(value ?? 0, 99))} className="h-7 w-16" />%
+                    </dt>
+                    <dd className="tabular-nums">{brl(totals.tax)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-4 border-t border-border pt-2">
+                    <dt className="font-bold">Valor final para pagamento</dt>
+                    <dd className="font-display text-xl font-black tabular-nums">{brl(totals.final)}</dd>
+                  </div>
+                </dl>
               </td>
-              <td className="px-3 py-4 text-right font-display text-xl font-black tabular-nums">{brl(totals.price)}</td>
-              <td colSpan={6} className="border-l-2 border-l-brand-accent/50 bg-surface-raised p-4 align-top">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-3">
-                  <span className="text-muted-foreground">Valor final</span>
-                  <span className="text-right font-bold tabular-nums lg:col-span-2">{brl(totals.price)}</span>
-                  <span className="text-muted-foreground">Custo real</span>
-                  <span className="text-right tabular-nums lg:col-span-2">{brl(totals.cost)}</span>
-                  <span className="flex items-center gap-2 text-muted-foreground">
-                    Imposto
-                    <NumberCell label="Imposto (%)" value={header.taxPct} onChange={(value) => setField("taxPct", Math.min(value ?? 0, 99))} className="h-7 w-16" />%
-                  </span>
-                  <span className="text-right tabular-nums lg:col-span-2">{brl(totals.tax)}</span>
-                  <span className="flex items-center gap-2 font-bold">
-                    FEE da empresa
-                    <NumberCell label="FEE da empresa (%)" value={header.feePct} onChange={(value) => setField("feePct", value ?? 0)} className="h-7 w-16" />%
-                  </span>
-                  <span className="text-right font-display text-lg font-black tabular-nums lg:col-span-2">
-                    {brl(totals.profit)} <span className="text-sm font-semibold text-muted-foreground">· margem {pct(totals.marginPct)}</span>
-                  </span>
-                </div>
+              <td colSpan={5} className="border-l-2 border-l-brand-accent/50 bg-surface-raised p-4">
+                <dl className="space-y-2 text-sm">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted-foreground">Custo real</dt>
+                    <dd className="tabular-nums">{brl(totals.cost)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted-foreground">Imposto ({pctNumber(header.taxPct)}, repassado ao cliente)</dt>
+                    <dd className="tabular-nums text-muted-foreground">{brl(totals.tax)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 border-t border-border pt-2">
+                    <dt className="flex items-center gap-2 font-bold">
+                      FEE da empresa
+                      <NumberCell label="FEE da empresa (%)" value={header.feePct} onChange={(value) => setField("feePct", value ?? 0)} className="h-7 w-16" />%
+                    </dt>
+                    <dd className="text-right">
+                      <span className="font-display text-lg font-black tabular-nums">{brl(totals.profit)}</span>
+                      <span className="block text-[12px] text-muted-foreground">margem {pct(totals.marginPct)} sobre o serviço</span>
+                    </dd>
+                  </div>
+                </dl>
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
       <p className="text-[12px] text-subtle">
-        Valor unitário ao cliente = custo × (1 + FEE) ÷ (1 − imposto). Digitar um valor ao cliente fixa o preço daquela linha (borda vermelha); apague para
-        voltar ao cálculo automático.
+        Valor unitário ao cliente = custo × (1 + FEE). O imposto entra separado, sobre o valor do serviço. Digitar um valor ao cliente fixa o preço daquela
+        linha (borda vermelha); apague para voltar ao cálculo automático.
       </p>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-3">
+        <FormField id="budget-deliverables" label="Entregas para o cliente" hint="Uma por linha. Aparece na nota para o cliente conferir o que recebe.">
+          <Textarea
+            id="budget-deliverables"
+            rows={6}
+            value={deliverables}
+            placeholder={"Meia diária de captação\nEdição do vídeo principal\n3 cortes para stories\n7 cartelas de motion\n4 GCs de motion\nRoteiro\nCapa para Reels"}
+            onChange={(event) => {
+              setDeliverables(event.target.value);
+              setDirty(true);
+            }}
+          />
+        </FormField>
         <FormField id="budget-terms" label="Condições de pagamento" hint="Aparece na nota e na apresentação.">
-          <Textarea id="budget-terms" rows={3} value={header.paymentTerms} onChange={(event) => setField("paymentTerms", event.target.value)} />
+          <Textarea id="budget-terms" rows={6} value={header.paymentTerms} onChange={(event) => setField("paymentTerms", event.target.value)} />
         </FormField>
         <FormField id="budget-notes" label="Observações para o cliente" hint="Aparece na nota de orçamento.">
-          <Textarea id="budget-notes" rows={3} value={header.notes} onChange={(event) => setField("notes", event.target.value)} />
+          <Textarea id="budget-notes" rows={6} value={header.notes} onChange={(event) => setField("notes", event.target.value)} />
         </FormField>
       </div>
 
       {presentationOpen ? (
         <PresentationDialog
           budgetId={budget.id}
-          initial={budget.presentation}
+          initial={{ ...budget.presentation, deliverables: budget.presentation.deliverables.length ? budget.presentation.deliverables : budget.deliverables }}
           companyLogoUrl={budget.companyLogoUrl}
           open
           onOpenChange={setPresentationOpen}

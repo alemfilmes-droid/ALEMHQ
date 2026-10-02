@@ -1,4 +1,4 @@
-import { brl, computeBudget, SECTION_LABELS, type BudgetSection } from "@/features/budgets/pricing";
+import { brl, computeBudget, pctNumber, SECTION_LABELS, type BudgetSection } from "@/features/budgets/pricing";
 import type { BudgetRecord, ProposalProfile } from "@/features/budgets/types";
 
 function date(value: string) {
@@ -11,7 +11,8 @@ function quantity(value: number) {
 
 /**
  * Nota de orçamento (visão do cliente): IDV da Além, itens com quantidade e valor, total, condições
- * e validade. Nunca mostra custos internos, imposto ou margem.
+ * e validade, além das entregas para o cliente conferir. Mostra valor do serviço, imposto e valor
+ * final; nunca custos internos ou margem.
  */
 export function BudgetNote({ budget, profile }: { budget: BudgetRecord; profile: ProposalProfile }) {
   const { lines, totals } = computeBudget(budget.items, budget.feePct, budget.taxPct);
@@ -101,11 +102,37 @@ export function BudgetNote({ budget, profile }: { budget: BudgetRecord; profile:
           })}
         </table>
 
-        <div className="mt-8 flex items-end justify-between gap-6 rounded-md bg-[#0A0A0A] px-8 py-6 text-white">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-white/60">Investimento total</p>
-          <p className="font-display text-4xl font-black tracking-tight tabular-nums">{brl(totals.price)}</p>
+        <div className="mt-8 ml-auto max-w-sm space-y-2 text-sm">
+          <div className="flex items-baseline justify-between gap-6">
+            <span className="text-[#555]">Valor do serviço</span>
+            <span className="font-semibold tabular-nums">{brl(totals.services)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-6">
+            <span className="text-[#555]">Imposto ({pctNumber(budget.taxPct)})</span>
+            <span className="tabular-nums">{brl(totals.tax)}</span>
+          </div>
+        </div>
+        <div className="mt-4 flex items-end justify-between gap-6 rounded-md bg-[#0A0A0A] px-8 py-6 text-white">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-white/60">Valor final para pagamento</p>
+          <p className="font-display text-4xl font-black tracking-tight tabular-nums">{brl(totals.final)}</p>
         </div>
       </section>
+
+      {budget.deliverables.length > 0 ? (
+        <section className="break-inside-avoid px-12 pt-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>
+            O que você recebe
+          </p>
+          <ul className="mt-3 grid grid-cols-2 gap-x-10 gap-y-2 text-sm">
+            {budget.deliverables.map((item) => (
+              <li key={item} className="flex items-start gap-2.5 border-b border-[#ececec] pb-2">
+                <span className="mt-[7px] size-1.5 shrink-0 rounded-full" style={{ background: accent }} />
+                <span className="text-[#222]">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-10 px-12 pb-10 pt-10 text-sm">
         <div className="space-y-2">

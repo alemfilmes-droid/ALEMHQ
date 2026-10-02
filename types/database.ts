@@ -177,6 +177,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          position: number
           section: Database["public"]["Enums"]["budget_item_section"]
           unit: string
         }
@@ -187,6 +188,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          position?: number
           section: Database["public"]["Enums"]["budget_item_section"]
           unit?: string
         }
@@ -197,6 +199,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          position?: number
           section?: Database["public"]["Enums"]["budget_item_section"]
           unit?: string
         }
@@ -265,54 +268,81 @@ export type Database = {
           company_id: string | null
           created_at: string
           created_by: string | null
+          deal_id: string | null
+          deal_proposal_id: string | null
+          decided_at: string | null
+          deliverables: string[]
           fee_pct: number
           id: string
           issue_date: string
           notes: string | null
           number: number
+          parent_id: string | null
           payment_terms: string | null
           presentation: Json
+          project_id: string | null
+          sent_at: string | null
           status: Database["public"]["Enums"]["budget_status"]
+          status_note: string | null
           tax_pct: number
           title: string
           updated_at: string
           valid_until: string
+          version: number
         }
         Insert: {
           client_name: string
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
+          deal_proposal_id?: string | null
+          decided_at?: string | null
+          deliverables?: string[]
           fee_pct?: number
           id?: string
           issue_date?: string
           notes?: string | null
           number?: number
+          parent_id?: string | null
           payment_terms?: string | null
           presentation?: Json
+          project_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["budget_status"]
+          status_note?: string | null
           tax_pct?: number
           title: string
           updated_at?: string
           valid_until?: string
+          version?: number
         }
         Update: {
           client_name?: string
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
+          deal_proposal_id?: string | null
+          decided_at?: string | null
+          deliverables?: string[]
           fee_pct?: number
           id?: string
           issue_date?: string
           notes?: string | null
           number?: number
+          parent_id?: string | null
           payment_terms?: string | null
           presentation?: Json
+          project_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["budget_status"]
+          status_note?: string | null
           tax_pct?: number
           title?: string
           updated_at?: string
           valid_until?: string
+          version?: number
         }
         Relationships: [
           {
@@ -334,6 +364,62 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "budgets_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_deal_proposal_id_fkey"
+            columns: ["deal_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "deal_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_profitability"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -3925,6 +4011,14 @@ export type Database = {
         }[]
       }
       announcements_unread_count: { Args: never; Returns: number }
+      budget_final_total: { Args: { p_budget_id: string }; Returns: number }
+      budget_set_proposal_status: {
+        Args: {
+          p_budget_id: string
+          p_status: Database["public"]["Enums"]["proposal_status"]
+        }
+        Returns: undefined
+      }
       can_access_all_deals: { Args: never; Returns: boolean }
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
       can_delete_project: { Args: { p_project_id: string }; Returns: boolean }
@@ -4221,6 +4315,21 @@ export type Database = {
       }
       expire_stale_invitations: { Args: never; Returns: undefined }
       finalize_project: { Args: { p_project_id: string }; Returns: undefined }
+      finance_budgets_in_negotiation: {
+        Args: never
+        Returns: {
+          budget_id: string
+          client_name: string
+          company_id: string
+          number: number
+          sent_at: string
+          status: Database["public"]["Enums"]["budget_status"]
+          title: string
+          total: number
+          valid_until: string
+          version: number
+        }[]
+      }
       finance_deals_in_negotiation: {
         Args: never
         Returns: {
@@ -4619,7 +4728,12 @@ export type Database = {
         | "nota"
         | "outro"
       budget_item_section: "profissional" | "custo"
-      budget_status: "rascunho" | "enviado" | "aprovado" | "recusado"
+      budget_status:
+        | "rascunho"
+        | "enviado"
+        | "aprovado"
+        | "recusado"
+        | "em_ajuste"
       client_health: "ativo" | "atencao" | "tensao" | "churn"
       client_tier: "low_ticket" | "mid_ticket" | "high_ticket"
       commission_kind: "padrao" | "reaquecido"
@@ -4952,7 +5066,13 @@ export const Constants = {
         "outro",
       ],
       budget_item_section: ["profissional", "custo"],
-      budget_status: ["rascunho", "enviado", "aprovado", "recusado"],
+      budget_status: [
+        "rascunho",
+        "enviado",
+        "aprovado",
+        "recusado",
+        "em_ajuste",
+      ],
       client_health: ["ativo", "atencao", "tensao", "churn"],
       client_tier: ["low_ticket", "mid_ticket", "high_ticket"],
       commission_kind: ["padrao", "reaquecido"],
