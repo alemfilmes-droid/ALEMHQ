@@ -13,6 +13,7 @@ import {
   Target,
   TrendingUp,
   Users,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { canAccessRouteFor } from "@/lib/auth/permissions";
@@ -61,6 +62,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/financeiro", label: "Financeiro", icon: Landmark },
       { href: "/banco-de-horas", label: "Banco de Horas", icon: Clock },
       { href: "/equipe", label: "Equipe", icon: Users },
+      { href: "/fluxogramas", label: "Fluxogramas", icon: Workflow },
       { href: "/avisos", label: "Avisos", icon: Megaphone },
       { href: "/configuracoes", label: "Configurações", icon: Settings },
     ],

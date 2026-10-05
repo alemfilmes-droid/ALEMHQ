@@ -22,6 +22,10 @@ import { FinalizeProjectButton } from "@/features/projects/components/finalize-p
 import { InvoiceSchedulesCard } from "@/features/projects/components/invoice-schedules-card";
 import { getInvoiceSchedules } from "@/features/projects/invoices";
 import { createClient } from "@/lib/supabase/server";
+import { FolderTree } from "lucide-react";
+import { DriveFolderPreview } from "@/components/drive/drive-folder-preview";
+import { Card, CardContent, CardHeading } from "@/components/ui/card";
+import { buildDriveFolder } from "@/lib/drive-folder";
 
 export const metadata: Metadata = { title: "Projeto" };
 
@@ -138,6 +142,25 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
             deliveryNotes={project.delivery_notes}
           />
         )}
+        {tab === "geral" ? (
+          <Card variant="static" className="mt-6 max-w-3xl">
+            <CardHeading icon={FolderTree} tone="warning" title="Pasta no Drive" />
+            <CardContent className="space-y-3">
+              <p className="text-[13px] text-muted-foreground">
+                Nome gerado pelo padrão da Além (data de início, projeto, cliente e iniciais do líder). Copie e crie a pasta com as 5 subpastas; depois
+                cole o link em “Pasta do Drive”{project.drive_folder_url ? "" : " — ainda não há link salvo"}.
+              </p>
+              <DriveFolderPreview
+                folder={buildDriveFolder({
+                  date: project.start_date ?? project.created_at.slice(0, 10),
+                  projectName: project.name,
+                  clientName: project.is_internal || !project.company ? "Além Filmes" : project.company.name,
+                  ownerName: project.owner?.full_name ?? "",
+                })}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
         {tab === "geral" && !project.is_internal && (canManageInvoices || invoiceSchedules.length > 0) ? (
           <div className="mt-6 max-w-3xl">
             <InvoiceSchedulesCard

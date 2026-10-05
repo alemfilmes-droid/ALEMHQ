@@ -45,6 +45,8 @@ export const ROUTE_ACCESS: Record<string, readonly AccessRole[]> = {
   "/banco-de-horas": ALL_ROLES,
   // Orçamentos: master e squad Financeiro (capability "budgets"; a RLS repete com can_manage_budgets()).
   "/orcamentos": ALL_ROLES,
+  // Fluxogramas: visível para todos; cada um lê os processos dos próprios squads (a RLS filtra).
+  "/fluxogramas": ALL_ROLES,
   // Metas: todo mundo pode ter uma; a RLS devolve só as da pessoa (ou todas para a diretoria).
   "/metas": INTERNAL_ROLES,
 };
@@ -270,4 +272,21 @@ export function assignableOrgLevels(actor: Pick<Profile, "org_level">): OrgLevel
   if (actor.org_level === "diretoria") return ["head", "executor"];
   if (actor.org_level === "head") return ["executor"];
   return [];
+}
+
+/**
+ * Fluxogramas: quem lê todos os squads (master, nível diretoria ou squad diretoria) — os demais leem
+ * só os processos dos próprios squads. Espelha can_read_process_squad() no banco.
+ */
+export function canReadAllProcesses(subject: Pick<Profile, "org_level"> & { squads: readonly Squad[] }): boolean {
+  return subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria");
+}
+
+/**
+ * Fluxogramas: quem cria/edita processos de um squad — master, diretoria ou o head desse squad.
+ * Espelha can_edit_process_squad() no banco (is_master() or is_director() or squad ∈ managed_squads()).
+ */
+export function canEditProcessSquad(subject: Pick<Profile, "org_level"> & { squads: readonly Squad[] }, squad: Squad): boolean {
+  if (canReadAllProcesses(subject)) return true;
+  return subject.org_level === "head" && subject.squads.includes(squad);
 }

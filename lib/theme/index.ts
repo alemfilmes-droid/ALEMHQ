@@ -85,6 +85,7 @@ export const PANEL_TONE: Record<string, PanelTone> = {
   "/essencia": "accent",
   "/orcamentos": "alert",
   "/metas": "success",
+  "/fluxogramas": "accent",
 };
 
 export function panelToneColor(tone: PanelTone): string | undefined {

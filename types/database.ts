@@ -2853,6 +2853,228 @@ export type Database = {
           },
         ]
       }
+      process_run_steps: {
+        Row: {
+          done_at: string
+          done_by: string | null
+          note: string | null
+          run_id: string
+          step_id: string
+        }
+        Insert: {
+          done_at?: string
+          done_by?: string | null
+          note?: string | null
+          run_id: string
+          step_id: string
+        }
+        Update: {
+          done_at?: string
+          done_by?: string | null
+          note?: string | null
+          run_id?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "process_run_steps_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "process_run_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "process_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "process_run_steps_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "process_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      process_runs: {
+        Row: {
+          context_entity_id: string | null
+          context_entity_type: string | null
+          context_label: string | null
+          finished_at: string | null
+          id: string
+          process_id: string
+          started_at: string
+          started_by: string
+        }
+        Insert: {
+          context_entity_id?: string | null
+          context_entity_type?: string | null
+          context_label?: string | null
+          finished_at?: string | null
+          id?: string
+          process_id: string
+          started_at?: string
+          started_by?: string
+        }
+        Update: {
+          context_entity_id?: string | null
+          context_entity_type?: string | null
+          context_label?: string | null
+          finished_at?: string | null
+          id?: string
+          process_id?: string
+          started_at?: string
+          started_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "process_runs_process_id_fkey"
+            columns: ["process_id"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "process_runs_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      process_steps: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          done_criteria: string | null
+          estimated_minutes: number | null
+          id: string
+          is_blocking: boolean
+          order_index: number
+          process_id: string
+          responsible_role: string | null
+          system_area: Database["public"]["Enums"]["process_system_area"]
+          system_link: string | null
+          title: string
+          tool: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          done_criteria?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_blocking?: boolean
+          order_index?: number
+          process_id: string
+          responsible_role?: string | null
+          system_area?: Database["public"]["Enums"]["process_system_area"]
+          system_link?: string | null
+          title: string
+          tool?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          done_criteria?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_blocking?: boolean
+          order_index?: number
+          process_id?: string
+          responsible_role?: string | null
+          system_area?: Database["public"]["Enums"]["process_system_area"]
+          system_link?: string | null
+          title?: string
+          tool?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "process_steps_process_id_fkey"
+            columns: ["process_id"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processes: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          frequency: Database["public"]["Enums"]["process_frequency"]
+          id: string
+          is_published: boolean
+          order_index: number
+          owner_role: string | null
+          slug: string
+          squad: Database["public"]["Enums"]["squad"]
+          summary: string | null
+          title: string
+          trigger_description: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: Database["public"]["Enums"]["process_frequency"]
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          owner_role?: string | null
+          slug: string
+          squad: Database["public"]["Enums"]["squad"]
+          summary?: string | null
+          title: string
+          trigger_description?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          frequency?: Database["public"]["Enums"]["process_frequency"]
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          owner_role?: string | null
+          slug?: string
+          squad?: Database["public"]["Enums"]["squad"]
+          summary?: string | null
+          title?: string
+          trigger_description?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_squads: {
         Row: {
           created_at: string
@@ -4499,6 +4721,10 @@ export type Database = {
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
       can_delete_project: { Args: { p_project_id: string }; Returns: boolean }
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
+      can_edit_process_squad: {
+        Args: { p_squad: Database["public"]["Enums"]["squad"] }
+        Returns: boolean
+      }
       can_finalize_project: { Args: { p_project_id: string }; Returns: boolean }
       can_fully_manage_pauta: { Args: never; Returns: boolean }
       can_manage_budgets: { Args: never; Returns: boolean }
@@ -4509,9 +4735,14 @@ export type Database = {
       can_manage_pautas: { Args: never; Returns: boolean }
       can_manage_profile: { Args: { p_target_id: string }; Returns: boolean }
       can_read_companies: { Args: never; Returns: boolean }
+      can_read_process_squad: {
+        Args: { p_squad: Database["public"]["Enums"]["squad"] }
+        Returns: boolean
+      }
       can_see_busy_of: { Args: { p_owner_id: string }; Returns: boolean }
       can_see_crm: { Args: never; Returns: boolean }
       can_see_money: { Args: never; Returns: boolean }
+      can_see_process_run: { Args: { p_run_id: string }; Returns: boolean }
       can_view_commitment: {
         Args: {
           p_attendees: string[]
@@ -5223,6 +5454,10 @@ export type Database = {
         }[]
       }
       payment_details_text: { Args: { p_profile_id: string }; Returns: string }
+      process_squad: {
+        Args: { p_process_id: string }
+        Returns: Database["public"]["Enums"]["squad"]
+      }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
       project_finalization_status: {
         Args: { p_project_id: string }
@@ -5254,6 +5489,7 @@ export type Database = {
       }
       shares_squad_with: { Args: { p_profile_id: string }; Returns: boolean }
       sync_crm_alerts: { Args: never; Returns: number }
+      text_has_credential: { Args: { p_text: string }; Returns: boolean }
       transfer_master: { Args: { p_new_master_id: string }; Returns: undefined }
       unregister_push_subscription: {
         Args: { p_endpoint: string }
@@ -5415,6 +5651,24 @@ export type Database = {
         | "dinheiro"
         | "outro"
       pix_key_type: "cpf" | "cnpj" | "email" | "telefone" | "aleatoria"
+      process_frequency:
+        | "sob_demanda"
+        | "diaria"
+        | "semanal"
+        | "mensal"
+        | "trimestral"
+      process_system_area:
+        | "clientes"
+        | "projetos"
+        | "pautas"
+        | "crm"
+        | "financeiro"
+        | "agenda"
+        | "equipe"
+        | "banco_de_horas"
+        | "avisos"
+        | "externo"
+        | "nenhum"
       production_function:
         | "captacao"
         | "edicao"
@@ -5782,6 +6036,26 @@ export const Constants = {
         "outro",
       ],
       pix_key_type: ["cpf", "cnpj", "email", "telefone", "aleatoria"],
+      process_frequency: [
+        "sob_demanda",
+        "diaria",
+        "semanal",
+        "mensal",
+        "trimestral",
+      ],
+      process_system_area: [
+        "clientes",
+        "projetos",
+        "pautas",
+        "crm",
+        "financeiro",
+        "agenda",
+        "equipe",
+        "banco_de_horas",
+        "avisos",
+        "externo",
+        "nenhum",
+      ],
       production_function: [
         "captacao",
         "edicao",
