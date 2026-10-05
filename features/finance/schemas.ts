@@ -66,6 +66,15 @@ export const payableSchema = z
     isFixed: z.boolean(),
     recurrence: z.enum(PAYABLE_RECURRENCES),
     recurrenceUntil: optionalIsoDate,
+    // Dados de pagamento do favorecido avulso (sem cadastro). Membro da equipe: vêm do perfil dele.
+    payeePixKeyType: z.enum(["cpf", "cnpj", "email", "telefone", "aleatoria"]).or(z.literal("")),
+    payeePixKey: z.string().trim().max(160),
+    payeeHolderName: z.string().trim().max(160),
+    payeeDocument: z.string().trim().max(20),
+    payeeBankName: z.string().trim().max(120),
+    payeeBankAgency: z.string().trim().max(20),
+    payeeBankAccount: z.string().trim().max(30),
+    payeeAccountType: z.enum(["corrente", "poupanca", "pagamento"]).or(z.literal("")),
   })
   .superRefine((data, ctx) => {
     if (!data.payeeProfileId && data.payeeName === "") {
@@ -79,10 +88,34 @@ export const payableSchema = z
     }
   });
 
-export const settlePayableSchema = z.object({
-  paidAt: isoDate,
-  paymentMethod: z.enum(PAYMENT_METHODS, { message: "Selecione a forma de pagamento." }),
-});
+/**
+ * Baixa do pagamento. Depois do vencimento: motivo obrigatório; multa/juros opcional (com motivo).
+ * `dueDate` vem do pagamento para validar o atraso aqui — o banco repete a regra.
+ */
+export const settlePayableSchema = z
+  .object({
+    paidAt: isoDate,
+    dueDate: isoDate,
+    paymentMethod: z.enum(PAYMENT_METHODS, { message: "Selecione a forma de pagamento." }),
+    receiptUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .refine((value) => value === "" || /^https?:\/\//i.test(value), "Use um link começando com http(s)://."),
+    lateReason: z.string().trim().max(500, "Use até 500 caracteres."),
+    hadPenalty: z.boolean(),
+    penaltyAmount: z.string().trim(),
+    penaltyReason: z.string().trim().max(500, "Use até 500 caracteres."),
+  })
+  .superRefine((data, ctx) => {
+    const late = data.paidAt > data.dueDate;
+    if (late && data.lateReason.length < 3) ctx.addIssue({ code: "custom", path: ["lateReason"], message: "Pagamento depois do vencimento: informe o motivo." });
+    if (late && data.hadPenalty) {
+      const cents = parseMoneyToCents(data.penaltyAmount);
+      if (cents === null || cents <= 0) ctx.addIssue({ code: "custom", path: ["penaltyAmount"], message: "Informe o valor da multa/juros." });
+      if (data.penaltyReason.length < 3) ctx.addIssue({ code: "custom", path: ["penaltyReason"], message: "Informe o motivo da multa/juros." });
+    }
+  });
 
 export const projectInstallmentsSchema = z.object({
   installments: intString("o número de parcelas", 1, 120),

@@ -32,6 +32,7 @@ import { PAYABLE_STATUSES, RECEIVABLE_STATUSES } from "@/features/finance/types"
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
+import { generateFinanceAutoPautasAction } from "@/features/finance/actions";
 
 export const metadata: Metadata = { title: "Financeiro" };
 
@@ -58,6 +59,8 @@ export default async function FinancePage({ searchParams }: { searchParams: Sear
 
   const params = await searchParams;
   const today = todayISO();
+  // Reforço do cron: gera as pautas automáticas do financeiro (idempotente) sem bloquear a página.
+  void generateFinanceAutoPautasAction();
   const period = resolvePeriod(params.periodo, params.de, params.ate, today);
   const tab = TABS.find((item) => item.key === params.aba)?.key ?? "dashboard";
 
@@ -213,7 +216,7 @@ async function PayablesTab({ params, period, options, today }: TabProps) {
       {status.length === 1 && status[0] === "atrasado" ? (
         <p className="text-[13px] text-muted-foreground">Atrasados aparecem de qualquer período.</p>
       ) : null}
-      <PayablesTable rows={rows} options={options} today={today} />
+      <PayablesTable rows={rows} options={options} today={today} initialOpenId={params.pagamento} />
     </div>
   );
 }

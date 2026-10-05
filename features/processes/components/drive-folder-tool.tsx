@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DriveFolderPreview } from "@/components/drive/drive-folder-preview";
+import { DriveFolderTree } from "@/components/drive/drive-folder-tree";
 import { SearchSelect } from "@/components/ui/search-select";
 import { buildDriveFolder } from "@/lib/drive-folder";
 
@@ -13,30 +14,35 @@ export interface DriveProjectOption {
   startDate: string;
 }
 
-/** Ferramenta dentro do passo: escolha o projeto e copie o nome/caminho da pasta no padrão. */
-export function DriveFolderTool({ projects, initialProjectId }: { projects: DriveProjectOption[]; initialProjectId?: string | null }) {
+/** Exemplo quando nenhum projeto foi escolhido (o mesmo do processo "Onde encontrar os arquivos"). */
+const EXAMPLE = { date: "2026-09-14", projectName: "Fest Show 2026", clientName: "Colégio Contemporâneo", ownerName: "Anderson Felipe" };
+
+/**
+ * Ferramenta dentro do passo: escolha o projeto e copie o nome/caminho da pasta no padrão. A
+ * variante "tree" desenha a árvore inteira com as subpastas (processo "Onde encontrar os arquivos").
+ */
+export function DriveFolderTool({ projects, initialProjectId, variant = "name" }: { projects: DriveProjectOption[]; initialProjectId?: string | null; variant?: "name" | "tree" }) {
   const [projectId, setProjectId] = useState(initialProjectId ?? "");
   const project = projects.find((item) => item.id === projectId);
+  const folder = buildDriveFolder(
+    project ? { date: project.startDate, projectName: project.name, clientName: project.clientName, ownerName: project.ownerName } : EXAMPLE,
+  );
 
   return (
-    <div className="space-y-3 rounded-md border border-border bg-surface-raised p-3">
-      <p className="text-[12px] font-bold text-muted-foreground">Gerador da pasta do Drive</p>
-      <SearchSelect
-        id="drive-tool-project"
-        value={projectId}
-        onChange={setProjectId}
-        options={projects.map((item) => ({ value: item.id, label: `${item.name} · ${item.clientName}` }))}
-        placeholder="Escolha o projeto"
-        emptyLabel="Nenhum projeto encontrado."
-      />
-      {project ? (
-        <DriveFolderPreview
-          compact
-          folder={buildDriveFolder({ date: project.startDate, projectName: project.name, clientName: project.clientName, ownerName: project.ownerName })}
+    <div className="space-y-3 rounded-md border border-border bg-surface-raised p-3 print:hidden">
+      <p className="text-[12px] font-bold text-muted-foreground">{variant === "tree" ? "Árvore de pastas do projeto" : "Gerador da pasta do Drive"}</p>
+      {projects.length > 0 ? (
+        <SearchSelect
+          id={`drive-tool-${variant}`}
+          value={projectId}
+          onChange={setProjectId}
+          options={projects.map((item) => ({ value: item.id, label: `${item.name} · ${item.clientName}` }))}
+          placeholder="Escolha o projeto"
+          emptyLabel="Nenhum projeto encontrado."
         />
-      ) : (
-        <p className="text-[12px] text-subtle">O nome sai da data de início, do projeto, do cliente e das iniciais do líder.</p>
-      )}
+      ) : null}
+      {!project ? <p className="text-[12px] text-subtle">Exemplo — escolha um projeto para gerar o nome real.</p> : null}
+      {variant === "tree" ? <DriveFolderTree folder={folder} /> : <DriveFolderPreview compact folder={folder} />}
     </div>
   );
 }

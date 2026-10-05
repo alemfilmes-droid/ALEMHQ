@@ -9,13 +9,36 @@ export interface CompanySettingsView {
   defaultWorkdays: number[];
   margin: MarginThresholds;
   updatedAt: string | null;
+  /** Pautas automáticas do financeiro. */
+  financeAutomation: FinanceAutomation;
 }
+
+export interface FinanceAutomation {
+  invoice: boolean;
+  invoiceDaysBefore: number;
+  weekly: boolean;
+  weeklyDow: number;
+  monthly: boolean;
+  payments: boolean;
+  executorId: string | null;
+}
+
+export const DEFAULT_FINANCE_AUTOMATION: FinanceAutomation = {
+  invoice: true,
+  invoiceDaysBefore: 5,
+  weekly: true,
+  weeklyDow: 6,
+  monthly: true,
+  payments: true,
+  executorId: null,
+};
 
 const FALLBACK: CompanySettingsView = {
   defaultDailyHours: 8,
   defaultWorkdays: [1, 2, 3, 4, 5],
   margin: DEFAULT_MARGIN_THRESHOLDS,
   updatedAt: null,
+  financeAutomation: DEFAULT_FINANCE_AUTOMATION,
 };
 
 function toView(row: CompanySettings): CompanySettingsView {
@@ -24,6 +47,15 @@ function toView(row: CompanySettings): CompanySettingsView {
     defaultWorkdays: row.default_workdays,
     margin: { healthy: Number(row.healthy_margin_pct), attention: Number(row.attention_margin_pct) },
     updatedAt: row.updated_at,
+    financeAutomation: {
+      invoice: row.finance_auto_invoice ?? true,
+      invoiceDaysBefore: row.finance_invoice_days_before ?? 5,
+      weekly: row.finance_auto_weekly ?? true,
+      weeklyDow: row.finance_weekly_dow ?? 6,
+      monthly: row.finance_auto_monthly ?? true,
+      payments: row.finance_auto_payments ?? true,
+      executorId: row.finance_executor_id ?? null,
+    },
   };
 }
 

@@ -1,6 +1,7 @@
 // AJUSTE MANUAL após `npm run db:types`: em Functions.generate_installments.Args, marque
-// p_project_id, p_company_id e p_payment_method como `| null` (a função aceita NULL, mas o gerador
-// não indica). Ver README → Migrações.
+// p_project_id, p_company_id e p_payment_method como `| null`; em
+// Functions.project_apply_contract_change.Args, p_budget_id como `| null` (as funções aceitam NULL,
+// mas o gerador não indica). Ver README → Migrações.
 export type Json =
   | string
   | number
@@ -267,6 +268,7 @@ export type Database = {
           archived_at: string | null
           client_name: string
           company_id: string | null
+          contract_synced_total: number | null
           created_at: string
           created_by: string | null
           deal_id: string | null
@@ -296,6 +298,7 @@ export type Database = {
           archived_at?: string | null
           client_name: string
           company_id?: string | null
+          contract_synced_total?: number | null
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -325,6 +328,7 @@ export type Database = {
           archived_at?: string | null
           client_name?: string
           company_id?: string | null
+          contract_synced_total?: number | null
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -720,6 +724,13 @@ export type Database = {
           attention_margin_pct: number
           default_daily_hours: number
           default_workdays: number[]
+          finance_auto_invoice: boolean
+          finance_auto_monthly: boolean
+          finance_auto_payments: boolean
+          finance_auto_weekly: boolean
+          finance_executor_id: string | null
+          finance_invoice_days_before: number
+          finance_weekly_dow: number
           healthy_margin_pct: number
           id: boolean
           proposal_profile: Json
@@ -732,6 +743,13 @@ export type Database = {
           attention_margin_pct?: number
           default_daily_hours?: number
           default_workdays?: number[]
+          finance_auto_invoice?: boolean
+          finance_auto_monthly?: boolean
+          finance_auto_payments?: boolean
+          finance_auto_weekly?: boolean
+          finance_executor_id?: string | null
+          finance_invoice_days_before?: number
+          finance_weekly_dow?: number
           healthy_margin_pct?: number
           id?: boolean
           proposal_profile?: Json
@@ -744,6 +762,13 @@ export type Database = {
           attention_margin_pct?: number
           default_daily_hours?: number
           default_workdays?: number[]
+          finance_auto_invoice?: boolean
+          finance_auto_monthly?: boolean
+          finance_auto_payments?: boolean
+          finance_auto_weekly?: boolean
+          finance_executor_id?: string | null
+          finance_invoice_days_before?: number
+          finance_weekly_dow?: number
           healthy_margin_pct?: number
           id?: boolean
           proposal_profile?: Json
@@ -753,6 +778,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "company_settings_finance_executor_id_fkey"
+            columns: ["finance_executor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "company_settings_prospect_reviewer_id_fkey"
             columns: ["prospect_reviewer_id"]
@@ -2464,6 +2496,11 @@ export type Database = {
           returned_at: string | null
           scheduled_at: string | null
           script_url: string | null
+          self_complete: boolean
+          source: string
+          source_period: string | null
+          source_ref_id: string | null
+          source_ref_type: string | null
           squad: Database["public"]["Enums"]["squad"]
           start_date: string | null
           status: Database["public"]["Enums"]["pauta_status"]
@@ -2505,6 +2542,11 @@ export type Database = {
           returned_at?: string | null
           scheduled_at?: string | null
           script_url?: string | null
+          self_complete?: boolean
+          source?: string
+          source_period?: string | null
+          source_ref_id?: string | null
+          source_ref_type?: string | null
           squad: Database["public"]["Enums"]["squad"]
           start_date?: string | null
           status: Database["public"]["Enums"]["pauta_status"]
@@ -2546,6 +2588,11 @@ export type Database = {
           returned_at?: string | null
           scheduled_at?: string | null
           script_url?: string | null
+          self_complete?: boolean
+          source?: string
+          source_period?: string | null
+          source_ref_id?: string | null
+          source_ref_type?: string | null
           squad?: Database["public"]["Enums"]["squad"]
           start_date?: string | null
           status?: Database["public"]["Enums"]["pauta_status"]
@@ -2681,15 +2728,34 @@ export type Database = {
           due_date: string
           id: string
           is_fixed: boolean
+          late_reason: string | null
           notes: string | null
+          original_amount: number | null
           paid_at: string | null
+          paid_late: boolean
+          payee_account_type:
+            | Database["public"]["Enums"]["bank_account_type"]
+            | null
+          payee_bank_account: string | null
+          payee_bank_agency: string | null
+          payee_bank_name: string | null
+          payee_document: string | null
+          payee_holder_name: string | null
           payee_name: string | null
+          payee_pix_key: string | null
+          payee_pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_receipt_url: string | null
+          penalty_amount: number | null
+          penalty_reason: string | null
           project_id: string | null
           recurrence: Database["public"]["Enums"]["payable_recurrence"]
           recurrence_parent_id: string | null
           recurrence_until: string | null
+          scheduled_at: string | null
+          scheduled_by: string | null
+          scheduled_for: string | null
           updated_at: string
         }
         Insert: {
@@ -2704,15 +2770,36 @@ export type Database = {
           due_date: string
           id?: string
           is_fixed?: boolean
+          late_reason?: string | null
           notes?: string | null
+          original_amount?: number | null
           paid_at?: string | null
+          paid_late?: boolean
+          payee_account_type?:
+            | Database["public"]["Enums"]["bank_account_type"]
+            | null
+          payee_bank_account?: string | null
+          payee_bank_agency?: string | null
+          payee_bank_name?: string | null
+          payee_document?: string | null
+          payee_holder_name?: string | null
           payee_name?: string | null
+          payee_pix_key?: string | null
+          payee_pix_key_type?:
+            | Database["public"]["Enums"]["pix_key_type"]
+            | null
           payee_profile_id?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_receipt_url?: string | null
+          penalty_amount?: number | null
+          penalty_reason?: string | null
           project_id?: string | null
           recurrence?: Database["public"]["Enums"]["payable_recurrence"]
           recurrence_parent_id?: string | null
           recurrence_until?: string | null
+          scheduled_at?: string | null
+          scheduled_by?: string | null
+          scheduled_for?: string | null
           updated_at?: string
         }
         Update: {
@@ -2727,15 +2814,36 @@ export type Database = {
           due_date?: string
           id?: string
           is_fixed?: boolean
+          late_reason?: string | null
           notes?: string | null
+          original_amount?: number | null
           paid_at?: string | null
+          paid_late?: boolean
+          payee_account_type?:
+            | Database["public"]["Enums"]["bank_account_type"]
+            | null
+          payee_bank_account?: string | null
+          payee_bank_agency?: string | null
+          payee_bank_name?: string | null
+          payee_document?: string | null
+          payee_holder_name?: string | null
           payee_name?: string | null
+          payee_pix_key?: string | null
+          payee_pix_key_type?:
+            | Database["public"]["Enums"]["pix_key_type"]
+            | null
           payee_profile_id?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_receipt_url?: string | null
+          penalty_amount?: number | null
+          penalty_reason?: string | null
           project_id?: string | null
           recurrence?: Database["public"]["Enums"]["payable_recurrence"]
           recurrence_parent_id?: string | null
           recurrence_until?: string | null
+          scheduled_at?: string | null
+          scheduled_by?: string | null
+          scheduled_for?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2793,6 +2901,13 @@ export type Database = {
             columns: ["recurrence_parent_id"]
             isOneToOne: false
             referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2949,54 +3064,86 @@ export type Database = {
       }
       process_steps: {
         Row: {
+          action_kind: string
           archived_at: string | null
+          branch_no_step_id: string | null
+          branch_yes_step_id: string | null
           created_at: string
           description: string | null
           done_criteria: string | null
           estimated_minutes: number | null
+          example_text: string | null
           id: string
+          image_url: string | null
           is_blocking: boolean
           order_index: number
           process_id: string
           responsible_role: string | null
+          step_type: string
           system_area: Database["public"]["Enums"]["process_system_area"]
           system_link: string | null
           title: string
           tool: string | null
         }
         Insert: {
+          action_kind?: string
           archived_at?: string | null
+          branch_no_step_id?: string | null
+          branch_yes_step_id?: string | null
           created_at?: string
           description?: string | null
           done_criteria?: string | null
           estimated_minutes?: number | null
+          example_text?: string | null
           id?: string
+          image_url?: string | null
           is_blocking?: boolean
           order_index?: number
           process_id: string
           responsible_role?: string | null
+          step_type?: string
           system_area?: Database["public"]["Enums"]["process_system_area"]
           system_link?: string | null
           title: string
           tool?: string | null
         }
         Update: {
+          action_kind?: string
           archived_at?: string | null
+          branch_no_step_id?: string | null
+          branch_yes_step_id?: string | null
           created_at?: string
           description?: string | null
           done_criteria?: string | null
           estimated_minutes?: number | null
+          example_text?: string | null
           id?: string
+          image_url?: string | null
           is_blocking?: boolean
           order_index?: number
           process_id?: string
           responsible_role?: string | null
+          step_type?: string
           system_area?: Database["public"]["Enums"]["process_system_area"]
           system_link?: string | null
           title?: string
           tool?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "process_steps_branch_no_step_id_fkey"
+            columns: ["branch_no_step_id"]
+            isOneToOne: false
+            referencedRelation: "process_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "process_steps_branch_yes_step_id_fkey"
+            columns: ["branch_yes_step_id"]
+            isOneToOne: false
+            referencedRelation: "process_steps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "process_steps_process_id_fkey"
             columns: ["process_id"]
@@ -3151,6 +3298,80 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      project_contract_changes: {
+        Row: {
+          amount: number | null
+          budget_id: string | null
+          change_type: string
+          changed_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          new_value: number | null
+          note: string | null
+          previous_value: number | null
+          project_id: string
+          receivables_summary: Json
+        }
+        Insert: {
+          amount?: number | null
+          budget_id?: string | null
+          change_type: string
+          changed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          new_value?: number | null
+          note?: string | null
+          previous_value?: number | null
+          project_id: string
+          receivables_summary?: Json
+        }
+        Update: {
+          amount?: number | null
+          budget_id?: string | null
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          new_value?: number | null
+          note?: string | null
+          previous_value?: number | null
+          project_id?: string
+          receivables_summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_contract_changes_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contract_changes_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contract_changes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_profitability"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_contract_changes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_financials: {
         Row: {
@@ -3340,6 +3561,7 @@ export type Database = {
           is_internal: boolean
           location_address: string | null
           location_notes: string | null
+          margin_alert_at: string | null
           model: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
@@ -3373,6 +3595,7 @@ export type Database = {
           is_internal?: boolean
           location_address?: string | null
           location_notes?: string | null
+          margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
@@ -3406,6 +3629,7 @@ export type Database = {
           is_internal?: boolean
           location_address?: string | null
           location_notes?: string | null
+          margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
           name?: string
           owner_id?: string
@@ -4268,6 +4492,11 @@ export type Database = {
           returned_at: string | null
           scheduled_at: string | null
           script_url: string | null
+          self_complete: boolean | null
+          source: string | null
+          source_period: string | null
+          source_ref_id: string | null
+          source_ref_type: string | null
           squad: Database["public"]["Enums"]["squad"] | null
           start_date: string | null
           status: Database["public"]["Enums"]["pauta_status"] | null
@@ -4405,17 +4634,36 @@ export type Database = {
           due_date: string | null
           id: string | null
           is_fixed: boolean | null
+          late_reason: string | null
           notes: string | null
+          original_amount: number | null
           paid_at: string | null
+          paid_late: boolean | null
+          payee_account_type:
+            | Database["public"]["Enums"]["bank_account_type"]
+            | null
+          payee_bank_account: string | null
+          payee_bank_agency: string | null
+          payee_bank_name: string | null
+          payee_document: string | null
+          payee_holder_name: string | null
           payee_label: string | null
           payee_name: string | null
+          payee_pix_key: string | null
+          payee_pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_receipt_url: string | null
+          penalty_amount: number | null
+          penalty_reason: string | null
           project_id: string | null
           project_name: string | null
           recurrence: Database["public"]["Enums"]["payable_recurrence"] | null
           recurrence_parent_id: string | null
           recurrence_until: string | null
+          scheduled_at: string | null
+          scheduled_by: string | null
+          scheduled_for: string | null
           status: string | null
           updated_at: string | null
         }
@@ -4474,6 +4722,13 @@ export type Database = {
             columns: ["recurrence_parent_id"]
             isOneToOne: false
             referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4708,6 +4963,18 @@ export type Database = {
         }[]
       }
       announcements_unread_count: { Args: never; Returns: number }
+      budget_contract_status: {
+        Args: { p_budget_id: string }
+        Returns: {
+          budget_total: number
+          contract_value: number
+          pending_count: number
+          project_id: string
+          project_name: string
+          received_count: number
+          synced_total: number
+        }[]
+      }
       budget_final_total: { Args: { p_budget_id: string }; Returns: number }
       budget_random_number: { Args: never; Returns: number }
       budget_set_proposal_status: {
@@ -4721,6 +4988,10 @@ export type Database = {
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
       can_delete_project: { Args: { p_project_id: string }; Returns: boolean }
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
+      can_edit_process_asset: {
+        Args: { p_object_name: string }
+        Returns: boolean
+      }
       can_edit_process_squad: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
@@ -4791,6 +5062,7 @@ export type Database = {
           is_internal: boolean
           location_address: string | null
           location_notes: string | null
+          margin_alert_at: string | null
           model: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
@@ -5024,6 +5296,22 @@ export type Database = {
       }
       expire_stale_invitations: { Args: never; Returns: undefined }
       finalize_project: { Args: { p_project_id: string }; Returns: undefined }
+      finance_auto_pauta: {
+        Args: {
+          p_briefing: string
+          p_company: string
+          p_due: string
+          p_executor: string
+          p_lead: string
+          p_period: string
+          p_project: string
+          p_ref_id: string
+          p_ref_type: string
+          p_self_complete: boolean
+          p_title: string
+        }
+        Returns: string
+      }
       finance_budgets_in_negotiation: {
         Args: never
         Returns: {
@@ -5057,6 +5345,37 @@ export type Database = {
           weighted_amount: number
         }[]
       }
+      finance_executor_id: { Args: never; Returns: string }
+      finance_generate_auto_pautas: { Args: never; Returns: number }
+      finance_late_payments: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          amount: number
+          days_late: number
+          description: string
+          due_date: string
+          late_reason: string
+          paid_at: string
+          payable_id: string
+          payee: string
+          penalty_amount: number
+          penalty_reason: string
+          project_name: string
+        }[]
+      }
+      finance_lead_id: { Args: never; Returns: string }
+      finance_margin_below_target: {
+        Args: never
+        Returns: {
+          company_name: string
+          contract_value: number
+          margin_pct: number
+          payables_total: number
+          project_id: string
+          project_name: string
+        }[]
+      }
+      finance_payment_lead_id: { Args: never; Returns: string }
       fmt_brl: { Args: { p_value: number }; Returns: string }
       fmt_qty: { Args: { p_value: number }; Returns: string }
       generate_installments: {
@@ -5115,15 +5434,34 @@ export type Database = {
           due_date: string
           id: string
           is_fixed: boolean
+          late_reason: string | null
           notes: string | null
+          original_amount: number | null
           paid_at: string | null
+          paid_late: boolean
+          payee_account_type:
+            | Database["public"]["Enums"]["bank_account_type"]
+            | null
+          payee_bank_account: string | null
+          payee_bank_agency: string | null
+          payee_bank_name: string | null
+          payee_document: string | null
+          payee_holder_name: string | null
           payee_name: string | null
+          payee_pix_key: string | null
+          payee_pix_key_type: Database["public"]["Enums"]["pix_key_type"] | null
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_receipt_url: string | null
+          penalty_amount: number | null
+          penalty_reason: string | null
           project_id: string | null
           recurrence: Database["public"]["Enums"]["payable_recurrence"]
           recurrence_parent_id: string | null
           recurrence_until: string | null
+          scheduled_at: string | null
+          scheduled_by: string | null
+          scheduled_for: string | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -5254,7 +5592,9 @@ export type Database = {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
       }
+      margin_alert_recipients: { Args: never; Returns: string[] }
       margin_status_for: { Args: { p_pct: number }; Returns: string }
+      month_name_pt: { Args: { p_date: string }; Returns: string }
       my_google_account: {
         Args: never
         Returns: {
@@ -5283,11 +5623,13 @@ export type Database = {
       }
       notify_finance_due_today: { Args: never; Returns: undefined }
       notify_invoices_due: { Args: never; Returns: undefined }
+      notify_margin_monthly_report: { Args: never; Returns: undefined }
       notify_overdue_finance: { Args: never; Returns: undefined }
       notify_project_ready: {
         Args: { p_project_id: string }
         Returns: undefined
       }
+      notify_scheduled_payments: { Args: never; Returns: undefined }
       pauta_column_for_status: {
         Args: { p_status: Database["public"]["Enums"]["pauta_status"] }
         Returns: Database["public"]["Enums"]["pauta_column"]
@@ -5352,6 +5694,11 @@ export type Database = {
           returned_at: string | null
           scheduled_at: string | null
           script_url: string | null
+          self_complete: boolean
+          source: string
+          source_period: string | null
+          source_ref_id: string | null
+          source_ref_type: string | null
           squad: Database["public"]["Enums"]["squad"]
           start_date: string | null
           status: Database["public"]["Enums"]["pauta_status"]
@@ -5405,6 +5752,11 @@ export type Database = {
           returned_at: string | null
           scheduled_at: string | null
           script_url: string | null
+          self_complete: boolean
+          source: string
+          source_period: string | null
+          source_ref_id: string | null
+          source_ref_type: string | null
           squad: Database["public"]["Enums"]["squad"]
           start_date: string | null
           status: Database["public"]["Enums"]["pauta_status"]
@@ -5458,6 +5810,36 @@ export type Database = {
         Args: { p_process_id: string }
         Returns: Database["public"]["Enums"]["squad"]
       }
+      project_apply_contract_change: {
+        Args: {
+          p_amount: number
+          p_budget_id: string | null
+          p_description: string
+          p_mode: string
+          p_note: string
+          p_project_id: string
+          p_regenerate: boolean
+        }
+        Returns: Json
+      }
+      project_contract_plan: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_mode: string
+          p_project_id: string
+          p_regenerate: boolean
+        }
+        Returns: {
+          amount: number
+          description: string
+          due_date: string
+          op: string
+          previous_amount: number
+          receivable_id: string
+          seq: number
+        }[]
+      }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
       project_finalization_status: {
         Args: { p_project_id: string }
@@ -5470,6 +5852,11 @@ export type Database = {
           ready: boolean
         }[]
       }
+      project_margin_check: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
+      project_margin_pct: { Args: { p_project_id: string }; Returns: number }
       publish_due_announcements: { Args: never; Returns: number }
       register_push_subscription: {
         Args: {

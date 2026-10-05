@@ -93,7 +93,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
           {project.finalized_at ? <Badge variant="outline">Finalizado em {formatDate(project.finalized_at.slice(0, 10))}</Badge> : null}
           <span>Código: {project.id.slice(0, 8)}</span>
         </p>
-        {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} target={(await getCompanySettings()).margin.healthy} /> : null}
+        {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} target={(await getCompanySettings()).margin.healthy} alertAt={project.margin_alert_at} /> : null}
       </div>
 
       <LinkTabs label="Seções do projeto" tabs={tabs} />

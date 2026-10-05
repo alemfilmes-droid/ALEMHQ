@@ -7,6 +7,7 @@ import { syncCrmAlertsAction } from "@/features/crm/actions";
 import { EssenciaCards } from "@/features/essencia/components/essencia-cards";
 import { checkOverdueFinanceAction } from "@/features/finance/actions";
 import { HomeFinanceCard } from "@/features/finance/components/home-finance-card";
+import { ScheduledPaymentsCard } from "@/features/finance/components/scheduled-payments-card";
 import { MyGoalsHighlight, TeamGoalsCard } from "@/features/goals/components/home-goal-cards";
 import { PautaHomeCards } from "@/features/pautas/components/home-cards";
 import { closeStaleTimeSessionsAction } from "@/features/time-tracking/actions";
@@ -66,6 +67,7 @@ export default async function HomePage() {
         {hasCapability(profile, "crmWorkday") ? <MyCommercialDayCard profileId={profile.id} showCommissions={!canManageAllDeals(profile) && hasCapability(profile, "finance")} /> : null}
 
         {hasCapability(profile, "manageCompany") ? <TeamGoalsCard /> : null}
+        {hasCapability(profile, "finance") ? <ScheduledPaymentsCard /> : null}
         {hasCapability(profile, "canSeeFinanceHomeCard") ? <HomeFinanceCard /> : null}
       </section>
 

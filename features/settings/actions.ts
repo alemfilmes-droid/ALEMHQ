@@ -50,3 +50,39 @@ export async function saveCompanySettingsAction(values: CompanySettingsInput): P
   revalidatePath("/", "layout");
   return { ok: true, message: "Configurações da empresa salvas." };
 }
+
+const financeAutomationSchema = z.object({
+  invoice: z.boolean(),
+  invoiceDaysBefore: z.number().int().min(0, "Use de 0 a 60 dias.").max(60, "Use de 0 a 60 dias."),
+  weekly: z.boolean(),
+  weeklyDow: z.number().int().min(0).max(6),
+  monthly: z.boolean(),
+  payments: z.boolean(),
+  executorId: z.string().uuid().nullable(),
+});
+
+/** Pautas automáticas do financeiro — só diretoria/master (a RLS de company_settings repete). */
+export async function saveFinanceAutomationAction(values: z.infer<typeof financeAutomationSchema>): Promise<ActionResult> {
+  const profile = await getCurrentProfile();
+  if (!profile) return UNAUTHENTICATED;
+  if (!hasCapability(profile, "manageCompany")) return { ok: false, error: "Só a diretoria altera as configurações da empresa." };
+  const parsed = financeAutomationSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revise os campos." };
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("company_settings")
+    .update({
+      finance_auto_invoice: d.invoice,
+      finance_invoice_days_before: d.invoiceDaysBefore,
+      finance_auto_weekly: d.weekly,
+      finance_weekly_dow: d.weeklyDow,
+      finance_auto_monthly: d.monthly,
+      finance_auto_payments: d.payments,
+      finance_executor_id: d.executorId,
+    })
+    .eq("id", true);
+  if (error) return { ok: false, error: "Não foi possível salvar." };
+  revalidatePath("/configuracoes");
+  return { ok: true, message: "Pautas automáticas do financeiro salvas." };
+}

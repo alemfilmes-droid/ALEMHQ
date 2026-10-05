@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { CommissionRulesCard } from "@/features/crm/components/commission-rules-card";
 import { listCommissionRules } from "@/features/crm/queries";
 import { CompanySettingsForm } from "@/features/settings/components/company-settings-form";
+import { FinanceAutomationCard } from "@/features/settings/components/finance-automation-card";
 import { NotificationPreferencesForm } from "@/features/settings/components/notification-preferences-form";
 import { getCompanySettings, getNotificationPreferences } from "@/features/settings/queries";
 import { GoogleCalendarSettings } from "@/features/google/components/google-calendar-settings";
@@ -131,6 +132,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
                   />
                 </CardContent>
               </Card>
+              <FinanceAutomationCard initial={company.financeAutomation} members={prospectMembers} />
               <ProspectSettingsCard members={prospectMembers} initial={prospectSettings} />
               <CommissionRulesCard rules={commissionRules} />
             </div>

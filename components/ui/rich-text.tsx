@@ -6,13 +6,13 @@ import { cn } from "@/lib/utils";
  * HTML cru (nada de dangerouslySetInnerHTML), então não há como injetar script pelo conteúdo.
  *
  * Suporta: parágrafos, "## título", listas "- " e "1. ", "> citação", **negrito**, *itálico* e
- * [links](https://…). Links só com http(s) ou mailto.
+ * [links](https://…). Links só com http(s), mailto ou rota interna do sistema (/fluxogramas/…).
  */
 
 const INLINE = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|\[[^\]]+\]\([^)\s]+\))/g;
 
 function safeHref(href: string): string | null {
-  return /^(https?:\/\/|mailto:)/i.test(href) ? href : null;
+  return /^(https?:\/\/|mailto:)/i.test(href) || /^\/(?!\/)[\w\-/?=&#%.]*$/.test(href) ? href : null;
 }
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
@@ -28,7 +28,12 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
     if (link) {
       const href = safeHref(link[2] ?? "");
       return href ? (
-        <a key={key} href={href} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4 hover:text-muted-foreground">
+        <a
+          key={key}
+          href={href}
+          {...(href.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+          className="font-semibold underline underline-offset-4 hover:text-muted-foreground"
+        >
           {link[1]}
         </a>
       ) : (

@@ -619,7 +619,10 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
         </dl>
 
         {members.some((member) => member.production_function === "nota_fiscal") || isInvoiceTaskTitle(pauta.title ?? "") ? (
-          <InvoiceTaskCallout projectId={pauta.project_is_internal ? null : pauta.project_id} />
+          <InvoiceTaskCallout
+            projectId={pauta.project_is_internal ? null : pauta.project_id}
+            receivableId={pauta.source_ref_type === "receivable" ? pauta.source_ref_id : null}
+          />
         ) : null}
 
         {members.length > 0 ? (

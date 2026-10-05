@@ -6,7 +6,8 @@ export interface MarginThresholds {
   attention: number;
 }
 
-export const DEFAULT_MARGIN_THRESHOLDS: MarginThresholds = { healthy: 50, attention: 47 };
+/** Política da Além: saudável ≥ 40%; atenção 30–39,99% (relatório mensal); crítico < 30% (alerta imediato). */
+export const DEFAULT_MARGIN_THRESHOLDS: MarginThresholds = { healthy: 40, attention: 30 };
 
 /** Espelha margin_status_for() no banco. */
 export function marginStatusFor(percent: number, thresholds: MarginThresholds = DEFAULT_MARGIN_THRESHOLDS): MarginStatus {

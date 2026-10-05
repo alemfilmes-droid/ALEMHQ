@@ -2,13 +2,12 @@
 
 import { Money } from "@/components/ui/money";
 import { useState, useTransition } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { settlePayableAction, settleReceivableAction } from "@/features/finance/actions";
 import { requestProjectFinalizeCheck } from "@/features/projects/finalize-events";
 import { MethodSelect } from "@/features/finance/components/method-select";
-import { PayeePaymentDetails } from "@/features/goals/components/payee-payment-details";
 import { centsToInput } from "@/features/finance/money";
 import {
   settlePayableSchema,
@@ -30,6 +29,9 @@ import {
 } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { formatDate } from "@/lib/format";
 
 interface DialogState {
   open: boolean;
@@ -117,6 +119,10 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
   );
 }
 
+/**
+ * Dar baixa no pagamento. Data depois do vencimento: o motivo do atraso é obrigatório e a pergunta
+ * de multa/juros aparece (valor e motivo entram no custo, para a margem refletir o valor real).
+ */
 export function SettlePayableDialog({ payable, open, onOpenChange, today }: DialogState & { payable: PayableItem }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -127,8 +133,19 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
     formState: { errors },
   } = useForm<SettlePayableValues>({
     resolver: zodResolver(settlePayableSchema),
-    defaultValues: { paidAt: today, paymentMethod: payable.paymentMethod ?? undefined },
+    defaultValues: {
+      paidAt: today,
+      dueDate: payable.dueDate,
+      paymentMethod: payable.paymentMethod ?? undefined,
+      receiptUrl: "",
+      lateReason: "",
+      hadPenalty: false,
+      penaltyAmount: "",
+      penaltyReason: "",
+    },
   });
+  const [paidAt, hadPenalty] = useWatch({ control, name: ["paidAt", "hadPenalty"] });
+  const late = !!paidAt && paidAt > payable.dueDate;
 
   const onSubmit = handleSubmit((values) => {
     setError(null);
@@ -147,14 +164,13 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Marcar como pago.</DialogTitle>
+          <DialogTitle>Dar baixa no pagamento.</DialogTitle>
           <DialogDescription>
-            {payable.description} · <Money cents={payable.amount} />
+            {payable.payeeLabel} · {payable.description} · <Money cents={payable.amount} /> · vence {formatDate(payable.dueDate)}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
           {error ? <Alert variant="error">{error}</Alert> : null}
-          {payable.payeeProfileId ? <PayeePaymentDetails profileId={payable.payeeProfileId} /> : null}
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="pay-date" label="Data do pagamento" error={errors.paidAt?.message}>
               <Input id="pay-date" type="date" {...register("paidAt")} />
@@ -169,6 +185,34 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
               />
             </FormField>
           </div>
+          <FormField id="pay-receipt" label="Link do comprovante (opcional)" error={errors.receiptUrl?.message}>
+            <Input id="pay-receipt" type="url" placeholder="https://" {...register("receiptUrl")} />
+          </FormField>
+
+          {late ? (
+            <fieldset className="space-y-4 rounded-md border border-border-strong p-3">
+              <legend className="eyebrow px-1">Pago depois do vencimento ({formatDate(payable.dueDate)})</legend>
+              <FormField id="pay-late-reason" label="Motivo do atraso" error={errors.lateReason?.message}>
+                <Textarea id="pay-late-reason" rows={2} aria-invalid={!!errors.lateReason} {...register("lateReason")} />
+              </FormField>
+              <label className="flex items-center gap-2 text-sm">
+                <Controller control={control} name="hadPenalty" render={({ field }) => <Checkbox checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} />} />
+                Houve multa ou juros
+              </label>
+              {hadPenalty ? (
+                <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
+                  <FormField id="pay-penalty" label="Valor (R$)" error={errors.penaltyAmount?.message}>
+                    <Input id="pay-penalty" inputMode="decimal" aria-invalid={!!errors.penaltyAmount} {...register("penaltyAmount")} />
+                  </FormField>
+                  <FormField id="pay-penalty-reason" label="Motivo da multa/juros" error={errors.penaltyReason?.message}>
+                    <Input id="pay-penalty-reason" aria-invalid={!!errors.penaltyReason} {...register("penaltyReason")} />
+                  </FormField>
+                </div>
+              ) : null}
+              {hadPenalty ? <p className="text-[12px] text-muted-foreground">A multa/juros soma no custo: a margem do projeto passa a refletir o valor real pago.</p> : null}
+            </fieldset>
+          ) : null}
+
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="secondary">
@@ -176,7 +220,7 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
               </Button>
             </DialogClose>
             <Button type="submit" loading={pending}>
-              Confirmar pagamento
+              Confirmar baixa
             </Button>
           </DialogFooter>
         </form>

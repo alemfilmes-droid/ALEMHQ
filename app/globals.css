@@ -452,3 +452,38 @@ html[data-privacy="on"] .sensitive-axis .recharts-cartesian-axis-tick-value:not(
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+  Impressão clara (fluxogramas): quando a página marcada com .print-light é impressa ou salva em PDF,
+  os tokens do tema passam para papel branco — mesma estrutura, contraste de documento.
+*/
+@media print {
+  html:has(.print-light) {
+    --background: #ffffff;
+    --foreground: #141414;
+    --surface: #ffffff;
+    --surface-raised: #f5f5f5;
+    --surface-hover: #eeeeee;
+    --border: #d4d4d4;
+    --border-strong: #a3a3a3;
+    --subtle: #6b6b6b;
+    --muted-foreground: #404040;
+    --surface-card-from: #ffffff;
+    --surface-card-to: #ffffff;
+    --border-card: #d4d4d4;
+    --card: #ffffff;
+    background: var(--background);
+    color: var(--foreground);
+  }
+  html:has(.print-light) body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .print-light {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-light .break-inside-avoid {
+    break-inside: avoid;
+  }
+}

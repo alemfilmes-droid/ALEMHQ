@@ -209,6 +209,15 @@ function toPayableRow(data: PayableValues) {
     is_fixed: data.isFixed,
     recurrence: data.recurrence,
     recurrence_until: orNull(data.recurrenceUntil),
+    // Favorecido da equipe: os dados vêm do perfil (payment_details) — nada duplicado aqui.
+    payee_pix_key_type: data.payeeProfileId || data.payeePixKeyType === "" ? null : data.payeePixKeyType,
+    payee_pix_key: data.payeeProfileId ? null : orNull(data.payeePixKey),
+    payee_holder_name: data.payeeProfileId ? null : orNull(data.payeeHolderName),
+    payee_document: data.payeeProfileId ? null : orNull(data.payeeDocument),
+    payee_bank_name: data.payeeProfileId ? null : orNull(data.payeeBankName),
+    payee_bank_agency: data.payeeProfileId ? null : orNull(data.payeeBankAgency),
+    payee_bank_account: data.payeeProfileId ? null : orNull(data.payeeBankAccount),
+    payee_account_type: data.payeeProfileId || data.payeeAccountType === "" ? null : data.payeeAccountType,
   };
 }
 
@@ -264,7 +273,14 @@ export async function settlePayableAction(id: string, values: SettlePayableValue
   const supabase = await createClient();
   const { data: updated, error } = await supabase
     .from("payables")
-    .update({ paid_at: parsed.data.paidAt, payment_method: parsed.data.paymentMethod })
+    .update({
+      paid_at: parsed.data.paidAt,
+      payment_method: parsed.data.paymentMethod,
+      payment_receipt_url: orNull(parsed.data.receiptUrl),
+      late_reason: parsed.data.paidAt > parsed.data.dueDate ? parsed.data.lateReason : null,
+      penalty_amount: parsed.data.paidAt > parsed.data.dueDate && parsed.data.hadPenalty ? amountToNumber(parsed.data.penaltyAmount) : null,
+      penalty_reason: parsed.data.paidAt > parsed.data.dueDate && parsed.data.hadPenalty ? parsed.data.penaltyReason : null,
+    })
     .eq("id", id)
     .is("paid_at", null)
     .is("cancelled_at", null)
@@ -273,6 +289,36 @@ export async function settlePayableAction(id: string, values: SettlePayableValue
   if (!updated || updated.length === 0) return { ok: false, error: "Este pagamento já foi baixado ou cancelado." };
   refresh();
   return { ok: true, message: "Pagamento registrado." };
+}
+
+/** Agendar NÃO é pagar: o pagamento continua pendente/atrasado em todo total até a baixa. */
+export async function schedulePayableAction(id: string, date: string | null): Promise<ActionResult> {
+  const profile = await requireFinance();
+  if (!profile) return FORBIDDEN;
+  if (!idSchema.safeParse(id).success || (date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(date))) return INVALID;
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("payables")
+    .update({ scheduled_for: date, scheduled_at: date ? new Date().toISOString() : null, scheduled_by: date ? profile.id : null })
+    .eq("id", id)
+    .is("paid_at", null)
+    .is("cancelled_at", null)
+    .select("id");
+  if (error) return { ok: false, error: "Não foi possível agendar." };
+  if (!updated || updated.length === 0) return { ok: false, error: "Este pagamento já foi baixado ou cancelado." };
+  refresh();
+  return { ok: true, message: date ? "Pagamento agendado. Ele continua em aberto até a baixa." : "Agendamento removido." };
+}
+
+/** Gera as pautas automáticas do financeiro (idempotente) — reforço do cron na abertura do painel. */
+export async function generateFinanceAutoPautasAction(): Promise<void> {
+  if (!(await requireFinance())) return;
+  try {
+    const supabase = await createClient();
+    await supabase.rpc("finance_generate_auto_pautas");
+  } catch {
+    // Sem a migração ou erro transitório: o cron das 8h gera de qualquer forma.
+  }
 }
 
 export async function cancelPayableAction(id: string): Promise<ActionResult> {

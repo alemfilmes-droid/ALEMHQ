@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { createQuickProjectAction } from "@/app/(app)/projetos/actions";
 import { archiveBudgetAction, deleteBudgetAction, duplicateBudgetAction, getClientLinksAction, saveBudgetAction, type BudgetHeaderValues } from "@/features/budgets/actions";
 import { BudgetStatusPanel } from "@/features/budgets/components/budget-status-panel";
+import { applyContractChangeAction, getBudgetContractStatusAction, type ContractStatus } from "@/features/finance/contract-actions";
+import { ContractSyncDialog } from "@/features/finance/components/contract-sync-dialog";
 import { PresentationDialog } from "@/features/budgets/components/presentation-dialog";
 import { brl, computeBudget, pct, pctNumber, SECTION_LABELS, type BudgetLineInput, type BudgetSection } from "@/features/budgets/pricing";
 import type { BudgetRecord, CatalogItem, DeliverableItem } from "@/features/budgets/types";
@@ -69,6 +71,8 @@ interface BudgetEditorProps {
   budget: BudgetRecord;
   catalog: CatalogItem[];
   companies: { id: string; name: string; logo_url: string | null }[];
+  /** Quem tem acesso ao financeiro decide o efeito do orçamento no contrato do projeto. */
+  canConfirmContract: boolean;
 }
 
 /**
@@ -76,7 +80,7 @@ interface BudgetEditorProps {
  * valores reais (custo, ganho e margem por linha). O FEE da empresa e o imposto, definidos aqui,
  * formam o valor do serviço, o imposto e o valor final para o cliente.
  */
-export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) {
+export function BudgetEditor({ budget, catalog, companies, canConfirmContract }: BudgetEditorProps) {
   const router = useRouter();
   const [header, setHeader] = useState({
     clientName: budget.clientName,
@@ -98,6 +102,7 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
   const [dirty, setDirty] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [presentationOpen, setPresentationOpen] = useState(false);
+  const [contractStatus, setContractStatus] = useState<ContractStatus | null>(null);
   const [saving, startSaving] = useTransition();
 
   const { lines, totals } = useMemo(() => computeBudget(rows, header.feePct, header.taxPct), [rows, header.feePct, header.taxPct]);
@@ -197,7 +202,28 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
       return false;
     }
     setDirty(false);
+    if (canConfirmContract && values.projectId) void syncContract();
     return true;
+  }
+
+  /** Orçamento ligado a projeto: sem contrato, define sozinho; contrato diferente, pergunta. */
+  async function syncContract() {
+    const status = await getBudgetContractStatusAction(budget.id);
+    if (!status || status.decision === "nenhuma") return;
+    if (status.decision === "definir") {
+      const result = await applyContractChangeAction({
+        projectId: status.projectId,
+        budgetId: budget.id,
+        mode: "definicao",
+        amount: status.budgetTotal,
+        regenerate: false,
+        description: "",
+        note: "",
+      });
+      if (result.ok) toast.success(result.message);
+      return;
+    }
+    setContractStatus(status);
   }
 
   function save() {
@@ -570,6 +596,17 @@ export function BudgetEditor({ budget, catalog, companies }: BudgetEditorProps) 
           <Textarea id="budget-notes" rows={6} value={header.notes} onChange={(event) => setField("notes", event.target.value)} />
         </FormField>
       </div>
+
+      {contractStatus ? (
+        <ContractSyncDialog
+          budgetId={budget.id}
+          status={contractStatus}
+          onDone={() => {
+            setContractStatus(null);
+            router.refresh();
+          }}
+        />
+      ) : null}
 
       {presentationOpen ? (
         <PresentationDialog

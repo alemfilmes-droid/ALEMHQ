@@ -88,6 +88,7 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
           folder={`receivables/${item.id}`}
           initialNumber={item.invoiceNumber}
           hasFile={!!item.invoiceFilePath}
+          driveFile={{ clientName: item.companyName, month: item.competenceMonth ?? item.dueDate }}
           onSave={(input) => attachReceivableInvoiceAction(item.id, input)}
           onOpenChange={setInvoiceOpen}
         />

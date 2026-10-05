@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { FinancialsForm } from "@/components/projects/financials-form";
+import { ContractHistory } from "@/features/finance/components/contract-history";
 import { GenerateInstallmentsDialog } from "@/features/finance/components/generate-installments-dialog";
 import { PayableDialog } from "@/features/finance/components/payable-dialog";
 import { PayablesTable } from "@/features/finance/components/payables-table";
@@ -58,6 +59,11 @@ export async function ProjectFinanceTab({ projectId, companyId, isInternal }: Pr
               paymentTerms: financialsResult.data?.payment_terms ?? "",
             }}
           />
+        </Section>
+      )}
+      {isInternal ? null : (
+        <Section title="Histórico de valores">
+          <ContractHistory projectId={projectId} />
         </Section>
       )}
 

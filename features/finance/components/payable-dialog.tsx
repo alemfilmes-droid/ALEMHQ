@@ -29,6 +29,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PayeePaymentDetails } from "@/features/goals/components/payee-payment-details";
+import { BANK_ACCOUNT_TYPE_LABELS, BANK_ACCOUNT_TYPES, PIX_KEY_TYPE_LABELS, PIX_KEY_TYPES } from "@/features/goals/types";
 
 type PayableDialogProps = {
   options: FinanceOptions;
@@ -67,6 +70,14 @@ function initialValues(props: PayableDialogProps): PayableValues {
       isFixed: item.isFixed,
       recurrence: item.recurrenceParentId ? "none" : item.recurrence,
       recurrenceUntil: item.recurrenceUntil ?? "",
+      payeePixKeyType: item.payee.pixKeyType ?? "",
+      payeePixKey: item.payee.pixKey ?? "",
+      payeeHolderName: item.payee.holderName ?? "",
+      payeeDocument: item.payee.document ?? "",
+      payeeBankName: item.payee.bankName ?? "",
+      payeeBankAgency: item.payee.agency ?? "",
+      payeeBankAccount: item.payee.account ?? "",
+      payeeAccountType: item.payee.accountType ?? "",
     };
   }
   return {
@@ -84,6 +95,14 @@ function initialValues(props: PayableDialogProps): PayableValues {
     isFixed: false,
     recurrence: "none",
     recurrenceUntil: "",
+    payeePixKeyType: "",
+    payeePixKey: "",
+    payeeHolderName: "",
+    payeeDocument: "",
+    payeeBankName: "",
+    payeeBankAgency: "",
+    payeeBankAccount: "",
+    payeeAccountType: "",
   };
 }
 
@@ -278,10 +297,64 @@ export function PayableDialog(props: PayableDialogProps) {
             </FormField>
           </div>
 
-          {payeeProfileId ? null : (
-            <FormField id="pay-payee-name" label="Nome do favorecido" error={errors.payeeName?.message}>
-              <Input id="pay-payee-name" aria-invalid={!!errors.payeeName} aria-describedby={errors.payeeName ? "pay-payee-name-message" : undefined} {...register("payeeName")} />
-            </FormField>
+          {payeeProfileId ? (
+            <div className="space-y-1.5">
+              <p className="text-[12px] text-muted-foreground">Dados para pagamento — vêm do perfil da pessoa (Perfil → Dados para pagamento).</p>
+              <PayeePaymentDetails profileId={payeeProfileId} />
+            </div>
+          ) : (
+            <>
+              <FormField id="pay-payee-name" label="Nome do favorecido" error={errors.payeeName?.message}>
+                <Input id="pay-payee-name" aria-invalid={!!errors.payeeName} aria-describedby={errors.payeeName ? "pay-payee-name-message" : undefined} {...register("payeeName")} />
+              </FormField>
+              <fieldset className="space-y-3 rounded-md border border-border p-3">
+                <legend className="eyebrow px-1">Dados para pagamento (opcional, ficam salvos neste custo)</legend>
+                <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                  <FormField id="pay-pix-type" label="Tipo da chave Pix">
+                    <NativeSelect id="pay-pix-type" {...register("payeePixKeyType")}>
+                      <option value="">—</option>
+                      {PIX_KEY_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {PIX_KEY_TYPE_LABELS[type]}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </FormField>
+                  <FormField id="pay-pix" label="Chave Pix">
+                    <Input id="pay-pix" {...register("payeePixKey")} />
+                  </FormField>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField id="pay-holder" label="Titular">
+                    <Input id="pay-holder" {...register("payeeHolderName")} />
+                  </FormField>
+                  <FormField id="pay-document" label="CPF/CNPJ">
+                    <Input id="pay-document" inputMode="numeric" {...register("payeeDocument")} />
+                  </FormField>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <FormField id="pay-bank" label="Banco" className="sm:col-span-2">
+                    <Input id="pay-bank" {...register("payeeBankName")} />
+                  </FormField>
+                  <FormField id="pay-agency" label="Agência">
+                    <Input id="pay-agency" inputMode="numeric" {...register("payeeBankAgency")} />
+                  </FormField>
+                  <FormField id="pay-account" label="Conta">
+                    <Input id="pay-account" {...register("payeeBankAccount")} />
+                  </FormField>
+                </div>
+                <FormField id="pay-account-type" label="Tipo de conta" className="sm:max-w-[14rem]">
+                  <NativeSelect id="pay-account-type" {...register("payeeAccountType")}>
+                    <option value="">—</option>
+                    {BANK_ACCOUNT_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {BANK_ACCOUNT_TYPE_LABELS[type]}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </FormField>
+              </fieldset>
+            </>
           )}
 
           <FormField id="pay-description" label="Descrição" error={errors.description?.message}>

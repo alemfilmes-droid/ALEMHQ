@@ -1,5 +1,5 @@
 import "server-only";
-import type { ProcessDetail, ProcessRunItem, ProcessStepItem, ProcessSummary, StepTool } from "@/features/processes/types";
+import { ACTION_KINDS, STEP_TOOLS, STEP_TYPES, type ActionKind, type ProcessDetail, type ProcessRunItem, type ProcessStepItem, type ProcessSummary, type StepTool, type StepType } from "@/features/processes/types";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types";
 
@@ -17,8 +17,14 @@ function toStep(row: StepRow): ProcessStepItem {
     doneCriteria: row.done_criteria,
     estimatedMinutes: row.estimated_minutes,
     isBlocking: row.is_blocking,
-    tool: row.tool === "pasta_drive" ? (row.tool satisfies StepTool) : null,
+    tool: (STEP_TOOLS as readonly string[]).includes(row.tool ?? "") ? (row.tool as StepTool) : null,
     archived: row.archived_at !== null,
+    stepType: (STEP_TYPES as readonly string[]).includes(row.step_type) ? (row.step_type as StepType) : "acao",
+    actionKind: (ACTION_KINDS as readonly string[]).includes(row.action_kind) ? (row.action_kind as ActionKind) : "executar",
+    branchYesStepId: row.branch_yes_step_id,
+    branchNoStepId: row.branch_no_step_id,
+    imageUrl: row.image_url,
+    exampleText: row.example_text,
   };
 }
 
@@ -30,7 +36,7 @@ export async function listProcesses(): Promise<ProcessSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("processes")
-    .select("*, steps:process_steps(title, description, archived_at)")
+    .select("*, steps:process_steps(title, description, example_text, archived_at)")
     .order("squad")
     .order("order_index")
     .order("title");
@@ -50,7 +56,7 @@ export async function listProcesses(): Promise<ProcessSummary[]> {
       isPublished: row.is_published,
       archived: row.archived_at !== null,
       stepCount: active.length,
-      searchText: [row.title, row.summary, row.trigger_description, row.owner_role, ...active.flatMap((step) => [step.title, step.description])]
+      searchText: [row.title, row.summary, row.trigger_description, row.owner_role, ...active.flatMap((step) => [step.title, step.description, step.example_text])]
         .filter(Boolean)
         .join(" "),
     };
@@ -132,4 +138,23 @@ export async function listProjectsForProcesses(): Promise<{ id: string; name: st
     ownerName: row.owner?.full_name ?? "",
     startDate: row.start_date ?? row.created_at.slice(0, 10),
   }));
+}
+
+/** Recebimentos para a ferramenta "arquivo da nota fiscal" (a RLS só devolve para quem tem financeiro). */
+export async function listInvoiceReceivableOptions(): Promise<{ id: string; label: string; clientName: string; month: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("receivables_with_status")
+    .select("id, description, company_name, competence_month, due_date, status")
+    .neq("status", "cancelado")
+    .order("due_date", { ascending: false })
+    .limit(200);
+  return (data ?? [])
+    .filter((row) => row.id && row.company_name && row.due_date)
+    .map((row) => ({
+      id: row.id!,
+      label: `${row.company_name} · ${row.description ?? ""} · ${(row.competence_month ?? row.due_date)!.slice(5, 7)}/${(row.competence_month ?? row.due_date)!.slice(0, 4)}`,
+      clientName: row.company_name!,
+      month: (row.competence_month ?? row.due_date)!,
+    }));
 }

@@ -26,7 +26,7 @@ interface CompanySettingsFormProps {
   initial: { defaultDailyHours: number; defaultWorkdays: number[]; healthy: number; attention: number };
 }
 
-/** Jornada padrão de quem entra na equipe e limiares da margem (antes fixos: 8h seg–sex, 50% / 47%). */
+/** Jornada padrão de quem entra na equipe e limiares da margem (padrão: 8h seg–sex; margem saudável 40%, crítica abaixo de 30%). */
 export function CompanySettingsForm({ initial }: CompanySettingsFormProps) {
   const [pending, startTransition] = useTransition();
   const {

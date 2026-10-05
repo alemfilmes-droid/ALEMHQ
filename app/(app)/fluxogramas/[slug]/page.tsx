@@ -6,13 +6,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { SquadBadge } from "@/components/ui/squad-badge";
-import { ProcessFlow } from "@/features/processes/components/process-flow";
+import { ExecutionMode } from "@/features/processes/components/execution-mode";
 import { ProcessHeaderActions } from "@/features/processes/components/process-header-actions";
 import { ProcessHistory } from "@/features/processes/components/process-history";
 import { ProcessSteps } from "@/features/processes/components/process-steps";
-import { getProcess, listProcessRuns, listProjectsForProcesses } from "@/features/processes/queries";
+import { ProcessSummary } from "@/features/processes/components/process-summary";
+import { getProcess, listInvoiceReceivableOptions, listProcessRuns, listProjectsForProcesses } from "@/features/processes/queries";
 import { FREQUENCY_LABELS } from "@/features/processes/types";
-import { canEditProcessSquad } from "@/lib/auth/permissions";
+import { canEditProcessSquad, hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { SQUADS } from "@/lib/auth/squads";
 import { formatDateTime } from "@/lib/format";
@@ -20,12 +21,12 @@ import { formatDateTime } from "@/lib/format";
 export const metadata: Metadata = { title: "Fluxograma" };
 
 type Params = Promise<{ slug: string }>;
-type SearchParams = Promise<{ aba?: string }>;
+type SearchParams = Promise<{ aba?: string; modo?: string }>;
 
 export default async function ProcessPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const profile = await requireProfile();
   const { slug } = await params;
-  const { aba } = await searchParams;
+  const { aba, modo } = await searchParams;
   if (!/^[a-z0-9-]{1,120}$/.test(slug)) notFound();
 
   const process = await getProcess(slug);
@@ -34,12 +35,22 @@ export default async function ProcessPage({ params, searchParams }: { params: Pa
   const canEdit = canEditProcessSquad(profile, process.squad);
   const tab = aba === "historico" ? "historico" : "passos";
   const activeSteps = process.steps.filter((step) => !step.archived);
-  const needsProjects = tab === "passos";
-  const [runs, projects] = await Promise.all([listProcessRuns(process.id, profile.id), needsProjects ? listProjectsForProcesses() : Promise.resolve([])]);
+  const execution = modo === "execucao";
+  const needsProjects = tab === "passos" || execution;
+  const needsReceivables = needsProjects && hasCapability(profile, "finance") && activeSteps.some((step) => step.tool === "arquivo_nota_fiscal");
+  const [runs, projects, receivables] = await Promise.all([
+    listProcessRuns(process.id, profile.id),
+    needsProjects ? listProjectsForProcesses() : Promise.resolve([]),
+    needsReceivables ? listInvoiceReceivableOptions() : Promise.resolve([]),
+  ]);
+
+  if (execution) {
+    return <ExecutionMode process={process} openRun={runs.open} projects={projects} receivables={receivables} />;
+  }
 
   return (
-    <>
-      <Link href="/fluxogramas" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+    <div className="print-light">
+      <Link href="/fluxogramas" className="mb-4 inline-flex print:hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" aria-hidden />
         Fluxogramas
       </Link>
@@ -78,12 +89,11 @@ export default async function ProcessPage({ params, searchParams }: { params: Pa
         actions={canEdit ? <ProcessHeaderActions process={process} squads={SQUADS.filter((squad) => canEditProcessSquad(profile, squad))} /> : undefined}
       />
 
-      <div className="mb-6 rounded-lg border border-border bg-surface-raised p-4">
-        <p className="eyebrow mb-3">Visão geral · {activeSteps.length} passos</p>
-        <ProcessFlow steps={activeSteps} squad={process.squad} />
+      <div className="mb-6">
+        <ProcessSummary process={process} />
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 print:hidden">
         <LinkTabs
           label="Seções do fluxograma"
           tabs={[
@@ -96,13 +106,13 @@ export default async function ProcessPage({ params, searchParams }: { params: Pa
       {tab === "historico" ? (
         <ProcessHistory runs={runs.finished} totalSteps={activeSteps.length} />
       ) : (
-        <ProcessSteps process={process} canEdit={canEdit} openRun={runs.open} projects={projects} />
+        <ProcessSteps process={process} canEdit={canEdit} openRun={runs.open} projects={projects} receivables={receivables} />
       )}
 
       <p className="mt-8 text-[12px] text-subtle">
         Atualizado em {formatDateTime(process.updatedAt)}
         {process.updatedByName ? ` por ${process.updatedByName}` : ""}.
       </p>
-    </>
+    </div>
   );
 }

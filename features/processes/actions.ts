@@ -120,6 +120,12 @@ export async function saveStepAction(processId: string, values: StepValues, step
     estimated_minutes: v.estimatedMinutes ? Number(v.estimatedMinutes) : null,
     is_blocking: v.isBlocking,
     tool: v.tool || null,
+    step_type: v.stepType,
+    action_kind: v.actionKind,
+    branch_yes_step_id: v.stepType === "decisao" ? v.branchYesStepId || null : null,
+    branch_no_step_id: v.stepType === "decisao" ? v.branchNoStepId || null : null,
+    image_url: v.imageUrl || null,
+    example_text: v.exampleText || null,
   };
   let error;
   if (stepId) {

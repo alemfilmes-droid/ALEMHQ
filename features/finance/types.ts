@@ -1,5 +1,5 @@
 import type { Cents } from "@/features/finance/money";
-import type { DealStage, MarginStatus, PayableCategory, PayableRecurrence, PaymentMethod, ProposalStatus } from "@/types";
+import type { BankAccountType, DealStage, MarginStatus, PayableCategory, PayableRecurrence, PaymentMethod, PixKeyType, ProposalStatus } from "@/types";
 
 export const RECEIVABLE_STATUSES = ["pendente", "atrasado", "recebido", "cancelado"] as const;
 export const PAYABLE_STATUSES = ["pendente", "atrasado", "pago", "cancelado"] as const;
@@ -51,6 +51,28 @@ export interface PayableItem {
   recurrenceUntil: string | null;
   recurrenceParentId: string | null;
   status: PayableStatus;
+  /** Agendado no banco (não é pago: continua pendente/atrasado em todo total). */
+  scheduledFor: string | null;
+  paidLate: boolean;
+  lateReason: string | null;
+  penaltyAmount: Cents | null;
+  penaltyReason: string | null;
+  /** Valor antes da multa/juros (quando houve). */
+  originalAmount: Cents | null;
+  receiptUrl: string | null;
+  /** Dados de pagamento de favorecido avulso (sem cadastro na equipe). */
+  payee: PayeeBankData;
+}
+
+export interface PayeeBankData {
+  pixKeyType: PixKeyType | null;
+  pixKey: string | null;
+  holderName: string | null;
+  document: string | null;
+  bankName: string | null;
+  agency: string | null;
+  account: string | null;
+  accountType: BankAccountType | null;
 }
 
 export interface ProfitabilityItem {

@@ -11,7 +11,7 @@ import { getPayeePaymentDetailsAction } from "@/features/goals/actions";
 import { BANK_ACCOUNT_TYPE_LABELS, PIX_KEY_TYPE_LABELS, type PaymentDetailsItem } from "@/features/goals/types";
 import { cn } from "@/lib/utils";
 
-function CopyValue({ label, value }: { label: string; value: string | null }) {
+export function CopyValue({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between gap-3">

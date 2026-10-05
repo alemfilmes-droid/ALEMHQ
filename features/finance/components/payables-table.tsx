@@ -9,6 +9,7 @@ import { CsvExportButton } from "@/features/finance/components/csv-export-button
 import { PayableDialog } from "@/features/finance/components/payable-dialog";
 import { SettlePayableDialog } from "@/features/finance/components/settle-dialogs";
 import { PayeePaymentDetailsDialog } from "@/features/goals/components/payee-payment-details";
+import { PaymentModal, ScheduledMarker } from "@/features/finance/components/payment-modal";
 import { DirectionIcon, StatusBadge } from "@/features/finance/components/status-badge";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
 import { FIXED_VARIABLE_LABELS, PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, STATUS_LABELS } from "@/features/finance/labels";
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface PayablesTableProps {
   rows: PayableItem[];
@@ -26,6 +28,8 @@ interface PayablesTableProps {
   /** Oculta a coluna de projeto (aba do projeto). */
   compact?: boolean;
   csvName?: string;
+  /** ?pagamento=<id> (link da notificação): abre o pagamento direto. */
+  initialOpenId?: string;
 }
 
 function RowActions({ item, options, today }: { item: PayableItem; options: FinanceOptions; today: string }) {
@@ -83,7 +87,9 @@ function RowActions({ item, options, today }: { item: PayableItem; options: Fina
   );
 }
 
-export function PayablesTable({ rows, options, today, compact = false, csvName = "pagamentos.csv" }: PayablesTableProps) {
+export function PayablesTable({ rows, options, today, compact = false, csvName = "pagamentos.csv", initialOpenId }: PayablesTableProps) {
+  const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
+  const openItem = openId ? rows.find((row) => row.id === openId) : undefined;
   if (rows.length === 0) {
     return <EmptyState icon={ArrowUpRight} title="Nenhum pagamento encontrado." hint="Ajuste os filtros ou o período." />;
   }
@@ -123,7 +129,15 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
         </thead>
         <tbody className="divide-y divide-border">
           {rows.map((item) => (
-            <tr key={item.id} className={item.status === "cancelado" ? "text-subtle" : undefined}>
+            <tr
+              key={item.id}
+              onClick={(event) => {
+                // Cliques em links, botões e menus da linha seguem o próprio caminho.
+                if ((event.target as HTMLElement).closest("a, button, [role='menuitem']")) return;
+                setOpenId(item.id);
+              }}
+              className={cn("cursor-pointer transition-colors hover:bg-surface-hover", item.status === "cancelado" && "text-subtle")}
+            >
               <td className="whitespace-nowrap px-4 py-3">
                 <span className="flex items-center gap-3">
                   <DirectionIcon direction="out" />
@@ -153,7 +167,15 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
               <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.amount)}</td>
               <td className="px-4 py-3">
                 <StatusBadge status={item.status} />
-                {item.paidAt ? <span className="mt-1 block text-[12px] text-muted-foreground">em {formatDate(item.paidAt)}</span> : null}
+                {item.paidAt ? (
+                  <span className="mt-1 block text-[12px] text-muted-foreground">
+                    em {formatDate(item.paidAt)}
+                    {item.paidLate ? " · com atraso" : ""}
+                  </span>
+                ) : null}
+                <span className="mt-1 block">
+                  <ScheduledMarker item={item} today={today} />
+                </span>
               </td>
               <td className="px-2 py-3 text-right">
                 <RowActions item={item} options={options} today={today} />
@@ -162,6 +184,7 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
           ))}
         </tbody>
       </TableShell>
+      {openItem ? <PaymentModal item={openItem} options={options} today={today} onOpenChange={(next) => !next && setOpenId(null)} /> : null}
     </div>
   );
 }

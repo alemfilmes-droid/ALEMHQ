@@ -4,7 +4,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { PAYABLE_COST_TYPE_FILTERS, type PayableCostTypeFilter } from "@/features/finance/labels";
 import { addDaysISO, type Period, todayISO } from "@/features/finance/period";
-import { sumCents, toCents } from "@/features/finance/money";
+import { sumCents, toCents, type Cents } from "@/features/finance/money";
 import {
   PAYABLE_STATUSES,
   RECEIVABLE_STATUSES,
@@ -118,6 +118,23 @@ function mapPayable(row: PayableRow): PayableItem | null {
     recurrenceUntil: row.recurrence_until,
     recurrenceParentId: row.recurrence_parent_id,
     status,
+    scheduledFor: row.scheduled_for,
+    paidLate: row.paid_late ?? false,
+    lateReason: row.late_reason,
+    penaltyAmount: row.penalty_amount == null ? null : toCents(row.penalty_amount),
+    penaltyReason: row.penalty_reason,
+    originalAmount: row.original_amount == null ? null : toCents(row.original_amount),
+    receiptUrl: row.payment_receipt_url,
+    payee: {
+      pixKeyType: row.payee_pix_key_type,
+      pixKey: row.payee_pix_key,
+      holderName: row.payee_holder_name,
+      document: row.payee_document,
+      bankName: row.payee_bank_name,
+      agency: row.payee_bank_agency,
+      account: row.payee_bank_account,
+      accountType: row.payee_account_type,
+    },
   };
 }
 
@@ -735,4 +752,79 @@ export async function getClientFinanceSummary(companyId: string): Promise<Client
     marginPct: row?.marginPct ?? null,
     marginStatus: row?.marginStatus ?? null,
   };
+}
+
+export interface MarginBelowTargetItem {
+  projectId: string;
+  projectName: string;
+  companyName: string | null;
+  contractValue: Cents;
+  payablesTotal: Cents;
+  marginPct: number;
+}
+
+/** Projetos entre o crítico e a meta (30–40%): o relatório mensal de margem. Abaixo do crítico vai por alerta imediato. */
+export async function getMarginBelowTarget(): Promise<MarginBelowTargetItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("finance_margin_below_target");
+  if (error) return [];
+  return (data ?? []).map((row) => ({
+    projectId: row.project_id,
+    projectName: row.project_name,
+    companyName: row.company_name,
+    contractValue: toCents(row.contract_value),
+    payablesTotal: toCents(row.payables_total),
+    marginPct: Number(row.margin_pct),
+  }));
+}
+
+export interface LatePaymentItem {
+  payableId: string;
+  payee: string;
+  description: string;
+  projectName: string | null;
+  dueDate: string;
+  paidAt: string;
+  daysLate: number;
+  amount: Cents;
+  penaltyAmount: Cents | null;
+  lateReason: string | null;
+  penaltyReason: string | null;
+}
+
+/** Pagamentos feitos com atraso num período (bloco do fechamento mensal). */
+export async function getLatePayments(from: string, to: string): Promise<LatePaymentItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("finance_late_payments", { p_from: from, p_to: to });
+  if (error) return [];
+  return (data ?? []).map((row) => ({
+    payableId: row.payable_id,
+    payee: row.payee,
+    description: row.description,
+    projectName: row.project_name,
+    dueDate: row.due_date,
+    paidAt: row.paid_at,
+    daysLate: row.days_late,
+    amount: toCents(row.amount),
+    penaltyAmount: row.penalty_amount == null ? null : toCents(row.penalty_amount),
+    lateReason: row.late_reason,
+    penaltyReason: row.penalty_reason,
+  }));
+}
+
+/** Pagamentos agendados para hoje (ou antes) ainda sem baixa — /inicio do financeiro. */
+export async function getScheduledPaymentsDue(today: string): Promise<{ id: string; payee: string; description: string; amount: Cents; scheduledFor: string }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("payables_with_status")
+    .select("id, payee_label, description, amount, scheduled_for")
+    .is("paid_at", null)
+    .is("cancelled_at", null)
+    .lte("scheduled_for", today)
+    .order("scheduled_for")
+    .limit(20);
+  if (error) return [];
+  return (data ?? [])
+    .filter((row) => row.id && row.scheduled_for)
+    .map((row) => ({ id: row.id!, payee: row.payee_label ?? "—", description: row.description ?? "", amount: toCents(row.amount), scheduledFor: row.scheduled_for! }));
 }

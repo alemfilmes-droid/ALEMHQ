@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CREDENTIAL_WARNING, hasCredential } from "@/features/processes/credentials";
-import { PROCESS_FREQUENCIES, STEP_TOOLS, SYSTEM_AREAS } from "@/features/processes/types";
+import { ACTION_KINDS, PROCESS_FREQUENCIES, STEP_TOOLS, STEP_TYPES, SYSTEM_AREAS } from "@/features/processes/types";
 import { SQUADS } from "@/lib/auth/squads";
 
 /** Texto livre que nunca pode carregar credencial. */
@@ -40,6 +40,16 @@ export const stepSchema = z
       .refine((value) => value === "" || (/^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 1440), "De 1 a 1440 minutos."),
     isBlocking: z.boolean(),
     tool: z.enum(STEP_TOOLS).or(z.literal("")),
+    stepType: z.enum(STEP_TYPES),
+    actionKind: z.enum(ACTION_KINDS),
+    branchYesStepId: z.string().uuid().or(z.literal("")),
+    branchNoStepId: z.string().uuid().or(z.literal("")),
+    imageUrl: z.string().trim().max(500).refine((value) => value === "" || /^https:\/\//.test(value), "Imagem inválida.").or(z.literal("")),
+    exampleText: safeText(2000),
+  })
+  .refine((values) => values.stepType !== "decisao" || (values.branchYesStepId !== "" && values.branchNoStepId !== ""), {
+    message: "Decisão precisa das duas saídas: para onde vai o “Sim” e o “Não”.",
+    path: ["branchNoStepId"],
   })
   .refine((values) => values.systemArea !== "externo" || values.systemLink === "" || /^https?:\/\//.test(values.systemLink), {
     message: "Sistema externo usa um endereço https://.",

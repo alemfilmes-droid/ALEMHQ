@@ -54,9 +54,35 @@ export const SYSTEM_AREA_ROUTES: Partial<Record<ProcessSystemArea, string>> = {
   avisos: "/avisos",
 };
 
-export const STEP_TOOLS = ["pasta_drive"] as const;
+export const STEP_TOOLS = ["pasta_drive", "arvore_drive", "arquivo_nota_fiscal"] as const;
 export type StepTool = (typeof STEP_TOOLS)[number];
-export const STEP_TOOL_LABELS: Record<StepTool, string> = { pasta_drive: "Gerador da pasta do Drive" };
+export const STEP_TOOL_LABELS: Record<StepTool, string> = {
+  pasta_drive: "Gerador da pasta do Drive",
+  arvore_drive: "Árvore de pastas do projeto",
+  arquivo_nota_fiscal: "Caminho e nome do PDF da nota",
+};
+
+/** Tipo do passo: decisão tem saídas "Sim" e "Não"; aprovação e espera mudam o desenho. */
+export const STEP_TYPES = ["acao", "decisao", "aprovacao", "espera"] as const;
+export type StepType = (typeof STEP_TYPES)[number];
+export const STEP_TYPE_LABELS: Record<StepType, string> = { acao: "Ação", decisao: "Decisão", aprovacao: "Aprovação", espera: "Espera" };
+
+/** O tipo de ação define o ícone do passo (ver features/processes/icons.ts). */
+export const ACTION_KINDS = ["copiar", "conferir", "acessar", "emitir", "enviar", "salvar", "registrar", "aprovar", "aguardar", "decidir", "executar"] as const;
+export type ActionKind = (typeof ACTION_KINDS)[number];
+export const ACTION_KIND_LABELS: Record<ActionKind, string> = {
+  copiar: "Copiar dados",
+  conferir: "Conferir",
+  acessar: "Acessar sistema externo",
+  emitir: "Emitir / produzir",
+  enviar: "Enviar",
+  salvar: "Salvar arquivo",
+  registrar: "Registrar no HQ",
+  aprovar: "Aprovar",
+  aguardar: "Aguardar",
+  decidir: "Decidir",
+  executar: "Executar",
+};
 
 export interface ProcessStepItem {
   id: string;
@@ -71,6 +97,19 @@ export interface ProcessStepItem {
   isBlocking: boolean;
   tool: StepTool | null;
   archived: boolean;
+  stepType: StepType;
+  actionKind: ActionKind;
+  branchYesStepId: string | null;
+  branchNoStepId: string | null;
+  imageUrl: string | null;
+  exampleText: string | null;
+}
+
+/** O passo acontece dentro do Além HQ (link interno) — e não num sistema externo. */
+export function isInsideHq(step: Pick<ProcessStepItem, "systemArea" | "systemLink">): boolean {
+  if (step.systemArea === "externo") return false;
+  const target = stepHref(step);
+  return target !== null && !target.external;
 }
 
 export interface ProcessSummary {

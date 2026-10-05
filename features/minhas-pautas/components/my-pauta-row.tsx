@@ -108,6 +108,11 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}
+        {pauta.source === "auto_financeiro" ? (
+          <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground" title="Criada pelo sistema a partir dos dados do financeiro">
+            Automática
+          </span>
+        ) : null}
         {pauta.title && isInvoiceTaskTitle(pauta.title) ? <NfseChip /> : null}
       </div>
 
