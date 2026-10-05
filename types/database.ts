@@ -4914,6 +4914,13 @@ export type Database = {
           deal_id: string
         }[]
       }
+      goal_closed_contracts_visible: {
+        Args: { p_goal_id: string; p_include_pending: boolean }
+        Returns: {
+          contract_value: number
+          deal_id: string
+        }[]
+      }
       goal_commission: {
         Args: {
           p_achieved: number
