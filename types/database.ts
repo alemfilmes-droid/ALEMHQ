@@ -1557,6 +1557,39 @@ export type Database = {
           },
         ]
       }
+      finance_auto_pauta_keys: {
+        Row: {
+          created_at: string
+          key: string
+          pauta_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          pauta_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          pauta_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_auto_pauta_keys_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_auto_pauta_keys_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas_with_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       freelancers: {
         Row: {
           city: string | null
@@ -2498,6 +2531,7 @@ export type Database = {
           script_url: string | null
           self_complete: boolean
           source: string
+          source_key: string | null
           source_period: string | null
           source_ref_id: string | null
           source_ref_type: string | null
@@ -2544,6 +2578,7 @@ export type Database = {
           script_url?: string | null
           self_complete?: boolean
           source?: string
+          source_key?: string | null
           source_period?: string | null
           source_ref_id?: string | null
           source_ref_type?: string | null
@@ -2590,6 +2625,7 @@ export type Database = {
           script_url?: string | null
           self_complete?: boolean
           source?: string
+          source_key?: string | null
           source_period?: string | null
           source_ref_id?: string | null
           source_ref_type?: string | null
@@ -5302,6 +5338,7 @@ export type Database = {
           p_company: string
           p_due: string
           p_executor: string
+          p_key: string
           p_lead: string
           p_period: string
           p_project: string
@@ -5311,6 +5348,10 @@ export type Database = {
           p_title: string
         }
         Returns: string
+      }
+      finance_auto_pauta_append: {
+        Args: { p_key: string; p_line: string; p_marker: string }
+        Returns: undefined
       }
       finance_budgets_in_negotiation: {
         Args: never
@@ -5374,6 +5415,10 @@ export type Database = {
           project_id: string
           project_name: string
         }[]
+      }
+      finance_payee_key: {
+        Args: { p_name: string; p_profile_id: string }
+        Returns: string
       }
       finance_payment_lead_id: { Args: never; Returns: string }
       fmt_brl: { Args: { p_value: number }; Returns: string }
@@ -5539,6 +5584,10 @@ export type Database = {
       goal_sync_owner: { Args: { p_owner_id: string }; Returns: undefined }
       google_sync_dispatch: { Args: never; Returns: undefined }
       has_finance_access: { Args: never; Returns: boolean }
+      has_open_auto_pauta: {
+        Args: { p_ref_id: string; p_ref_type: string }
+        Returns: boolean
+      }
       in_squad: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
@@ -5696,6 +5745,7 @@ export type Database = {
           script_url: string | null
           self_complete: boolean
           source: string
+          source_key: string | null
           source_period: string | null
           source_ref_id: string | null
           source_ref_type: string | null
@@ -5754,6 +5804,7 @@ export type Database = {
           script_url: string | null
           self_complete: boolean
           source: string
+          source_key: string | null
           source_period: string | null
           source_ref_id: string | null
           source_ref_type: string | null

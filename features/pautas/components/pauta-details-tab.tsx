@@ -622,6 +622,11 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
           <InvoiceTaskCallout
             projectId={pauta.project_is_internal ? null : pauta.project_id}
             receivableId={pauta.source_ref_type === "receivable" ? pauta.source_ref_id : null}
+            clientMonth={
+              pauta.source_ref_type === "client_invoices" && pauta.source_ref_id && pauta.source_period
+                ? { companyId: pauta.source_ref_id, month: pauta.source_period }
+                : null
+            }
           />
         ) : null}
 

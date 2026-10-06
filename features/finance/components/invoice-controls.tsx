@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ExternalLink, FileText, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { attachReceivableInvoiceAction, getInvoiceFileUrlAction } from "@/features/finance/actions";
+import { attachReceivableInvoiceAction, getInvoiceFileUrlAction, listClientMonthReceivablesAction } from "@/features/finance/actions";
 import { INVOICE_FILE_ACCEPT, uploadInvoiceFile } from "@/features/finance/invoice-files";
 import { InvoiceFilePreview } from "@/components/drive/invoice-file-preview";
 import { buildInvoiceFile } from "@/lib/invoice-file";
@@ -168,8 +168,8 @@ export function NfseChip() {
 }
 
 /** Pauta automática de nota fiscal: registra o número da nota direto no recebimento. */
-function InvoiceNumberQuickSave({ receivableId }: { receivableId: string }) {
-  const [number, setNumber] = useState("");
+function InvoiceNumberQuickSave({ receivableId, label, initial }: { receivableId: string; label?: string; initial?: string | null }) {
+  const [number, setNumber] = useState(initial ?? "");
   const [pending, startTransition] = useTransition();
   return (
     <form
@@ -180,13 +180,12 @@ function InvoiceNumberQuickSave({ receivableId }: { receivableId: string }) {
           const result = await attachReceivableInvoiceAction(receivableId, { invoiceNumber: number, filePath: null });
           if (result.ok) {
             toast.success("Número da nota registrado no recebimento.");
-            setNumber("");
           } else toast.error(result.error);
         });
       }}
     >
-      <FormField id="pauta-nf-number" label="Nota emitida? Registre o número no recebimento" className="min-w-[12rem] flex-1">
-        <Input id="pauta-nf-number" value={number} maxLength={60} onChange={(event) => setNumber(event.target.value)} placeholder="Ex.: 154" />
+      <FormField id={`pauta-nf-${receivableId}`} label={label ?? "Nota emitida? Registre o número no recebimento"} className="min-w-[12rem] flex-1">
+        <Input id={`pauta-nf-${receivableId}`} value={number} maxLength={60} onChange={(event) => setNumber(event.target.value)} placeholder="Ex.: 154" />
       </FormField>
       <Button type="submit" size="sm" loading={pending} disabled={!number.trim()}>
         Salvar número
@@ -195,8 +194,37 @@ function InvoiceNumberQuickSave({ receivableId }: { receivableId: string }) {
   );
 }
 
+/** Pauta do mês por cliente: cada parcela do mês com o campo do número da nota. */
+function ClientMonthInvoices({ companyId, month }: { companyId: string; month: string }) {
+  const [rows, setRows] = useState<{ id: string; label: string; invoiceNumber: string | null }[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    void listClientMonthReceivablesAction(companyId, month).then((result) => active && setRows(result));
+    return () => {
+      active = false;
+    };
+  }, [companyId, month]);
+  if (!rows || rows.length === 0) return null;
+  return (
+    <div className="w-full space-y-2">
+      {rows.map((row) => (
+        <InvoiceNumberQuickSave key={row.id} receivableId={row.id} label={row.label} initial={row.invoiceNumber} />
+      ))}
+    </div>
+  );
+}
+
 /** Dentro de uma pauta/tarefa de nota fiscal: atalho para emitir e onde anexar depois. */
-export function InvoiceTaskCallout({ projectId, receivableId }: { projectId?: string | null; receivableId?: string | null }) {
+export function InvoiceTaskCallout({
+  projectId,
+  receivableId,
+  clientMonth,
+}: {
+  projectId?: string | null;
+  receivableId?: string | null;
+  /** Pauta automática "Emitir nota fiscal — cliente · mês". */
+  clientMonth?: { companyId: string; month: string } | null;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-md border border-border-strong bg-surface-raised p-3">
       <p className="min-w-0 flex-1 text-[13px] text-muted-foreground">
@@ -212,6 +240,7 @@ export function InvoiceTaskCallout({ projectId, receivableId }: { projectId?: st
       </p>
       <NfseEmitButton />
       {receivableId ? <InvoiceNumberQuickSave receivableId={receivableId} /> : null}
+      {clientMonth ? <ClientMonthInvoices companyId={clientMonth.companyId} month={clientMonth.month} /> : null}
     </div>
   );
 }

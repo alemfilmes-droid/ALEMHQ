@@ -5,7 +5,7 @@ import { z } from "zod";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { centsToNumber, parseMoneyToCents, toCents } from "@/features/finance/money";
+import { centsToNumber, formatCents, parseMoneyToCents, toCents } from "@/features/finance/money";
 import {
   payableSchema,
   projectInstallmentsSchema,
@@ -391,4 +391,30 @@ export async function getInvoiceFileUrlAction(path: string): Promise<{ ok: true;
   const { data, error } = await supabase.storage.from("invoices").createSignedUrl(path, 300);
   if (error || !data) return { ok: false, error: "Não foi possível abrir a nota (sem acesso ou arquivo removido)." };
   return { ok: true, url: data.signedUrl };
+}
+
+/** Parcelas de um cliente num mês (pauta "Emitir nota fiscal — cliente · mês"). Só financeiro. */
+export async function listClientMonthReceivablesAction(
+  companyId: string,
+  month: string,
+): Promise<{ id: string; label: string; invoiceNumber: string | null }[]> {
+  if (!(await requireFinance()) || !idSchema.safeParse(companyId).success || !/^\d{4}-\d{2}-\d{2}$/.test(month)) return [];
+  const start = `${month.slice(0, 7)}-01`;
+  const end = new Date(Date.UTC(Number(start.slice(0, 4)), Number(start.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("receivables_with_status")
+    .select("id, description, amount, due_date, invoice_number, status")
+    .eq("company_id", companyId)
+    .gte("due_date", start)
+    .lte("due_date", end)
+    .neq("status", "cancelado")
+    .order("due_date");
+  return (data ?? [])
+    .filter((row) => row.id)
+    .map((row) => ({
+      id: row.id!,
+      label: `${row.description ?? "Recebimento"} · ${formatCents(toCents(row.amount))} · vence ${row.due_date?.slice(8, 10)}/${row.due_date?.slice(5, 7)}`,
+      invoiceNumber: row.invoice_number,
+    }));
 }
