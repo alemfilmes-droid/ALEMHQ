@@ -13,7 +13,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { getCompanySettings } from "@/features/settings/queries";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
-import { MODEL_LABELS, MODELS, PROJECT_STAGES, STAGE_LABELS } from "@/lib/domain";
+import { ALL_PROJECT_STAGES, MODEL_LABELS, MODELS, STAGE_LABELS } from "@/lib/domain";
 import { PROJECT_STAGE_TONE } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import type { ProjectModel, ProjectStage } from "@/types";
@@ -34,7 +34,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
   const params = await searchParams;
   const canManage = hasCapability(profile, "manageProjects");
   const model = MODELS.find((item): item is ProjectModel => item === params.modelo);
-  const stage = PROJECT_STAGES.find((item): item is ProjectStage => item === params.etapa);
+  const stage = ALL_PROJECT_STAGES.find((item): item is ProjectStage => item === params.etapa);
   const onlyMine = params.meus === "1";
   const boardView = params.visao === "quadro";
 

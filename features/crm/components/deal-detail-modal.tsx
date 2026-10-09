@@ -7,7 +7,9 @@ import { AlertTriangle, CheckCircle2, Flame, MessageCircle, MessageSquareReply }
 import { getDealDetailAction } from "@/features/crm/actions";
 import { ClosingSection } from "@/features/crm/components/detail/closing-section";
 import { DealFieldsForm } from "@/features/crm/components/detail/deal-fields-form";
+import { DealNotesThread } from "@/features/crm/components/detail/deal-notes-thread";
 import { DirectionSection } from "@/features/crm/components/detail/direction-section";
+import { ClosureNotice } from "@/features/clients/components/closure-notice";
 import { InteractionsTimeline } from "@/features/crm/components/detail/interactions-timeline";
 import { MeetingsSection } from "@/features/crm/components/detail/meetings-section";
 import { NextActionCard } from "@/features/crm/components/detail/next-action-card";
@@ -22,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TabBar } from "@/components/ui/tab-bar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { TEMPERATURE_TONE } from "@/lib/status";
@@ -83,9 +86,13 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
+type DealTab = "negocio" | "direcionamentos";
+
 function DealDetailBody({ detail, options, canManageAll, reload }: { detail: DealDetail; options: DealFormOptions; canManageAll: boolean; reload: () => void }) {
   const flow = useCrmFlow();
   const { deal, qualification, interactions, meetings, proposals, negotiations, log } = detail;
+  const [tab, setTab] = useState<DealTab>("negocio");
+  const [openRequests, setOpenRequests] = useState(detail.openRequests);
   const stage = deal.stage!;
   const closed = stage === "ganho" || stage === "perdido";
   const isOwner = deal.owner_id === flow.currentUserId;
@@ -104,119 +111,138 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
         <DialogTitle>{deal.title}</DialogTitle>
       </DialogHeader>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <NativeSelect
-          aria-label="Etapa do negócio"
-          className="w-60"
-          value={stage}
-          onChange={(event) => flow.requestStage(deal, event.target.value as DealStage)}
-        >
-          {DEAL_STAGES.map((item) => (
-            <option key={item} value={item}>
-              {DEAL_STAGE_LABELS[item]}
-            </option>
-          ))}
-        </NativeSelect>
-        {deal.is_qualified ? (
-          <Badge variant="outline">
-            <CheckCircle2 className="size-3" aria-hidden />
-            Qualificado
-          </Badge>
-        ) : null}
-        {!closed ? (
-          <Badge variant="muted">
-            <StatusDot tone={TEMPERATURE_TONE[temperature]} />
-            {TEMPERATURE_LABELS[temperature]}
-            {deal.temperature_reason && temperature !== "neutral" ? ` · ${deal.temperature_reason}` : ""}
-          </Badge>
-        ) : null}
-        {deal.is_reheated ? (
-          <Badge variant="muted">
-            <Flame className="size-3" aria-hidden />
-            Reaquecido
-          </Badge>
-        ) : null}
-        {deal.fast_track ? <Badge variant="muted">Venda direta</Badge> : null}
-      </div>
+      {detail.closure ? <ClosureNotice closure={detail.closure} /> : null}
 
-      <dl className="grid gap-3 text-sm sm:grid-cols-3">
-        <div>
-          <dt className="eyebrow">SDR (comissão)</dt>
-          <dd className="mt-1 font-semibold">{deal.owner_name}</dd>
-        </div>
-        <div>
-          <dt className="eyebrow">Com a bola agora</dt>
-          <dd className="mt-1 font-semibold">{deal.responsible_name ?? "Ninguém"}</dd>
-        </div>
-        {deal.commission_amount != null && deal.commission_percent != null && stage !== "perdido" ? (
-          <div>
-            <dt className="eyebrow">{isOwner ? "Sua comissão" : "Comissão do SDR"}</dt>
-            <dd className="mt-1 font-semibold">
-              <Money cents={toCents(deal.commission_amount)} /> ({String(deal.commission_percent).replace(".", ",").replace(/,00$/, "")}%)
-            </dd>
+      <TabBar<DealTab>
+        label="Seções do negócio"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "negocio", label: "Negócio" },
+          { value: "direcionamentos", label: `Direcionamentos${openRequests ? ` (${openRequests})` : ""}` },
+        ]}
+      />
+
+      {tab === "direcionamentos" ? (
+        <DealNotesThread dealId={deal.id!} onChanged={setOpenRequests} />
+      ) : (
+        <>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <NativeSelect
+              aria-label="Etapa do negócio"
+              className="w-60"
+              value={stage}
+              onChange={(event) => flow.requestStage(deal, event.target.value as DealStage)}
+            >
+              {DEAL_STAGES.map((item) => (
+                <option key={item} value={item}>
+                  {DEAL_STAGE_LABELS[item]}
+                </option>
+              ))}
+            </NativeSelect>
+            {deal.is_qualified ? (
+              <Badge variant="outline">
+                <CheckCircle2 className="size-3" aria-hidden />
+                Qualificado
+              </Badge>
+            ) : null}
+            {!closed ? (
+              <Badge variant="muted">
+                <StatusDot tone={TEMPERATURE_TONE[temperature]} />
+                {TEMPERATURE_LABELS[temperature]}
+                {deal.temperature_reason && temperature !== "neutral" ? ` · ${deal.temperature_reason}` : ""}
+              </Badge>
+            ) : null}
+            {deal.is_reheated ? (
+              <Badge variant="muted">
+                <Flame className="size-3" aria-hidden />
+                Reaquecido
+              </Badge>
+            ) : null}
+            {deal.fast_track ? <Badge variant="muted">Venda direta</Badge> : null}
           </div>
-        ) : null}
-      </dl>
 
-      {!closed ? <NextActionCard deal={deal} onSaved={reload} /> : null}
-      {!closed && deal.next_action_overdue ? (
-        <p className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
-          <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
-          A próxima ação venceu em {deal.next_action_at ? formatDateTime(deal.next_action_at) : "—"}.
-        </p>
-      ) : null}
+          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="eyebrow">SDR (comissão)</dt>
+              <dd className="mt-1 font-semibold">{deal.owner_name}</dd>
+            </div>
+            <div>
+              <dt className="eyebrow">Com a bola agora</dt>
+              <dd className="mt-1 font-semibold">{deal.responsible_name ?? "Ninguém"}</dd>
+            </div>
+            {deal.commission_amount != null && deal.commission_percent != null && stage !== "perdido" ? (
+              <div>
+                <dt className="eyebrow">{isOwner ? "Sua comissão" : "Comissão do SDR"}</dt>
+                <dd className="mt-1 font-semibold">
+                  <Money cents={toCents(deal.commission_amount)} /> ({String(deal.commission_percent).replace(".", ",").replace(/,00$/, "")}%)
+                </dd>
+              </div>
+            ) : null}
+          </dl>
 
-      <DealFieldsForm deal={deal} options={options} canManageAll={canManageAll} onSaved={reload} />
+          {!closed ? <NextActionCard deal={deal} onSaved={reload} /> : null}
+          {!closed && deal.next_action_overdue ? (
+            <p className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
+              <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+              A próxima ação venceu em {deal.next_action_at ? formatDateTime(deal.next_action_at) : "—"}.
+            </p>
+          ) : null}
 
-      <Section id="qualificacao-title" title="Qualificação">
-        <QualificationForm dealId={deal.id!} qualification={qualification} onSaved={reload} />
-      </Section>
+          <DealFieldsForm deal={deal} options={options} canManageAll={canManageAll} onSaved={reload} />
 
-      {canDirect ? (
-        <Section id="direcionamento-title" title="Direcionamento">
-          <DirectionSection deal={deal} onSaved={reload} />
-        </Section>
-      ) : null}
+          <Section id="qualificacao-title" title="Qualificação">
+            <QualificationForm dealId={deal.id!} qualification={qualification} onSaved={reload} />
+          </Section>
 
-      <Section id="interacoes-title" title="Contatos">
-        {!closed ? (
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="secondary" onClick={() => flow.logContact(deal)}>
-              <MessageCircle aria-hidden />
-              Registrar contato
-            </Button>
-            <Button type="button" size="sm" variant="secondary" onClick={() => flow.clientResponded(deal)}>
-              <MessageSquareReply aria-hidden />
-              Cliente respondeu
-            </Button>
-          </div>
-        ) : null}
-        <InteractionsTimeline interactions={interactions} />
-      </Section>
+          {canDirect ? (
+            <Section id="direcionamento-title" title="Direcionamento da qualificação">
+              <DirectionSection deal={deal} onSaved={reload} />
+            </Section>
+          ) : null}
 
-      <Section id="reunioes-title" title="Reuniões">
-        <MeetingsSection deal={deal} meetings={meetings} closed={closed} />
-      </Section>
+          <Section id="interacoes-title" title="Contatos">
+            {!closed ? (
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="secondary" onClick={() => flow.logContact(deal)}>
+                  <MessageCircle aria-hidden />
+                  Registrar contato
+                </Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => flow.clientResponded(deal)}>
+                  <MessageSquareReply aria-hidden />
+                  Cliente respondeu
+                </Button>
+              </div>
+            ) : null}
+            <InteractionsTimeline interactions={interactions} showCadence={!closed} />
+          </Section>
 
-      <Section id="propostas-title" title="Propostas e negociação">
-        <ProposalsSection deal={deal} proposals={proposals} negotiations={negotiations} closed={closed} />
-      </Section>
+          <Section id="reunioes-title" title="Reuniões">
+            <MeetingsSection deal={deal} meetings={meetings} closed={closed} />
+          </Section>
 
-      <Section id="fechamento-title" title="Fechamento">
-        <ClosingSection deal={deal} />
-      </Section>
+          <Section id="propostas-title" title="Propostas e negociação">
+            <ProposalsSection deal={deal} proposals={proposals} negotiations={negotiations} closed={closed} />
+          </Section>
 
-      {log.length > 0 ? (
-        <Section id="responsabilidade-title" title="Histórico de responsabilidade">
-          <ul className="space-y-1.5 text-[13px] text-muted-foreground">
-            {log.map((entry) => (
-              <li key={entry.id}>
-                {formatDate(entry.occurred_at)} — {entry.body}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
+          <Section id="fechamento-title" title="Fechamento">
+            <ClosingSection deal={deal} />
+          </Section>
+
+          {log.length > 0 ? (
+            <Section id="responsabilidade-title" title="Histórico de responsabilidade">
+              <ul className="space-y-1.5 text-[13px] text-muted-foreground">
+                {log.map((entry) => (
+                  <li key={entry.id}>
+                    {formatDate(entry.occurred_at)} — {entry.body}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

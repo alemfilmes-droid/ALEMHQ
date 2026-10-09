@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { COMPANY_LIFECYCLES, COMPANY_SOURCES } from "@/lib/domain";
+import { ALL_COMPANY_LIFECYCLES, COMPANY_SOURCES } from "@/lib/domain";
 
 const phone = z
   .string()
@@ -9,7 +9,7 @@ const phone = z
 
 export const companySchema = z.object({
   name: z.string().trim().min(2, "Informe o nome da empresa.").max(120, "Use até 120 caracteres."),
-  lifecycle: z.enum(COMPANY_LIFECYCLES),
+  lifecycle: z.enum(ALL_COMPANY_LIFECYCLES),
   source: z.enum(COMPANY_SOURCES).or(z.literal("")),
   sourceDetail: z.string().trim().max(160, "Use até 160 caracteres."),
   document: z.string().trim().max(24, "Use até 24 caracteres."),

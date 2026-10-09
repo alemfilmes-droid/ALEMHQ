@@ -4,7 +4,7 @@ import { StatusBar } from "@/components/ui/status-bar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { ProjectClientLabel } from "@/components/projects/project-client-label";
 import { ProjectDates } from "@/components/projects/project-dates";
-import { MODEL_LABELS, PROJECT_STAGES, STAGE_LABELS } from "@/lib/domain";
+import { ALL_PROJECT_STAGES, MODEL_LABELS, STAGE_LABELS } from "@/lib/domain";
 import { PROJECT_STAGE_TONE } from "@/lib/status";
 import type { Project } from "@/types";
 
@@ -17,7 +17,7 @@ type BoardProject = Pick<Project, "id" | "name" | "stage" | "model" | "due_date"
  * projeto). O quadro que arrasta de verdade é o de Pautas.
  */
 export function ProjectBoardView({ projects }: { projects: BoardProject[] }) {
-  const stagesWithCards = PROJECT_STAGES.filter((stage) => projects.some((project) => project.stage === stage));
+  const stagesWithCards = ALL_PROJECT_STAGES.filter((stage) => projects.some((project) => project.stage === stage));
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">

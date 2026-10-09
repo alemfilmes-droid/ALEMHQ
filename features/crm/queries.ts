@@ -1,4 +1,5 @@
 import "server-only";
+import { CLOSURE_SELECT, toClosureInfo } from "@/features/clients/closures";
 import { DEAL_LOSS_REASONS, OPEN_DEAL_STAGES } from "@/features/crm/labels";
 import { dayEnd, dayStart } from "@/features/crm/period";
 import type {
@@ -106,7 +107,7 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
       supabase
         .from("deal_interactions")
         .select(
-          "id, deal_id, kind, channel, approach, body, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url)",
+          "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url)",
         )
         .eq("deal_id", id)
         .order("occurred_at", { ascending: false }),
@@ -130,6 +131,20 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
 
   if (!dealResult.data) return null;
 
+  const [requestsResult, closureResult] = await Promise.all([
+    supabase.from("deal_notes").select("id", { count: "exact", head: true }).eq("deal_id", id).eq("is_request", true).is("resolved_at", null),
+    dealResult.data.company_id
+      ? supabase
+          .from("client_closures")
+          .select(CLOSURE_SELECT)
+          .eq("company_id", dealResult.data.company_id)
+          .is("project_id", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
   const interactions: DealInteractionDetail[] = (interactionsResult.data ?? []).map((row) => ({
     id: row.id,
     deal_id: row.deal_id,
@@ -137,6 +152,8 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
     channel: row.channel,
     approach: row.approach,
     body: row.body,
+    summary: row.summary,
+    next_step: row.next_step,
     responded: row.responded,
     responded_to_interaction_id: row.responded_to_interaction_id,
     stage: row.stage,
@@ -176,6 +193,8 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
     proposals: proposalsResult.data ?? [],
     negotiations: negotiationsResult.data ?? [],
     log,
+    openRequests: requestsResult.count ?? 0,
+    closure: closureResult.data ? toClosureInfo(closureResult.data) : null,
   };
 }
 
@@ -188,7 +207,7 @@ export async function listInteractionsFeed(filters: { ownerId?: string[]; kind?:
   let query = supabase
     .from("deal_interactions")
     .select(
-      "id, deal_id, kind, channel, approach, body, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url), deal:deals!inner(title, code, owner_id, company:companies(name))",
+      "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url), deal:deals!inner(title, code, owner_id, company:companies(name))",
     )
     .order("occurred_at", { ascending: false })
     .limit(LIST_LIMIT);
@@ -205,6 +224,8 @@ export async function listInteractionsFeed(filters: { ownerId?: string[]; kind?:
     channel: row.channel,
     approach: row.approach,
     body: row.body,
+    summary: row.summary,
+    next_step: row.next_step,
     responded: row.responded,
     responded_to_interaction_id: row.responded_to_interaction_id,
     stage: row.stage,
@@ -560,4 +581,13 @@ export async function listCommissionRules(): Promise<CommissionRuleRow[]> {
     current.push(row);
   }
   return current;
+}
+
+/** Pedidos de direcionamento abertos por negócio (a RLS de deal_notes limita ao que a pessoa vê). */
+export async function getOpenRequestCounts(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("deal_notes").select("deal_id").eq("is_request", true).is("resolved_at", null);
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[row.deal_id] = (counts[row.deal_id] ?? 0) + 1;
+  return counts;
 }

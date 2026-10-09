@@ -19,8 +19,11 @@ import {
 import { MyPautasCalendar } from "@/features/minhas-pautas/components/my-pautas-calendar";
 import { MyPautasKanban } from "@/features/minhas-pautas/components/my-pautas-kanban";
 import { MyPautasList } from "@/features/minhas-pautas/components/my-pautas-list";
+import { MyOpenRequests } from "@/features/minhas-pautas/components/my-open-requests";
 import { MyPautasSummaryStrip } from "@/features/minhas-pautas/components/my-pautas-summary";
+import type { MyOpenRequest } from "@/features/crm/types";
 import { PautaCreateDialog } from "@/features/pautas/components/pauta-create-dialog";
+import { isCrmPauta } from "@/features/pautas/crm-lock";
 import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import type { MyPautasBoard as MyPautasBoardData } from "@/features/minhas-pautas/types";
 import type { PautaFormOptions } from "@/features/pautas/types";
@@ -39,6 +42,8 @@ interface MyPautasBoardProps {
   initialOpenId?: string;
   currentUser: { id: string; full_name: string; avatar_url: string | null; managedSquads?: readonly Squad[] };
   mySquads: Squad[];
+  /** Pedidos de direcionamento abertos para mim (presos à pauta do negócio). */
+  requests?: MyOpenRequest[];
 }
 
 const VIEW_OPTIONS: { view: MyPautasView; label: string; icon: typeof List }[] = [
@@ -86,7 +91,7 @@ function Segmented<T extends string>({
  * filtros e o mesmo modal de pauta. Visão, agrupamento, semana e squad ficam na URL — trocar de
  * visão não recarrega dados do servidor (history.replaceState, que o Next sincroniza com useSearchParams).
  */
-export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta, canCreateProjects, initialOpenId, currentUser, mySquads }: MyPautasBoardProps) {
+export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta, canCreateProjects, initialOpenId, currentUser, mySquads, requests = [] }: MyPautasBoardProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
@@ -97,9 +102,11 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
 
   function menuFor(pauta: PautaWithDetails) {
     const isCreator = pauta.created_by === currentUser.id;
+    // Pauta de negócio só some com o negócio (o banco recusa arquivar/apagar pelo quadro).
+    const crm = isCrmPauta(pauta);
     return {
-      canDelete: isCreator,
-      canArchive: canManage || isCreator,
+      canDelete: isCreator && !crm,
+      canArchive: (canManage || isCreator) && !crm,
       onRemove: (mode: "delete" | "archive") => setRemoval({ mode, id: pauta.id!, title: pauta.title ?? "" }),
     };
   }
@@ -196,6 +203,8 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
           />
         </div>
       </div>
+
+      <MyOpenRequests requests={requests} onOpen={setOpenId} />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-xs">

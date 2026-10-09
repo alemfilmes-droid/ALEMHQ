@@ -108,12 +108,7 @@ export function groupPautasByWeek(pautas: PautaWithDetails[], monday: string): C
   return days;
 }
 
-/** Contagem por squad de origem (maior primeiro). */
-export function countBySquad(pautas: PautaWithDetails[]): { squad: Squad; count: number }[] {
-  const counts = new Map<Squad, number>();
-  for (const pauta of pautas) if (pauta.squad) counts.set(pauta.squad, (counts.get(pauta.squad) ?? 0) + 1);
-  return [...counts.entries()].map(([squad, count]) => ({ squad, count })).sort((a, b) => b.count - a.count || a.squad.localeCompare(b.squad));
-}
+export { countBySquad } from "@/features/pautas/board";
 
 /** Filtros compartilhados pelas três visões. */
 export function matchesFilters(pauta: PautaWithDetails, filters: { squad: Squad | null; search: string }): boolean {

@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
@@ -10,6 +11,7 @@ import { PautaCard } from "@/features/pautas/components/pauta-card";
 import { PautaDetailModal } from "@/features/pautas/components/pauta-detail-modal";
 import { PautaRemoveDialog, type PautaRemoval } from "@/features/pautas/components/pauta-remove-dialogs";
 import { groupPautasByColumn } from "@/features/pautas/board";
+import { isCrmPauta, notifyCrmLock } from "@/features/pautas/crm-lock";
 import type { PautaFormOptions } from "@/features/pautas/types";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
 import type { PautaColumn, PautaStatus, PautaWithDetails, Squad } from "@/types";
@@ -39,6 +41,7 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
   { initialPautas, options, canManage, canCreate, canCreateProjects, lockedProjectId, initialOpenId, currentUser },
   ref,
 ) {
+  const router = useRouter();
   const [pautas, setPautas] = useState(initialPautas);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
@@ -49,9 +52,11 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
   // ou quem criou — a diretoria arquiva o que não criou em vez de apagar.
   function menuFor(pauta: PautaWithDetails) {
     const isCreator = pauta.created_by === currentUser.id;
+    // Pauta de negócio só some com o negócio (o banco recusa arquivar/apagar pelo quadro).
+    const crm = isCrmPauta(pauta);
     return {
-      canDelete: isCreator,
-      canArchive: canManage || isCreator,
+      canDelete: isCreator && !crm,
+      canArchive: (canManage || isCreator) && !crm,
       onRemove: (mode: "delete" | "archive") => setRemoval({ mode, id: pauta.id!, title: pauta.title ?? "" }),
     };
   }
@@ -84,6 +89,11 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
     const targetColumn = over.id as PautaColumn;
     const current = pautas.find((item) => item.id === pautaId);
     if (!current || current.board_column === targetColumn) return;
+
+    if (isCrmPauta(current)) {
+      notifyCrmLock(current, router.push);
+      return;
+    }
 
     if (targetColumn === "entregue" && current.created_by !== currentUser.id && !(canManage && !current.created_by)) {
       toast.error("Só quem criou a pauta pode aprovar. Envie para revisão.");

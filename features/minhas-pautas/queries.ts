@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { MyOpenRequest } from "@/features/crm/types";
 import type { MyPautasBoard } from "@/features/minhas-pautas/types";
 import { pautaUrgency } from "@/lib/pautas";
 import type { PautaWithDetails } from "@/types";
@@ -28,10 +29,21 @@ export async function getMyPautasBoard(profileId: string): Promise<MyPautasBoard
   ]);
 
   const memberPautaIds = (memberRowsResult.data ?? []).map((row) => row.pauta_id);
-  const memberOnlyResult = memberPautaIds.length > 0 ? await supabase.from("pautas_with_details").select("*").in("id", memberPautaIds) : null;
+  // Pedido de direcionamento aberto para mim: a pauta do negócio entra no meu quadro até eu resolver.
+  const { data: requestRows } = await supabase
+    .from("deal_notes")
+    .select("deal_id")
+    .eq("assigned_to", profileId)
+    .eq("is_request", true)
+    .is("resolved_at", null);
+  const requestDealIds = Array.from(new Set((requestRows ?? []).map((row) => row.deal_id)));
+  const [memberOnlyResult, requestPautasResult] = await Promise.all([
+    memberPautaIds.length > 0 ? supabase.from("pautas_with_details").select("*").in("id", memberPautaIds) : null,
+    requestDealIds.length > 0 ? supabase.from("pautas_with_details").select("*").eq("source", "crm").in("deal_id", requestDealIds) : null,
+  ]);
 
   const byId = new Map<string, PautaWithDetails>();
-  for (const row of [...(linkedResult.data ?? []), ...(memberOnlyResult?.data ?? [])]) {
+  for (const row of [...(linkedResult.data ?? []), ...(memberOnlyResult?.data ?? []), ...(requestPautasResult?.data ?? [])]) {
     if (row.id) byId.set(row.id, row);
   }
 
@@ -99,4 +111,33 @@ export async function getHomePautaSummary(profileId: string): Promise<HomePautaS
     hoje: board.hoje.length,
     nextDue: nextDue?.id && nextDue.title ? { id: nextDue.id, title: nextDue.title, dueDate: nextDue.due_date } : null,
   };
+}
+
+/** Pedidos de direcionamento abertos para a pessoa, com a pauta do negócio para abrir direto. */
+export async function getMyOpenRequests(profileId: string): Promise<MyOpenRequest[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("deal_notes")
+    .select("id, body, due_at, created_at, deal_id, author:profiles!deal_notes_author_id_fkey(full_name)")
+    .eq("assigned_to", profileId)
+    .eq("is_request", true)
+    .is("resolved_at", null)
+    .order("created_at", { ascending: false });
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const dealIds = Array.from(new Set(rows.map((row) => row.deal_id)));
+  const { data: pautas } = await supabase.from("pautas_with_details").select("id, deal_id, title").eq("source", "crm").in("deal_id", dealIds);
+  const byDeal = new Map((pautas ?? []).map((pauta) => [pauta.deal_id, pauta]));
+
+  return rows.map((row) => ({
+    id: row.id,
+    body: row.body,
+    dueAt: row.due_at,
+    createdAt: row.created_at,
+    authorName: row.author?.full_name ?? null,
+    dealId: row.deal_id,
+    pautaId: byDeal.get(row.deal_id)?.id ?? null,
+    title: byDeal.get(row.deal_id)?.title ?? "Negócio",
+  }));
 }

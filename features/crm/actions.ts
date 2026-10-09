@@ -46,7 +46,7 @@ import { canManageAllDeals, hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { nullIfEmpty } from "@/lib/validations/company";
 import { createClient } from "@/lib/supabase/server";
-import type { Tables } from "@/types";
+import type { CompanyLifecycle, Tables } from "@/types";
 
 /** Pré-requisitos do fluxo que o banco recusou — a UI usa para explicar e oferecer o próximo passo. */
 export type FlowNeed = "qualification" | "meeting" | "proposal" | "client_response" | "outcome" | "interaction";
@@ -118,7 +118,7 @@ async function requireCrm() {
 export async function findSimilarCompaniesAction(input: {
   name: string;
   document: string;
-}): Promise<{ id: string; name: string; document: string | null; lifecycle: string }[]> {
+}): Promise<{ id: string; name: string; document: string | null; lifecycle: CompanyLifecycle }[]> {
   if (!(await requireCrm())) return [];
   const name = input.name.trim();
   const document = input.document.trim();
@@ -261,6 +261,9 @@ export async function logContactAction(values: ContactValues): Promise<FlowResul
     p_channel: d.channel,
     p_approach: d.approach,
     p_body: d.body,
+    p_summary: d.summary,
+    p_next_step: d.nextStep,
+    ...(d.previousResponded ? { p_previous_responded: d.previousResponded === "sim" } : {}),
     p_responded_to: arg<string>(null),
     p_next_action: hasNext ? d.nextAction : arg<string>(null),
     p_next_action_at: hasNext ? nextActionAt(d.nextActionDate, d.nextActionTime) : arg<string>(null),
@@ -269,6 +272,25 @@ export async function logContactAction(values: ContactValues): Promise<FlowResul
 
   refresh();
   return { ok: true, message: "Contato registrado." };
+}
+
+/** A tentativa anterior ainda sem resposta registrada — o "Registrar contato" pergunta sobre ela. */
+export async function getPendingAttemptAction(
+  dealId: string,
+): Promise<{ id: string; occurredAt: string; channel: string | null; summary: string } | null> {
+  if (!idSchema.safeParse(dealId).success) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("deal_interactions")
+    .select("id, occurred_at, channel, summary, body")
+    .eq("deal_id", dealId)
+    .eq("kind", "tentativa_contato")
+    .is("responded", null)
+    .order("occurred_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? { id: data.id, occurredAt: data.occurred_at, channel: data.channel, summary: data.summary ?? data.body } : null;
 }
 
 /** "Cliente respondeu": grava a resposta ligada à tentativa que ela responde. */

@@ -26,7 +26,7 @@ function escapeLike(value: string) {
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
   const { aba, saude, cidade, busca } = await searchParams;
-  const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : "client";
+  const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : aba === "ex-clientes" ? "former_client" : "client";
   const isClientTab = lifecycle === "client";
   const canManage = hasCapability(profile, "manageCompanies");
 
@@ -55,7 +55,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   for (const project of projects ?? []) {
     if (!project.company_id) continue;
     const current = stats.get(project.company_id) ?? { active: 0, lastActivity: null };
-    if (project.stage !== "entregue" && project.stage !== "cancelado") current.active += 1;
+    if (project.stage !== "entregue" && project.stage !== "cancelado" && project.stage !== "encerrado") current.active += 1;
     if (!current.lastActivity || project.created_at > current.lastActivity) current.lastActivity = project.created_at;
     stats.set(project.company_id, current);
   }
@@ -96,7 +96,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         eyebrow="Operação"
         title="Clientes."
         description="Clientes por nível de ticket, do maior para o menor contrato. Prospects ficam na aba própria."
-        actions={canManage ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
+        actions={canManage && lifecycle !== "former_client" ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
       />
 
       <div className="mb-6">
@@ -104,7 +104,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
           label="Situação"
           tabs={[
             { href: "/clientes", label: "Clientes", active: isClientTab },
-            { href: "/clientes?aba=prospects", label: "Prospects", active: !isClientTab },
+            { href: "/clientes?aba=prospects", label: "Prospects", active: lifecycle === "prospect" },
+            { href: "/clientes?aba=ex-clientes", label: "Ex-clientes", active: lifecycle === "former_client" },
           ]}
         />
       </div>
@@ -124,7 +125,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         <div className="flex flex-col items-center rounded-lg border border-dashed border-border-strong px-6 py-16 text-center">
           <Building2 className="mb-3 size-6 text-muted-foreground" aria-hidden />
           <p className="font-bold">
-            {hasFilters ? "Nenhuma empresa com esses filtros." : isClientTab ? "Nenhum cliente cadastrado." : "Nenhum prospect cadastrado."}
+            {hasFilters ? "Nenhuma empresa com esses filtros." : isClientTab ? "Nenhum cliente cadastrado." : lifecycle === "former_client" ? "Nenhum ex-cliente." : "Nenhum prospect cadastrado."}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{hasFilters ? "Ajuste ou limpe os filtros." : "Use “Nova empresa” para começar."}</p>
         </div>

@@ -22,7 +22,7 @@ import {
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { COMPANY_LIFECYCLES, COMPANY_SOURCES, LIFECYCLE_LABELS, SOURCE_LABELS } from "@/lib/domain";
+import { ALL_COMPANY_LIFECYCLES, COMPANY_LIFECYCLES, COMPANY_SOURCES, LIFECYCLE_LABELS, SOURCE_LABELS } from "@/lib/domain";
 import { companySchema, type CompanyValues } from "@/lib/validations/company";
 import type { Company, CompanyLifecycle } from "@/types";
 
@@ -126,17 +126,17 @@ export function CompanyFormDialog(props: CompanyFormDialogProps) {
           </FormField>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <FormField id="company-lifecycle" label="Situação">
+            <FormField id="company-lifecycle" label="Situação" hint={watch("lifecycle") === "former_client" ? "Ex-cliente: use “Reativar cliente”." : undefined}>
               <Controller
                 control={control}
                 name="lifecycle"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={field.value === "former_client"}>
                     <SelectTrigger id="company-lifecycle">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {COMPANY_LIFECYCLES.map((item) => (
+                      {(field.value === "former_client" ? ALL_COMPANY_LIFECYCLES : COMPANY_LIFECYCLES).map((item) => (
                         <SelectItem key={item} value={item}>
                           {LIFECYCLE_LABELS[item]}
                         </SelectItem>

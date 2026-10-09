@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { KanbanLane } from "@/components/kanban/kanban-lane";
@@ -8,6 +9,7 @@ import { laneKeyOf, lanesFor, priorityRank, type KanbanDimension } from "@/featu
 import { PautaCard, type PautaCardMenu } from "@/features/pautas/components/pauta-card";
 import { movePautaColumnAction, updatePautaAction } from "@/features/pautas/actions";
 import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
+import { isCrmPauta, notifyCrmLock } from "@/features/pautas/crm-lock";
 import type { PautaOptionMember } from "@/features/pautas/types";
 import { PAUTA_COLUMNS, defaultStatusForColumn } from "@/lib/pautas";
 import { PRIORITIES } from "@/lib/domain";
@@ -45,6 +47,7 @@ function isColumn(value: string): value is PautaColumn {
  * tarefa avulsa) ou status (quem edita a pauta — o banco confere de novo). Entre squads, nunca.
  */
 export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, canManage, onOpen, onChanged, menuFor, members }: MyPautasKanbanProps) {
+  const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(null);
   // Pauta de equipe arrastada por status: o card muda de coluna e abre o "passar adiante" para
   // confirmar etapa, pessoa e prazo. Cancelar devolve o card.
@@ -109,6 +112,10 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
     }
 
     if (dimension === "status" && isColumn(target)) {
+      if (isCrmPauta(pauta)) {
+        notifyCrmLock(pauta, router.push);
+        return;
+      }
       const previous = pauta;
       const status = defaultStatusForColumn(target, pauta.status ?? undefined, pauta.squad);
 

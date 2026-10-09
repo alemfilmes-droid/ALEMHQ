@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Ban, Pencil } from "lucide-react";
 import { AddContactDialog } from "@/components/companies/add-contact-dialog";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { CompanyLogoUploader } from "@/components/companies/company-logo-uploader";
@@ -23,7 +23,12 @@ import { getClientOverview, getClientTimeline } from "@/features/clients/queries
 import { CompanyDealsTab } from "@/features/crm/components/company-deals-tab";
 import { CompanyFinanceTab } from "@/features/finance/components/company-finance-tab";
 import { getClientFinanceSummary } from "@/features/finance/queries";
-import { canManageCompanyLogos, hasCapability } from "@/lib/auth/permissions";
+import { canCloseClients, canManageCompanyLogos, hasCapability } from "@/lib/auth/permissions";
+import { CLOSURE_SELECT, toClosureInfo } from "@/features/clients/closures";
+import { ClosureCard } from "@/features/clients/components/closure-card";
+import { ClosureNotice } from "@/features/clients/components/closure-notice";
+import { CloseClientDialog } from "@/features/clients/components/close-client-dialog";
+import { ReopenClientButton } from "@/features/clients/components/reopen-client-button";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS, STAGE_LABELS, TIER_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/format";
@@ -58,14 +63,17 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
     .maybeSingle();
   if (!company) notFound();
 
-  const [contactsResult, projectsResult] = await Promise.all([
+  const [contactsResult, projectsResult, closureResult] = await Promise.all([
     supabase.from("contacts").select("*").eq("company_id", id).order("full_name"),
     supabase
       .from("projects")
       .select("id, name, stage, model, due_date, start_date, end_date")
       .eq("company_id", id)
       .order("created_at", { ascending: false }),
+    supabase.from("client_closures").select(CLOSURE_SELECT).eq("company_id", id).is("project_id", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
+  const closure = closureResult.data ? toClosureInfo(closureResult.data) : null;
+  const canClose = canCloseClients(profile);
   const overviewTab = !financeTab && !commercialTab;
   const [overview, financeSummary, timeline] = overviewTab
     ? await Promise.all([
@@ -82,7 +90,13 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
   return (
     <>
       <PageHeader
-        eyebrow={company.became_client_at ? `Cliente desde ${formatDate(company.became_client_at)}` : "Prospect"}
+        eyebrow={
+          company.lifecycle === "former_client"
+            ? `Ex-cliente${closure ? ` desde ${formatDate(closure.closedAt)}` : ""}`
+            : company.became_client_at
+              ? `Cliente desde ${formatDate(company.became_client_at)}`
+              : "Prospect"
+        }
         title={company.name}
         description={origin ?? undefined}
         leading={
@@ -93,8 +107,21 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
           )
         }
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <LifecycleBadge lifecycle={company.lifecycle} />
+            {canClose && company.lifecycle === "client" ? (
+              <CloseClientDialog
+                companyId={company.id}
+                companyName={company.name}
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Ban aria-hidden />
+                    Encerrar
+                  </Button>
+                }
+              />
+            ) : null}
+            {canClose && company.lifecycle === "former_client" ? <ReopenClientButton companyId={company.id} /> : null}
             {canManage ? (
               <CompanyFormDialog
                 mode="edit"
@@ -128,10 +155,15 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
       {financeTab ? (
         <CompanyFinanceTab companyId={company.id} />
       ) : commercialTab ? (
-        <CompanyDealsTab companyId={company.id} canSeeFinance={canSeeFinance} />
+        <div className="space-y-6">
+          {closure ? <ClosureNotice closure={closure} /> : null}
+          <CompanyDealsTab companyId={company.id} canSeeFinance={canSeeFinance} />
+        </div>
       ) : (
         <>
           {overview ? <ClientMetrics overview={overview} finance={financeSummary} /> : null}
+
+          {closure ? <ClosureCard closure={closure} title={closure.reopenedAt ? "Último encerramento" : "Encerramento"} /> : null}
 
           <dl className="card-grid mb-10 text-sm">
             <div className="rounded-lg border border-border bg-card p-4">

@@ -15,7 +15,7 @@ import { UserAvatar, usePrimarySquad } from "@/components/ui/avatar";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
 import { ClientWaitingBadge, FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
-import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
+import { OpenRequestsBadge, PautaStageBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
 import { SURFACE, squadBarStyle, squadGradient } from "@/lib/theme";
@@ -36,18 +36,17 @@ interface PautaCardProps {
 
 /**
  * Card de pauta (quadro global, aba do projeto e Minhas Pautas). Degradê da esquerda para a direita
- * na cor do squad principal do RESPONSÁVEL atual — quem está em vários squads reconhece a origem na
- * hora — e barra lateral de 3px na cor do squad de quem atribuiu/é dono (o líder). Sem squad
- * conhecido, superfície neutra.
+ * na cor do SQUAD DA PAUTA (pautas.squad, definido pela origem: CRM → comercial, financeiro
+ * automático → financeiro, projeto → audiovisual, direção → diretoria) e barra lateral de 3px na cor
+ * do squad de quem atribuiu/é dono (o líder). Pauta de negócio mostra a etapa do CRM no lugar do status.
  */
 export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasMenu = Boolean(menu && (menu.canDelete || menu.canArchive));
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: pauta.id! });
   const overdue = pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
-  const assigneeSquad = usePrimarySquad(pauta.current_assignee_id ?? pauta.lead_id) ?? pauta.squad;
   const ownerSquad = usePrimarySquad(pauta.lead_id ?? pauta.created_by) ?? pauta.squad;
-  const gradient = squadGradient(assigneeSquad);
+  const gradient = squadGradient(pauta.squad);
 
   return (
     <div
@@ -126,7 +125,8 @@ export function PautaCard({ pauta, onOpen, dragging = false, menu }: PautaCardPr
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <PautaStatusBadge status={pauta.status!} squad={pauta.squad} />
+        <PautaStageBadge pauta={pauta} />
+        <OpenRequestsBadge count={pauta.open_requests_count} />
         <PautaPriorityBadge priority={pauta.priority!} />
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}

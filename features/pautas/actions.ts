@@ -352,3 +352,13 @@ export async function removePautaMemberAction(input: {
   revalidatePath("/minhas-pautas");
   return { ok: true, message: "Responsável removido." };
 }
+
+export type PautaDealSummary = Database["public"]["Functions"]["pauta_deal_summary"]["Returns"][number];
+
+/** Resumo do negócio da pauta espelho. Valor em negociação só volta para quem tem acesso ao financeiro. */
+export async function getPautaDealSummaryAction(pautaId: string): Promise<PautaDealSummary | null> {
+  if (!z.string().uuid().safeParse(pautaId).success) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("pauta_deal_summary", { p_pauta_id: pautaId });
+  return data?.[0] ?? null;
+}

@@ -13,7 +13,7 @@ import { DealKanbanBoard } from "@/features/crm/components/kanban/deal-kanban-bo
 import { LeadsTable } from "@/features/crm/components/leads-table";
 import { NewDealDialog } from "@/features/crm/components/new-deal-dialog";
 import { parseDealFilters } from "@/features/crm/filters";
-import { getDealFormOptions, listDeals } from "@/features/crm/queries";
+import { getDealFormOptions, getOpenRequestCounts, listDeals } from "@/features/crm/queries";
 import { PeriodSelector } from "@/features/finance/components/period-selector";
 import { resolvePeriod, todayISO } from "@/features/finance/period";
 import { canManageAllDeals, hasCapability } from "@/lib/auth/permissions";
@@ -49,10 +49,10 @@ export default async function CrmPage({ searchParams }: { searchParams: SearchPa
   ];
   const tab = tabs.find((item) => item.key === params.aba)?.key ?? "funil";
 
-  const options = await getDealFormOptions();
+  const [options, openRequests] = await Promise.all([getDealFormOptions(), getOpenRequestCounts()]);
 
   return (
-    <CrmFlowProvider options={options} canManageAll={canManageAll} canSeeFinance={canSeeFinance} currentUserId={profile.id} initialOpenId={params.negocio}>
+    <CrmFlowProvider options={options} canManageAll={canManageAll} canSeeFinance={canSeeFinance} currentUserId={profile.id} initialOpenId={params.negocio} openRequests={openRequests}>
       <PageHeader
         panel="/crm"
         title="CRM."

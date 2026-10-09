@@ -9,6 +9,7 @@ import { ClientAvatar } from "@/components/companies/client-avatar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { isDealOverdue } from "@/features/crm/board";
 import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
+import { OpenRequestsBadge } from "@/features/pautas/components/pauta-status-badge";
 import { TEMPERATURE_LABELS, type Temperature } from "@/features/crm/labels";
 import { toCents } from "@/features/finance/money";
 import { formatDate } from "@/lib/format";
@@ -103,6 +104,7 @@ export function DealCard({ deal, dragging = false }: DealCardProps) {
           ) : null}
         </div>
         <span className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <OpenRequestsBadge count={flow.openRequests[deal.id!]} />
           {deal.is_reheated ? <Flame className="size-3" aria-label="Reaquecido" /> : null}
           {deal.days_in_stage} {deal.days_in_stage === 1 ? "dia" : "dias"} na etapa
         </span>

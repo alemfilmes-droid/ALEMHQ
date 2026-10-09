@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { MyCommitmentsSection } from "@/features/crm/components/my-commitments-section";
 import { MyPautasBoard } from "@/features/minhas-pautas/components/my-pautas-board";
-import { getMyPautasBoard } from "@/features/minhas-pautas/queries";
+import { getMyOpenRequests, getMyPautasBoard } from "@/features/minhas-pautas/queries";
 import { getPautaFormOptions } from "@/features/pautas/queries";
 import { PanelIcon } from "@/components/layout/panel-icon";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ export default async function MinhasPautasPage({ searchParams }: { searchParams:
   const profile = await requireProfile();
   const { pauta } = await searchParams;
 
-  const [board, options] = await Promise.all([getMyPautasBoard(profile.id), getPautaFormOptions()]);
+  const [board, options, requests] = await Promise.all([getMyPautasBoard(profile.id), getPautaFormOptions(), getMyOpenRequests(profile.id)]);
 
   return (
     <div className="space-y-6">
@@ -55,6 +55,7 @@ export default async function MinhasPautasPage({ searchParams }: { searchParams:
           initialOpenId={pauta}
           currentUser={{ id: profile.id, full_name: profile.full_name, avatar_url: profile.avatar_url, managedSquads: hasCapability(profile, "managePautas") ? managedSquads(profile) : [] }}
           mySquads={profile.squads}
+          requests={requests}
         />
       </Suspense>
     </div>

@@ -1,7 +1,7 @@
 // AJUSTE MANUAL após `npm run db:types`: em Functions.generate_installments.Args, marque
 // p_project_id, p_company_id e p_payment_method como `| null`; em
-// Functions.project_apply_contract_change.Args, p_budget_id como `| null` (as funções aceitam NULL,
-// mas o gerador não indica). Ver README → Migrações.
+// Functions.project_apply_contract_change.Args, p_budget_id como `| null`; em Functions.close_client.Args,
+// p_project_id como `| null` (as funções aceitam NULL, mas o gerador não indica). Ver README → Migrações.
 export type Json =
   | string
   | number
@@ -430,6 +430,109 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_closures: {
+        Row: {
+          closed_at: string
+          closed_by: string | null
+          company_id: string
+          created_at: string
+          description: string
+          future_prospect_potential: Database["public"]["Enums"]["prospect_potential"]
+          has_pending_payables: boolean
+          has_pending_receivables: boolean
+          id: string
+          notes: string | null
+          pending_payables_note: string | null
+          pending_receivables_note: string | null
+          project_id: string | null
+          reason: Database["public"]["Enums"]["closure_reason"]
+          reopened_at: string | null
+          reopened_by: string | null
+          summary: Json
+        }
+        Insert: {
+          closed_at: string
+          closed_by?: string | null
+          company_id: string
+          created_at?: string
+          description: string
+          future_prospect_potential: Database["public"]["Enums"]["prospect_potential"]
+          has_pending_payables?: boolean
+          has_pending_receivables?: boolean
+          id?: string
+          notes?: string | null
+          pending_payables_note?: string | null
+          pending_receivables_note?: string | null
+          project_id?: string | null
+          reason: Database["public"]["Enums"]["closure_reason"]
+          reopened_at?: string | null
+          reopened_by?: string | null
+          summary?: Json
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string
+          future_prospect_potential?: Database["public"]["Enums"]["prospect_potential"]
+          has_pending_payables?: boolean
+          has_pending_receivables?: boolean
+          id?: string
+          notes?: string | null
+          pending_payables_note?: string | null
+          pending_receivables_note?: string | null
+          project_id?: string | null
+          reason?: Database["public"]["Enums"]["closure_reason"]
+          reopened_at?: string | null
+          reopened_by?: string | null
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_closures_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_closures_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_closures_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "finance_by_client"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "client_closures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_profitability"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "client_closures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_closures_reopened_by_fkey"
+            columns: ["reopened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -956,11 +1059,13 @@ export type Database = {
           deal_id: string
           id: string
           kind: Database["public"]["Enums"]["deal_interaction_kind"]
+          next_step: string | null
           occurred_at: string
           responded: boolean | null
           responded_to_interaction_id: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           stage_to: Database["public"]["Enums"]["deal_stage"] | null
+          summary: string | null
         }
         Insert: {
           approach?: string | null
@@ -974,11 +1079,13 @@ export type Database = {
           deal_id: string
           id?: string
           kind: Database["public"]["Enums"]["deal_interaction_kind"]
+          next_step?: string | null
           occurred_at?: string
           responded?: boolean | null
           responded_to_interaction_id?: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           stage_to?: Database["public"]["Enums"]["deal_stage"] | null
+          summary?: string | null
         }
         Update: {
           approach?: string | null
@@ -992,11 +1099,13 @@ export type Database = {
           deal_id?: string
           id?: string
           kind?: Database["public"]["Enums"]["deal_interaction_kind"]
+          next_step?: string | null
           occurred_at?: string
           responded?: boolean | null
           responded_to_interaction_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_to?: Database["public"]["Enums"]["deal_stage"] | null
+          summary?: string | null
         }
         Relationships: [
           {
@@ -1235,6 +1344,105 @@ export type Database = {
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "deal_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_notes: {
+        Row: {
+          assigned_to: string | null
+          author_id: string | null
+          body: string
+          created_at: string
+          deal_id: string
+          due_at: string | null
+          id: string
+          is_request: boolean
+          reply_to_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          author_id?: string | null
+          body: string
+          created_at?: string
+          deal_id: string
+          due_at?: string | null
+          id?: string
+          is_request?: boolean
+          reply_to_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          deal_id?: string
+          due_at?: string | null
+          id?: string
+          is_request?: boolean
+          reply_to_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_notes_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "deal_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_notes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2501,6 +2709,7 @@ export type Database = {
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
           client_waiting_since: string | null
+          closure_label: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -2509,6 +2718,7 @@ export type Database = {
           created_for: string | null
           current_assignee_id: string | null
           deal_id: string | null
+          deal_stage: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url: string | null
           direct_company_id: string | null
           drive_folder_url: string | null
@@ -2548,6 +2758,7 @@ export type Database = {
           briefing?: string | null
           capture_type?: Database["public"]["Enums"]["pauta_capture_type"][]
           client_waiting_since?: string | null
+          closure_label?: string | null
           code?: string | null
           contact_id?: string | null
           contact_phone_override?: string | null
@@ -2556,6 +2767,7 @@ export type Database = {
           created_for?: string | null
           current_assignee_id?: string | null
           deal_id?: string | null
+          deal_stage?: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url?: string | null
           direct_company_id?: string | null
           drive_folder_url?: string | null
@@ -2595,6 +2807,7 @@ export type Database = {
           briefing?: string | null
           capture_type?: Database["public"]["Enums"]["pauta_capture_type"][]
           client_waiting_since?: string | null
+          closure_label?: string | null
           code?: string | null
           contact_id?: string | null
           contact_phone_override?: string | null
@@ -2603,6 +2816,7 @@ export type Database = {
           created_for?: string | null
           current_assignee_id?: string | null
           deal_id?: string | null
+          deal_stage?: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url?: string | null
           direct_company_id?: string | null
           drive_folder_url?: string | null
@@ -3579,6 +3793,8 @@ export type Database = {
       projects: {
         Row: {
           briefing: string | null
+          closed_at: string | null
+          closure_id: string | null
           company_id: string | null
           contact_id: string | null
           created_at: string
@@ -3613,6 +3829,8 @@ export type Database = {
         }
         Insert: {
           briefing?: string | null
+          closed_at?: string | null
+          closure_id?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -3647,6 +3865,8 @@ export type Database = {
         }
         Update: {
           briefing?: string | null
+          closed_at?: string | null
+          closure_id?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -3680,6 +3900,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_closure_id_fkey"
+            columns: ["closure_id"]
+            isOneToOne: false
+            referencedRelation: "client_closures"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_company_id_fkey"
             columns: ["company_id"]
@@ -4485,6 +4712,7 @@ export type Database = {
             | Database["public"]["Enums"]["pauta_capture_type"][]
             | null
           client_waiting_since: string | null
+          closure_label: string | null
           code: string | null
           comments_count: number | null
           company_id: string | null
@@ -4501,6 +4729,7 @@ export type Database = {
           created_for_name: string | null
           current_assignee_id: string | null
           deal_id: string | null
+          deal_stage: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url: string | null
           direct_company_id: string | null
           drive_folder_url: string | null
@@ -4520,6 +4749,7 @@ export type Database = {
           lead_name: string | null
           location_address: string | null
           logs_count: number | null
+          open_requests_count: number | null
           previous_assignee_id: string | null
           priority: Database["public"]["Enums"]["project_priority"] | null
           project_id: string | null
@@ -5022,6 +5252,7 @@ export type Database = {
       }
       can_access_all_deals: { Args: never; Returns: boolean }
       can_access_deal: { Args: { p_deal_id: string }; Returns: boolean }
+      can_close_clients: { Args: never; Returns: boolean }
       can_delete_project: { Args: { p_project_id: string }; Returns: boolean }
       can_edit_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       can_edit_process_asset: {
@@ -5060,11 +5291,38 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_view_deal_notes: { Args: { p_deal_id: string }; Returns: boolean }
       can_view_goal: { Args: { p_goal_id: string }; Returns: boolean }
       can_view_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
       check_project_payment: {
         Args: { p_project_id: string }
         Returns: undefined
+      }
+      client_closure_preview: {
+        Args: {
+          p_closed_at?: string
+          p_company_id: string
+          p_project_id?: string
+        }
+        Returns: Json
+      }
+      close_client: {
+        Args: {
+          p_closed_at: string
+          p_company_id: string
+          p_description: string
+          p_has_pending_payables: boolean
+          p_has_pending_receivables: boolean
+          p_keep_payable_ids: string[]
+          p_keep_receivable_ids: string[]
+          p_notes: string
+          p_pending_payables_note: string
+          p_pending_receivables_note: string
+          p_potential: Database["public"]["Enums"]["prospect_potential"]
+          p_project_id: string | null
+          p_reason: Database["public"]["Enums"]["closure_reason"]
+        }
+        Returns: string
       }
       close_deal_won: {
         Args: {
@@ -5080,6 +5338,8 @@ export type Database = {
         }
         Returns: {
           briefing: string | null
+          closed_at: string | null
+          closure_id: string | null
           company_id: string | null
           contact_id: string | null
           created_at: string
@@ -5120,6 +5380,22 @@ export type Database = {
         }
       }
       close_stale_time_sessions: { Args: never; Returns: undefined }
+      closure_health: {
+        Args: {
+          p_current: Database["public"]["Enums"]["client_health"]
+          p_reason: Database["public"]["Enums"]["closure_reason"]
+        }
+        Returns: Database["public"]["Enums"]["client_health"]
+      }
+      closure_reason_label: {
+        Args: { p_reason: Database["public"]["Enums"]["closure_reason"] }
+        Returns: string
+      }
+      closure_target_projects: {
+        Args: { p_company_id: string; p_project_id: string }
+        Returns: string[]
+      }
+      company_closed_since: { Args: { p_company_id: string }; Returns: string }
       company_contract_ranking: {
         Args: never
         Returns: {
@@ -5172,11 +5448,32 @@ export type Database = {
         Args: { p_task: Database["public"]["Enums"]["direction_task"] }
         Returns: string
       }
+      crm_goal_label: {
+        Args: { p_goal: Database["public"]["Enums"]["prospection_goal"] }
+        Returns: string
+      }
       crm_head_id: { Args: never; Returns: string }
+      crm_pauta_column: {
+        Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
+        Returns: Database["public"]["Enums"]["pauta_column"]
+      }
+      crm_pauta_status: {
+        Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
+        Returns: Database["public"]["Enums"]["pauta_status"]
+      }
+      crm_pauta_title: {
+        Args: {
+          p_company: string
+          p_goals: Database["public"]["Enums"]["prospection_goal"][]
+          p_title: string
+        }
+        Returns: string
+      }
       crm_stage_label: {
         Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
         Returns: string
       }
+      crm_sync_deal_pauta: { Args: { p_deal_id: string }; Returns: string }
       crm_system_move: { Args: never; Returns: boolean }
       current_access_role: {
         Args: never
@@ -5223,7 +5520,10 @@ export type Database = {
           p_kind: Database["public"]["Enums"]["deal_interaction_kind"]
           p_next_action?: string
           p_next_action_at?: string
+          p_next_step?: string
+          p_previous_responded?: boolean
           p_responded_to?: string
+          p_summary?: string
         }
         Returns: string
       }
@@ -5259,6 +5559,22 @@ export type Database = {
           proposal_id: string
         }[]
       }
+      deal_note_create: {
+        Args: {
+          p_assigned_to?: string
+          p_body: string
+          p_deal_id: string
+          p_due_at?: string
+          p_is_request?: boolean
+          p_reply_to?: string
+        }
+        Returns: string
+      }
+      deal_note_set_resolved: {
+        Args: { p_note_id: string; p_resolved: boolean }
+        Returns: undefined
+      }
+      deal_pauta_url: { Args: { p_deal_id: string }; Returns: string }
       deal_proposals_list: {
         Args: { p_deal_id: string }
         Returns: {
@@ -5588,6 +5904,7 @@ export type Database = {
         Args: { p_ref_id: string; p_ref_type: string }
         Returns: boolean
       }
+      has_open_deal_request: { Args: { p_deal_id: string }; Returns: boolean }
       in_squad: {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
@@ -5683,6 +6000,27 @@ export type Database = {
         Args: { p_status: Database["public"]["Enums"]["pauta_status"] }
         Returns: Database["public"]["Enums"]["pauta_column"]
       }
+      pauta_deal_summary: {
+        Args: { p_pauta_id: string }
+        Returns: {
+          can_open_deal: boolean
+          code: string
+          deal_id: string
+          interactions_count: number
+          last_interaction_at: string
+          last_interaction_channel: Database["public"]["Enums"]["deal_interaction_channel"]
+          last_interaction_kind: Database["public"]["Enums"]["deal_interaction_kind"]
+          last_interaction_text: string
+          negotiation_value: number
+          next_action: string
+          next_action_at: string
+          open_requests: number
+          owner_name: string
+          responsible_name: string
+          stage: Database["public"]["Enums"]["deal_stage"]
+          title: string
+        }[]
+      }
       pauta_default_squad: {
         Args: {
           p_deal_id: string
@@ -5715,6 +6053,7 @@ export type Database = {
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
           client_waiting_since: string | null
+          closure_label: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -5723,6 +6062,7 @@ export type Database = {
           created_for: string | null
           current_assignee_id: string | null
           deal_id: string | null
+          deal_stage: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url: string | null
           direct_company_id: string | null
           drive_folder_url: string | null
@@ -5774,6 +6114,7 @@ export type Database = {
           briefing: string | null
           capture_type: Database["public"]["Enums"]["pauta_capture_type"][]
           client_waiting_since: string | null
+          closure_label: string | null
           code: string | null
           contact_id: string | null
           contact_phone_override: string | null
@@ -5782,6 +6123,7 @@ export type Database = {
           created_for: string | null
           current_assignee_id: string | null
           deal_id: string | null
+          deal_stage: Database["public"]["Enums"]["deal_stage"] | null
           delivery_url: string | null
           direct_company_id: string | null
           drive_folder_url: string | null
@@ -5841,6 +6183,7 @@ export type Database = {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: Database["public"]["Enums"]["pauta_status"][]
       }
+      pauta_system_write: { Args: never; Returns: boolean }
       pautas_summary: {
         Args: {
           p_assignee_id?: string
@@ -5918,6 +6261,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reopen_client: { Args: { p_company_id: string }; Returns: undefined }
       run_daily_all: { Args: never; Returns: undefined }
       run_daily_reminders: { Args: never; Returns: undefined }
       run_goal_reminders: { Args: never; Returns: undefined }
@@ -5960,6 +6304,12 @@ export type Database = {
         | "em_ajuste"
       client_health: "ativo" | "atencao" | "tensao" | "churn"
       client_tier: "low_ticket" | "mid_ticket" | "high_ticket"
+      closure_reason:
+        | "churn"
+        | "fim_de_contrato"
+        | "projeto_concluido"
+        | "pausa_temporaria"
+        | "outro"
       commission_kind: "padrao" | "reaquecido"
       commitment_kind: "reuniao_comercial" | "captacao" | "entrega" | "interno"
       commitment_status:
@@ -5969,7 +6319,7 @@ export type Database = {
         | "remarcado"
         | "cancelado"
       commitment_visibility: "privado" | "equipe"
-      company_lifecycle: "prospect" | "client"
+      company_lifecycle: "prospect" | "client" | "former_client"
       company_source:
         | "crm"
         | "indicacao"
@@ -6148,6 +6498,7 @@ export type Database = {
         | "producao"
         | "pausado"
         | "cancelado"
+        | "encerrado"
       proposal_channel:
         | "whatsapp_pdf"
         | "email"
@@ -6156,6 +6507,7 @@ export type Database = {
         | "presencial"
         | "outro"
       proposal_status: "enviada" | "em_negociacao" | "aceita" | "recusada"
+      prospect_potential: "alto" | "medio" | "baixo" | "nenhum"
       prospection_goal:
         | "recorrencia"
         | "campanha_institucional"
@@ -6332,6 +6684,13 @@ export const Constants = {
       ],
       client_health: ["ativo", "atencao", "tensao", "churn"],
       client_tier: ["low_ticket", "mid_ticket", "high_ticket"],
+      closure_reason: [
+        "churn",
+        "fim_de_contrato",
+        "projeto_concluido",
+        "pausa_temporaria",
+        "outro",
+      ],
       commission_kind: ["padrao", "reaquecido"],
       commitment_kind: ["reuniao_comercial", "captacao", "entrega", "interno"],
       commitment_status: [
@@ -6342,7 +6701,7 @@ export const Constants = {
         "cancelado",
       ],
       commitment_visibility: ["privado", "equipe"],
-      company_lifecycle: ["prospect", "client"],
+      company_lifecycle: ["prospect", "client", "former_client"],
       company_source: [
         "crm",
         "indicacao",
@@ -6536,6 +6895,7 @@ export const Constants = {
         "producao",
         "pausado",
         "cancelado",
+        "encerrado",
       ],
       proposal_channel: [
         "whatsapp_pdf",
@@ -6546,6 +6906,7 @@ export const Constants = {
         "outro",
       ],
       proposal_status: ["enviada", "em_negociacao", "aceita", "recusada"],
+      prospect_potential: ["alto", "medio", "baixo", "nenhum"],
       prospection_goal: [
         "recorrencia",
         "campanha_institucional",

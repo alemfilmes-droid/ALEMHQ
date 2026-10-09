@@ -1,3 +1,4 @@
+import type { ClientClosureInfo } from "@/features/clients/closures";
 import type { Temperature } from "@/features/crm/labels";
 import type { BoardPeriod } from "@/features/crm/period";
 import type { Cents } from "@/features/finance/money";
@@ -67,6 +68,10 @@ export interface DealInteractionDetail {
   channel: DealInteractionChannel | null;
   approach: string | null;
   body: string;
+  /** "Resumo do que aconteceu" (obrigatório nas tentativas novas). */
+  summary: string | null;
+  /** Próximo passo combinado com o cliente (opcional). */
+  next_step: string | null;
   responded: boolean | null;
   responded_to_interaction_id: string | null;
   stage: DealStage;
@@ -116,6 +121,10 @@ export interface DealDetail {
   proposals: DealProposal[];
   negotiations: DealNegotiation[];
   log: DealLogEntry[];
+  /** Pedidos de direcionamento ainda abertos. */
+  openRequests: number;
+  /** Último encerramento do cliente (por que saiu e se vale voltar a abordar). */
+  closure: ClientClosureInfo | null;
 }
 
 export interface StageColumnSummary {
@@ -205,3 +214,41 @@ export interface CommissionRuleRow {
 
 /** Kanban do funil, agrupado pelas 10 etapas fixas. */
 export type DealBoard = Record<DealStage, DealWithDetails[]>;
+
+/** Direcionamento (conversa interna do negócio). Pedido = is_request com responsável, aberto até resolver. */
+export interface DealNoteDetail {
+  id: string;
+  deal_id: string;
+  body: string;
+  is_request: boolean;
+  due_at: string | null;
+  reply_to_id: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  author: DealOptionMember | null;
+  assignee: DealOptionMember | null;
+  resolver: DealOptionMember | null;
+}
+
+export interface DealNotesThreadData {
+  notes: DealNoteDetail[];
+  /** Pessoas do squad comercial (para quem um pedido pode ir). */
+  members: DealOptionMember[];
+  /** Diretoria, master e head comercial criam pedidos (can_access_all_deals()). */
+  canRequest: boolean;
+  /** Pode resolver: quem recebeu, quem pediu ou a gestão do comercial. */
+  canManageAll: boolean;
+  currentUserId: string;
+}
+
+/** Pedido aberto para mim, com a pauta espelho do negócio (Minhas Pautas). */
+export interface MyOpenRequest {
+  id: string;
+  body: string;
+  dueAt: string | null;
+  createdAt: string;
+  authorName: string | null;
+  dealId: string;
+  pautaId: string | null;
+  title: string;
+}

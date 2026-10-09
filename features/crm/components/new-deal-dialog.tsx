@@ -20,7 +20,8 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { COMPANY_SOURCES, SOURCE_LABELS } from "@/lib/domain";
+import { COMPANY_SOURCES, LIFECYCLE_LABELS, SOURCE_LABELS } from "@/lib/domain";
+import type { CompanyLifecycle } from "@/types";
 import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 
 interface NewDealDialogProps {
@@ -58,7 +59,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="eyebrow border-t border-border pt-5">{children}</p>;
 }
 
-type Similar = { id: string; name: string; document: string | null; lifecycle: string };
+type Similar = { id: string; name: string; document: string | null; lifecycle: CompanyLifecycle };
 
 /**
  * Cria o negócio e, se preciso, a empresa (prospect) e o primeiro contato numa transação só — na
@@ -217,7 +218,7 @@ export function NewDealDialog({ options, canManageAll, defaultOwnerId }: NewDeal
                           </Link>
                           <span className="text-muted-foreground">
                             {" "}
-                            · {item.lifecycle === "client" ? "Cliente" : "Prospect"}
+                            · {LIFECYCLE_LABELS[item.lifecycle]}
                             {item.document ? ` · ${item.document}` : ""}
                           </span>
                         </span>

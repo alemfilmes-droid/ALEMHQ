@@ -1,6 +1,8 @@
 import type { ClientTier, CompanyLifecycle, CompanySource, ProjectModel, ProjectPriority, ProjectStage, ServiceType } from "@/types";
 
+/** Situações escolhíveis no formulário. "Ex-cliente" só entra pelo encerramento (e sai por "Reativar cliente"). */
 export const COMPANY_LIFECYCLES = ["client", "prospect"] as const satisfies readonly CompanyLifecycle[];
+export const ALL_COMPANY_LIFECYCLES = ["client", "prospect", "former_client"] as const satisfies readonly CompanyLifecycle[];
 
 export const COMPANY_SOURCES = [
   "crm",
@@ -27,9 +29,13 @@ export const PROJECT_STAGES = [
   "cancelado",
 ] as const satisfies readonly ProjectStage[];
 
+/** Todas as etapas, inclusive "Encerrado" — que só entra pelo encerramento (não aparece no seletor). */
+export const ALL_PROJECT_STAGES = [...PROJECT_STAGES, "encerrado"] as const satisfies readonly ProjectStage[];
+
 export const LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
   client: "Cliente",
   prospect: "Prospect",
+  former_client: "Ex-cliente",
 };
 
 export const SOURCE_LABELS: Record<CompanySource, string> = {
@@ -55,6 +61,7 @@ export const STAGE_LABELS: Record<ProjectStage, string> = {
   entregue: "Entregue",
   pausado: "Pausado",
   cancelado: "Cancelado",
+  encerrado: "Encerrado",
 };
 
 export const INTERNAL_PROJECT_LABEL = "Interno — Além Filmes";

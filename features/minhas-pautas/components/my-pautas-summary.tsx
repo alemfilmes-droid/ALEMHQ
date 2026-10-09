@@ -1,7 +1,5 @@
-import { StatusDot } from "@/components/ui/status-dot";
-import { SQUAD_LABELS } from "@/lib/auth/squads";
-import { SQUAD_TONE, toneColor } from "@/lib/status";
-import { cn } from "@/lib/utils";
+import { SquadCountStrip } from "@/features/pautas/components/squad-count-strip";
+import { toneColor } from "@/lib/status";
 import type { MyPautasSummary } from "@/features/minhas-pautas/types";
 import type { Squad } from "@/types";
 
@@ -35,36 +33,7 @@ export function MyPautasSummaryStrip({ summary, squadCounts, activeSquad, onSqua
         ))}
       </dl>
 
-      {squadCounts && squadCounts.length > 0 ? (
-        <ul aria-label="Pautas por squad" className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
-          {squadCounts.map(({ squad, count }, index) => {
-            const active = activeSquad === squad;
-            return (
-              <li key={squad} className="flex items-center">
-                {index > 0 ? (
-                  <span aria-hidden className="px-1 text-subtle">
-                    ·
-                  </span>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => onSquadToggle(squad)}
-                  aria-pressed={active}
-                  title={active ? "Mostrar todos os squads" : `Mostrar só ${SQUAD_LABELS[squad]}`}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-semibold transition-colors",
-                    active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-                  )}
-                >
-                  <StatusDot tone={SQUAD_TONE[squad]} />
-                  <span className="tabular-nums">{count}</span>
-                  {SQUAD_LABELS[squad]}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+      {squadCounts ? <SquadCountStrip counts={squadCounts} activeSquad={activeSquad} onToggle={onSquadToggle} /> : null}
     </div>
   );
 }

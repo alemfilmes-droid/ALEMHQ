@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Archive, Trash2 } from "lucide-react";
 import { getPautaDetailAction } from "@/features/pautas/actions";
+import { DealNotesThread } from "@/features/crm/components/detail/deal-notes-thread";
+import { isCrmPauta } from "@/features/pautas/crm-lock";
 import { PautaActivityTab } from "@/features/pautas/components/pauta-activity-tab";
+import { PautaDealTab } from "@/features/pautas/components/pauta-deal-tab";
 import { PautaCommentsTab } from "@/features/pautas/components/pauta-comments-tab";
 import { PautaDetailsTab } from "@/features/pautas/components/pauta-details-tab";
 import { PautaLogsTab } from "@/features/pautas/components/pauta-logs-tab";
@@ -30,13 +33,14 @@ interface PautaDetailModalProps {
   onRemoved?: (id: string) => void;
 }
 
-type TabKey = "detalhes" | "registros" | "comentarios" | "atividade";
+type TabKey = "detalhes" | "negocio" | "direcionamentos" | "registros" | "comentarios" | "atividade";
 
 export function PautaDetailModal({ pautaId, options, canManage, currentUser, open, onOpenChange, onChanged, onRemoved }: PautaDetailModalProps) {
   const [detail, setDetail] = useState<PautaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("detalhes");
   const [removal, setRemoval] = useState<PautaRemoval | null>(null);
+  const [openRequests, setOpenRequests] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -46,6 +50,11 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
       if (active) {
         setDetail(data);
         setLoading(false);
+        // Pauta de negócio abre no resumo do negócio (a coluna e o status vêm do CRM).
+        if (data && isCrmPauta(data.pauta)) {
+          setTab("negocio");
+          setOpenRequests(data.pauta.open_requests_count ?? 0);
+        }
       }
     });
     return () => {
@@ -65,6 +74,8 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
     // Registros e atividade mudam junto (ex.: "passar adiante" grava a nota como registro).
     reload();
   }
+
+  const crm = detail ? isCrmPauta(detail.pauta) : false;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,6 +120,8 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
               </p>
               <DialogTitle>{detail.pauta.title}</DialogTitle>
               {(() => {
+                // Pauta de negócio: some junto com o negócio, nunca pelo quadro.
+                if (isCrmPauta(detail.pauta)) return null;
                 // Apagar: só quem criou. Arquivar: gestão plena ou quem criou (a diretoria arquiva o que não criou).
                 const isCreator = detail.pauta.created_by === currentUser.id;
                 const canArchive = canManage || isCreator;
@@ -138,7 +151,12 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
               value={tab}
               onChange={setTab}
               tabs={[
-                { value: "detalhes", label: "Detalhes" },
+                ...(crm
+                  ? [
+                      { value: "negocio" as const, label: "Negócio" },
+                      { value: "direcionamentos" as const, label: `Direcionamentos${openRequests ? ` (${openRequests})` : ""}` },
+                    ]
+                  : [{ value: "detalhes" as const, label: "Detalhes" }]),
                 { value: "registros", label: `Registros${detail.logs.length ? ` (${detail.logs.length})` : ""}` },
                 { value: "comentarios", label: `Comentários${detail.comments.length ? ` (${detail.comments.length})` : ""}` },
                 { value: "atividade", label: "Atividade" },
@@ -147,7 +165,11 @@ export function PautaDetailModal({ pautaId, options, canManage, currentUser, ope
 
             {/* -mx/px: folga para o anel colorido dos avatares não ser cortado pela rolagem. */}
             <div className="-mx-1.5 min-h-0 flex-1 overflow-y-auto px-1.5 pt-5">
-              {tab === "detalhes" ? (
+              {tab === "negocio" && crm && detail.pauta.deal_id ? (
+                <PautaDealTab pautaId={pautaId} dealId={detail.pauta.deal_id} />
+              ) : tab === "direcionamentos" && crm && detail.pauta.deal_id ? (
+                <DealNotesThread dealId={detail.pauta.deal_id} onChanged={setOpenRequests} />
+              ) : tab === "detalhes" ? (
                 detail.pauta.is_standalone ? (
                   <StandaloneTaskDetailsTab pauta={detail.pauta} onChanged={handleChanged} />
                 ) : (

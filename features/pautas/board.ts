@@ -1,6 +1,6 @@
 import type { PautaBoard, PautasSummary } from "@/features/pautas/types";
 import { isPautaOverdue } from "@/lib/pautas";
-import type { PautaWithDetails } from "@/types";
+import type { PautaWithDetails, Squad } from "@/types";
 
 /** Puro, sem dependência de servidor — usado no client (KanbanBoard) e no server (página). */
 export function groupPautasByColumn(pautas: PautaWithDetails[]): PautaBoard {
@@ -27,4 +27,11 @@ export function summarizePautas(pautas: PautaWithDetails[]): PautasSummary {
     if (pauta.is_critical || overdue) criticas += 1;
   }
   return { emAndamento, concluidas, criticas };
+}
+
+/** Contagem por squad da pauta (pautas.squad), do maior para o menor — tira de squads dos quadros. */
+export function countBySquad(pautas: PautaWithDetails[]): { squad: Squad; count: number }[] {
+  const counts = new Map<Squad, number>();
+  for (const pauta of pautas) if (pauta.squad) counts.set(pauta.squad, (counts.get(pauta.squad) ?? 0) + 1);
+  return [...counts.entries()].map(([squad, count]) => ({ squad, count })).sort((a, b) => b.count - a.count || a.squad.localeCompare(b.squad));
 }

@@ -28,9 +28,9 @@ interface MyPautasCalendarProps {
 function CalendarItem({ pauta, onOpen, showSquad }: { pauta: PautaWithDetails; onOpen: () => void; showSquad: boolean }) {
   const overdue = !pauta.scheduled_at && pauta.due_date ? isPautaOverdue(pauta.due_date, pauta.board_column!) : false;
   const assigneeId = pauta.current_assignee_id ?? pauta.lead_id;
-  const assigneeSquad = usePrimarySquad(assigneeId) ?? pauta.squad;
   const ownerSquad = usePrimarySquad(pauta.lead_id ?? pauta.created_by) ?? pauta.squad;
-  const gradient = squadGradient(assigneeSquad, 13);
+  // Degradê na cor do squad da pauta (a origem), igual ao card do quadro.
+  const gradient = squadGradient(pauta.squad, 13);
 
   return (
     <button

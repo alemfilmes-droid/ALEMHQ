@@ -1,4 +1,6 @@
-import type { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
+
+export type { Json };
 
 export type Tables = Database["public"]["Tables"];
 export type Profile = Tables["profiles"]["Row"];
@@ -100,3 +102,8 @@ export type GoalEntrySource = Database["public"]["Enums"]["goal_entry_source"];
 export type PaymentDetails = Tables["payment_details"]["Row"];
 export type PixKeyType = Database["public"]["Enums"]["pix_key_type"];
 export type BankAccountType = Database["public"]["Enums"]["bank_account_type"];
+
+export type ClosureReason = Database["public"]["Enums"]["closure_reason"];
+export type ProspectPotential = Database["public"]["Enums"]["prospect_potential"];
+export type ClientClosure = Tables["client_closures"]["Row"];
+export type DealNote = Tables["deal_notes"]["Row"];

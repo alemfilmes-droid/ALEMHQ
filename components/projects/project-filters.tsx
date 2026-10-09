@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { MODEL_LABELS, MODELS, PROJECT_STAGES, STAGE_LABELS } from "@/lib/domain";
+import { ALL_PROJECT_STAGES, MODEL_LABELS, MODELS, STAGE_LABELS } from "@/lib/domain";
 
 const ALL = "all";
 
@@ -73,7 +73,7 @@ export function ProjectFilters({ companies }: ProjectFiltersProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Todas as etapas</SelectItem>
-              {PROJECT_STAGES.map((item) => (
+              {ALL_PROJECT_STAGES.map((item) => (
                 <SelectItem key={item} value={item}>
                   {STAGE_LABELS[item]}
                 </SelectItem>

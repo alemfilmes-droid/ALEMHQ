@@ -125,14 +125,29 @@ export const stageChangeSchema = z.object({
 
 export type StageChangeValues = z.infer<typeof stageChangeSchema>;
 
-/** "+ Registrar contato": mais uma tentativa, sem mudar de etapa. */
-export const contactSchema = z.object({
-  dealId: z.string().uuid(),
-  ...interactionFields,
-  nextAction: z.string().trim().max(200, "Use até 200 caracteres."),
-  nextActionDate: optionalIsoDate,
-  nextActionTime: time,
-});
+/**
+ * "+ Registrar contato": mais uma tentativa, sem mudar de etapa. Resumo obrigatório; abordagem completa
+ * e próximo passo combinado opcionais. Quando há tentativa anterior sem resposta registrada, a pessoa
+ * diz se ela teve resposta (`previousResponded`) — o banco recusa sem isso.
+ */
+export const contactSchema = z
+  .object({
+    dealId: z.string().uuid(),
+    channel,
+    approach: interactionFields.approach,
+    summary: z.string().trim().min(5, "Escreva um resumo do que aconteceu.").max(280, "Use até 280 caracteres."),
+    body: z.string().trim().max(1500, "Use até 1500 caracteres."),
+    nextStep: z.string().trim().max(200, "Use até 200 caracteres."),
+    hasPendingAttempt: z.boolean(),
+    previousResponded: z.enum(["sim", "nao"]).or(z.literal("")),
+    nextAction: z.string().trim().max(200, "Use até 200 caracteres."),
+    nextActionDate: optionalIsoDate,
+    nextActionTime: time,
+  })
+  .refine((value) => !value.hasPendingAttempt || value.previousResponded !== "", {
+    message: "Responda se a tentativa anterior teve resposta.",
+    path: ["previousResponded"],
+  });
 
 export type ContactValues = z.infer<typeof contactSchema>;
 

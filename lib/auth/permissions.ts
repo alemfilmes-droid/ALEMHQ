@@ -243,6 +243,14 @@ export function canFullyManagePauta(subject: CapabilitySubject): boolean {
 }
 
 /**
+ * Encerrar e reativar clientes/projetos: diretoria (nível ou squad) e master — espelha
+ * can_close_clients() no banco, que é quem decide de verdade.
+ */
+export function canCloseClients(subject: Pick<Profile, "org_level"> & { squads: readonly Squad[] }): boolean {
+  return subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria");
+}
+
+/**
  * Espelha can_access_all_deals() no banco: gestão de todos os negócios do CRM (ver qualquer
  * negócio, reatribuir responsável, fechar como ganho) — diretoria, master, ou head do squad
  * comercial, ou quem lidera o squad comercial (liderança de squad, não cargo). Quem não se encaixa

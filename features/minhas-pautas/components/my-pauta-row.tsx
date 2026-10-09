@@ -8,7 +8,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { Badge } from "@/components/ui/badge";
 import { PautaPriorityBadge } from "@/features/pautas/components/pauta-priority-badge";
 import { ClientWaitingBadge, FreelancerBadge } from "@/features/pautas/components/freelancer-badge";
-import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
+import { OpenRequestsBadge, PautaStageBadge } from "@/features/pautas/components/pauta-status-badge";
 import { isPautaOverdue } from "@/lib/pautas";
 import { formatDate } from "@/lib/format";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
@@ -104,7 +104,8 @@ export function MyPautaRow({ pauta, currentUserId, onOpen, muted = false, showSq
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
-        {pauta.status ? <PautaStatusBadge status={pauta.status} squad={pauta.squad} /> : null}
+        {pauta.status ? <PautaStageBadge pauta={pauta} /> : null}
+        <OpenRequestsBadge count={pauta.open_requests_count} />
         {pauta.priority ? <PautaPriorityBadge priority={pauta.priority} /> : null}
         {pauta.freelancer_name ? <FreelancerBadge name={pauta.freelancer_name} /> : null}
         {pauta.waiting_on_contact_name ? <ClientWaitingBadge name={pauta.waiting_on_contact_name} role={pauta.waiting_on_contact_role} /> : null}

@@ -14,7 +14,11 @@ import { ProjectFinanceTab } from "@/features/finance/components/project-finance
 import { getProjectProfitability } from "@/features/finance/queries";
 import { KanbanBoard } from "@/features/pautas/components/kanban-board";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
-import { canCreateProjectPauta, canDeleteProject, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
+import { canCloseClients, canCreateProjectPauta, canDeleteProject, canFullyManagePauta, hasCapability } from "@/lib/auth/permissions";
+import { CLOSURE_SELECT, toClosureInfo } from "@/features/clients/closures";
+import { ClosureCard } from "@/features/clients/components/closure-card";
+import { CloseClientDialog } from "@/features/clients/components/close-client-dialog";
+import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/format";
@@ -22,7 +26,7 @@ import { FinalizeProjectButton } from "@/features/projects/components/finalize-p
 import { InvoiceSchedulesCard } from "@/features/projects/components/invoice-schedules-card";
 import { getInvoiceSchedules } from "@/features/projects/invoices";
 import { createClient } from "@/lib/supabase/server";
-import { FolderTree } from "lucide-react";
+import { Ban, FolderTree } from "lucide-react";
 import { DriveFolderPreview } from "@/components/drive/drive-folder-preview";
 import { Card, CardContent, CardHeading } from "@/components/ui/card";
 import { buildDriveFolder } from "@/lib/drive-folder";
@@ -64,6 +68,11 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
     supabase.rpc("can_manage_invoices", { p_project_id: id }),
     tab === "geral" ? getInvoiceSchedules(id) : Promise.resolve([]),
   ]);
+  const closureResult = project.closure_id
+    ? await supabase.from("client_closures").select(CLOSURE_SELECT).eq("id", project.closure_id).maybeSingle()
+    : { data: null };
+  const closure = closureResult.data ? toClosureInfo(closureResult.data) : null;
+  const canClose = canCloseClients(profile) && !project.is_internal && Boolean(project.company) && project.stage !== "encerrado" && project.stage !== "cancelado";
   const canManageInvoices = canInvoicesResult.data === true;
   const canFinalize = canFinalizeResult.data === true;
 
@@ -80,7 +89,20 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {canDeleteProject(profile) ? <DeleteProjectDialog projectId={project.id} projectName={project.name} /> : null}
-            {!project.finalized_at && !project.is_internal && canFinalize ? <FinalizeProjectButton projectId={project.id} autoOpen={finalizar === "1"} /> : null}
+            {canClose && project.company ? (
+              <CloseClientDialog
+                companyId={project.company.id}
+                companyName={project.company.name}
+                project={{ id: project.id, name: project.name }}
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Ban aria-hidden />
+                    Encerrar
+                  </Button>
+                }
+              />
+            ) : null}
+            {!project.finalized_at && project.stage !== "encerrado" && !project.is_internal && canFinalize ? <FinalizeProjectButton projectId={project.id} autoOpen={finalizar === "1"} /> : null}
             <StageSelect projectId={project.id} stage={project.stage} disabled={!canManage} />
           </div>
         }
@@ -91,10 +113,13 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
           {project.is_internal ? <Badge variant="muted">Interno</Badge> : null}
           <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
           {project.finalized_at ? <Badge variant="outline">Finalizado em {formatDate(project.finalized_at.slice(0, 10))}</Badge> : null}
+          {project.closed_at ? <Badge variant="outline">Encerrado em {formatDate(project.closed_at.slice(0, 10))}</Badge> : null}
           <span>Código: {project.id.slice(0, 8)}</span>
         </p>
         {profitability ? <ProjectMarginLine marginPct={profitability.marginPct} marginStatus={profitability.marginStatus} target={(await getCompanySettings()).margin.healthy} alertAt={project.margin_alert_at} /> : null}
       </div>
+
+      {closure && tab === "geral" ? <ClosureCard closure={closure} title={closure.projectId ? "Encerramento do projeto" : "Encerrado junto com o cliente"} /> : null}
 
       <LinkTabs label="Seções do projeto" tabs={tabs} />
 

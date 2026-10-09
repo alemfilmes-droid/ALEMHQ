@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PautasBoard } from "@/features/pautas/components/pautas-board";
 import { PautasCounters } from "@/features/pautas/components/pautas-counters";
-import { summarizePautas } from "@/features/pautas/board";
+import { countBySquad, summarizePautas } from "@/features/pautas/board";
+import { PautasSquadFilter } from "@/features/pautas/components/pautas-squad-filter";
 import { getPautaFormOptions, listPautas } from "@/features/pautas/queries";
 import { parsePautaFilters, pautaFiltersKey } from "@/features/pautas/filters";
 import { canCreateProjectPauta, canFullyManagePauta, hasCapability, managedSquads } from "@/lib/auth/permissions";
@@ -27,15 +28,19 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
   const scopeLabel = scopedSquads.length === 4 ? "Todos os squads" : scopedSquads.map((squad) => SQUAD_LABELS[squad]).join(", ") || "Nenhum squad";
 
   // URL → filtros validados → consulta no servidor (RLS por baixo). Os contadores do topo são
-  // calculados da mesma lista filtrada, então acompanham cada filtro.
+  // calculados da mesma lista filtrada, então acompanham cada filtro. A consulta ignora o squad: a
+  // tira de squads conta com os outros filtros aplicados e o squad é recortado aqui mesmo.
   const filters = parsePautaFilters(params);
+  const squads = filters.squads ?? [];
 
   const supabase = await createClient();
-  const [pautas, options, companies] = await Promise.all([
-    listPautas(filters),
+  const [allSquads, options, companies] = await Promise.all([
+    listPautas({ ...filters, squads: [] }),
     getPautaFormOptions(),
     supabase.from("companies").select("id, name").order("name"),
   ]);
+  const pautas = squads.length ? allSquads.filter((pauta) => pauta.squad && squads.includes(pauta.squad)) : allSquads;
+  const squadCounts = countBySquad(allSquads);
   const summary = summarizePautas(pautas);
 
   return (
@@ -58,7 +63,12 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
             <p className="text-[11px] font-semibold uppercase tracking-wide text-subtle">{scopeLabel}</p>
           </div>
         </div>
-        <PautasCounters summary={summary} />
+        <div className="flex flex-col items-end gap-2">
+          <PautasCounters summary={summary} />
+          <Suspense>
+            <PautasSquadFilter counts={squadCounts} selected={squads} />
+          </Suspense>
+        </div>
       </div>
 
       <Suspense>
