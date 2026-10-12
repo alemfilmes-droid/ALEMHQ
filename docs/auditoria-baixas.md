@@ -1,6 +1,6 @@
 # Auditoria de baixas duplicadas
 
-**Status:** aguardando o Anderson rodar a consulta (só leitura).
+**Status:** concluída em 12/10/2026 (consulta rodada pelo Anderson na produção, só leitura).
 
 Consulta: `docs/auditoria-baixas.sql` — roda dentro de `begin read only … rollback`, não altera nada.
 
@@ -14,6 +14,11 @@ O banco já impede duas baixas no **mesmo** item (a baixa só altera itens em ab
   legítimo — conferir).
 
 ## Resultado
-_(preencher com a saída da consulta)_
+- Conferidos: **18 pagamentos com baixa** e **4 recebimentos com baixa**.
+- Gêmeos **fortes**: **nenhum**.
+- Gêmeos de **atenção**: **nenhum**.
+
+Conclusão: não há baixa duplicada na produção. As repetições relatadas pela Anna eram tentativas que
+falharam sem aviso (nada foi gravado nelas), e não baixas em dobro — o que bate com a causa do Bloco 1.
 
 Nenhum registro foi alterado ou apagado.
