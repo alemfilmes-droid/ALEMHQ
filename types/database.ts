@@ -3106,6 +3106,7 @@ export type Database = {
           notes: string | null
           original_amount: number | null
           paid_at: string | null
+          settle_key: string | null
           paid_late: boolean
           payee_account_type:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3148,6 +3149,7 @@ export type Database = {
           notes?: string | null
           original_amount?: number | null
           paid_at?: string | null
+          settle_key?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3192,6 +3194,7 @@ export type Database = {
           notes?: string | null
           original_amount?: number | null
           paid_at?: string | null
+          settle_key?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -4961,6 +4964,7 @@ export type Database = {
           project_id: string | null
           received_amount: number | null
           received_at: string | null
+          settle_key: string | null
           service_description: string | null
           task_id: string | null
           updated_at: string
@@ -4985,6 +4989,7 @@ export type Database = {
           project_id?: string | null
           received_amount?: number | null
           received_at?: string | null
+          settle_key?: string | null
           service_description?: string | null
           task_id?: string | null
           updated_at?: string
@@ -5009,6 +5014,7 @@ export type Database = {
           project_id?: string | null
           received_amount?: number | null
           received_at?: string | null
+          settle_key?: string | null
           service_description?: string | null
           task_id?: string | null
           updated_at?: string

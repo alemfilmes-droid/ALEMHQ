@@ -2,6 +2,7 @@
 
 import { Money } from "@/components/ui/money";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ import {
   type SettleReceivableValues,
 } from "@/features/finance/schemas";
 import type { PayableItem, ReceivableItem } from "@/features/finance/types";
-import { Alert } from "@/components/ui/alert";
+import { ActionError } from "@/components/ui/action-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,34 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/format";
+import { needsReload, runAction, type ClientActionResult } from "@/lib/actions/client-action";
+
+/**
+ * Estado comum das baixas: chave da tentativa (uma por janela aberta — reenviar a mesma tentativa
+ * nunca gera segunda baixa), erro visível e atualização da lista assim que o servidor confirma.
+ */
+function useSettleSubmit(onOpenChange: (open: boolean) => void) {
+  const router = useRouter();
+  const [requestKey] = useState(() => crypto.randomUUID());
+  const [failure, setFailure] = useState<{ message: string; reload: boolean } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function submit(call: (key: string) => Promise<ClientActionResult>, onSuccess?: () => void) {
+    setFailure(null);
+    startTransition(async () => {
+      const result = await runAction(() => call(requestKey));
+      if (result.ok) {
+        toast.success(result.message);
+        onOpenChange(false);
+        router.refresh();
+        onSuccess?.();
+      } else {
+        setFailure({ message: result.error, reload: needsReload(result) });
+      }
+    });
+  }
+  return { submit, pending, failure };
+}
 
 interface DialogState {
   open: boolean;
@@ -40,8 +69,7 @@ interface DialogState {
 }
 
 export function SettleReceivableDialog({ receivable, open, onOpenChange, today }: DialogState & { receivable: ReceivableItem }) {
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const { submit, pending, failure } = useSettleSubmit(onOpenChange);
   const {
     register,
     control,
@@ -57,23 +85,13 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
     },
   });
 
-  const onSubmit = handleSubmit((values) => {
-    setError(null);
-    startTransition(async () => {
-      const result = await settleReceivableAction(receivable.id, values);
-      if (result.ok) {
-        toast.success(result.message);
-        onOpenChange(false);
-        // Último pagamento de um projeto com tudo aprovado: oferece finalizar o projeto.
-        requestProjectFinalizeCheck(receivable.projectId);
-      } else {
-        setError(result.error);
-      }
-    });
-  });
+  const onSubmit = handleSubmit((values) =>
+    // Último pagamento de um projeto com tudo aprovado: oferece finalizar o projeto.
+    submit((key) => settleReceivableAction(receivable.id, values, key), () => requestProjectFinalizeCheck(receivable.projectId)),
+  );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Marcar como recebido.</DialogTitle>
@@ -82,7 +100,7 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
-          {error ? <Alert variant="error">{error}</Alert> : null}
+          <ActionError message={failure?.message ?? null} reload={failure?.reload} />
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="settle-date" label="Data do recebimento" error={errors.receivedAt?.message}>
               <Input id="settle-date" type="date" {...register("receivedAt")} />
@@ -105,12 +123,12 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
+              <Button type="button" variant="secondary" disabled={pending}>
                 Cancelar
               </Button>
             </DialogClose>
             <Button type="submit" loading={pending}>
-              Confirmar recebimento
+              {pending ? "Registrando…" : "Confirmar recebimento"}
             </Button>
           </DialogFooter>
         </form>
@@ -124,8 +142,7 @@ export function SettleReceivableDialog({ receivable, open, onOpenChange, today }
  * de multa/juros aparece (valor e motivo entram no custo, para a margem refletir o valor real).
  */
 export function SettlePayableDialog({ payable, open, onOpenChange, today }: DialogState & { payable: PayableItem }) {
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const { submit, pending, failure } = useSettleSubmit(onOpenChange);
   const {
     register,
     control,
@@ -147,21 +164,10 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
   const [paidAt, hadPenalty] = useWatch({ control, name: ["paidAt", "hadPenalty"] });
   const late = !!paidAt && paidAt > payable.dueDate;
 
-  const onSubmit = handleSubmit((values) => {
-    setError(null);
-    startTransition(async () => {
-      const result = await settlePayableAction(payable.id, values);
-      if (result.ok) {
-        toast.success(result.message);
-        onOpenChange(false);
-      } else {
-        setError(result.error);
-      }
-    });
-  });
+  const onSubmit = handleSubmit((values) => submit((key) => settlePayableAction(payable.id, values, key)));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Dar baixa no pagamento.</DialogTitle>
@@ -170,7 +176,7 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="space-y-5">
-          {error ? <Alert variant="error">{error}</Alert> : null}
+          <ActionError message={failure?.message ?? null} reload={failure?.reload} />
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="pay-date" label="Data do pagamento" error={errors.paidAt?.message}>
               <Input id="pay-date" type="date" {...register("paidAt")} />
@@ -215,12 +221,12 @@ export function SettlePayableDialog({ payable, open, onOpenChange, today }: Dial
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary">
+              <Button type="button" variant="secondary" disabled={pending}>
                 Cancelar
               </Button>
             </DialogClose>
             <Button type="submit" loading={pending}>
-              Confirmar baixa
+              {pending ? "Registrando…" : "Confirmar baixa"}
             </Button>
           </DialogFooter>
         </form>

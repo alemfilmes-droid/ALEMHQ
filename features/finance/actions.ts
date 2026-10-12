@@ -6,6 +6,7 @@ import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { centsToNumber, formatCents, parseMoneyToCents, toCents } from "@/features/finance/money";
+import { isSettleKey, resolveSettleConflict, settleDbErrorMessage } from "@/lib/finance/settlement";
 import {
   payableSchema,
   projectInstallmentsSchema,
@@ -118,10 +119,14 @@ export async function updateReceivableAction(id: string, values: ReceivableValue
   return { ok: true, message: "Recebimento atualizado." };
 }
 
-export async function settleReceivableAction(id: string, values: SettleReceivableValues): Promise<ActionResult> {
+/**
+ * Baixa: só altera o item em aberto (nunca duas baixas). `requestKey` identifica a tentativa — a mesma
+ * tentativa reenviada depois de uma resposta perdida devolve sucesso em vez de erro.
+ */
+export async function settleReceivableAction(id: string, values: SettleReceivableValues, requestKey: string): Promise<ActionResult> {
   if (!(await requireFinance())) return FORBIDDEN;
   const parsed = settleReceivableSchema.safeParse(values);
-  if (!idSchema.safeParse(id).success || !parsed.success) return INVALID;
+  if (!idSchema.safeParse(id).success || !parsed.success || !isSettleKey(requestKey)) return INVALID;
 
   const supabase = await createClient();
   const { data: updated, error } = await supabase
@@ -131,13 +136,22 @@ export async function settleReceivableAction(id: string, values: SettleReceivabl
       received_amount: amountToNumber(parsed.data.receivedAmount),
       payment_method: parsed.data.paymentMethod,
       invoice_number: orNull(parsed.data.invoiceNumber),
+      settle_key: requestKey,
     })
     .eq("id", id)
     .is("received_at", null)
     .is("cancelled_at", null)
     .select("id");
-  if (error) return { ok: false, error: "Não foi possível registrar o recebimento." };
-  if (!updated || updated.length === 0) return { ok: false, error: "Este recebimento já foi baixado ou cancelado." };
+  if (error) {
+    console.error("settleReceivableAction:", error.code, error.message);
+    return { ok: false, error: settleDbErrorMessage(error, "recebimento") };
+  }
+  if (!updated || updated.length === 0) {
+    const { data: row } = await supabase.from("receivables").select("received_at, cancelled_at, settle_key").eq("id", id).maybeSingle();
+    const result = resolveSettleConflict(row && { settledOn: row.received_at, cancelledAt: row.cancelled_at, settleKey: row.settle_key }, requestKey, "recebimento");
+    refresh();
+    return result;
+  }
   refresh();
   return { ok: true, message: "Recebimento registrado." };
 }
@@ -265,10 +279,11 @@ export async function updatePayableAction(id: string, values: PayableValues): Pr
   return { ok: true, message: "Pagamento atualizado." };
 }
 
-export async function settlePayableAction(id: string, values: SettlePayableValues): Promise<ActionResult> {
+/** Baixa do pagamento — mesma regra de idempotência de settleReceivableAction. */
+export async function settlePayableAction(id: string, values: SettlePayableValues, requestKey: string): Promise<ActionResult> {
   if (!(await requireFinance())) return FORBIDDEN;
   const parsed = settlePayableSchema.safeParse(values);
-  if (!idSchema.safeParse(id).success || !parsed.success) return INVALID;
+  if (!idSchema.safeParse(id).success || !parsed.success || !isSettleKey(requestKey)) return INVALID;
 
   const supabase = await createClient();
   const { data: updated, error } = await supabase
@@ -280,13 +295,22 @@ export async function settlePayableAction(id: string, values: SettlePayableValue
       late_reason: parsed.data.paidAt > parsed.data.dueDate ? parsed.data.lateReason : null,
       penalty_amount: parsed.data.paidAt > parsed.data.dueDate && parsed.data.hadPenalty ? amountToNumber(parsed.data.penaltyAmount) : null,
       penalty_reason: parsed.data.paidAt > parsed.data.dueDate && parsed.data.hadPenalty ? parsed.data.penaltyReason : null,
+      settle_key: requestKey,
     })
     .eq("id", id)
     .is("paid_at", null)
     .is("cancelled_at", null)
     .select("id");
-  if (error) return { ok: false, error: "Não foi possível registrar o pagamento." };
-  if (!updated || updated.length === 0) return { ok: false, error: "Este pagamento já foi baixado ou cancelado." };
+  if (error) {
+    console.error("settlePayableAction:", error.code, error.message);
+    return { ok: false, error: settleDbErrorMessage(error, "pagamento") };
+  }
+  if (!updated || updated.length === 0) {
+    const { data: row } = await supabase.from("payables").select("paid_at, cancelled_at, settle_key").eq("id", id).maybeSingle();
+    const result = resolveSettleConflict(row && { settledOn: row.paid_at, cancelledAt: row.cancelled_at, settleKey: row.settle_key }, requestKey, "pagamento");
+    refresh();
+    return result;
+  }
   refresh();
   return { ok: true, message: "Pagamento registrado." };
 }
