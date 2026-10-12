@@ -105,6 +105,10 @@ lido do banco de produção).
 - Memória por foto/logo exibida: ~48 MB (12 MP decodificada) → ~0,26 MB (256 × 256).
 - Cards montados no quadro de Pautas: todos → no máximo 20 por coluna (80 na tela).
 - Pautas carregadas: todas as já entregues → só as entregues dos últimos 30 dias.
+- **Medição real (produção, 12/10/2026, só totais):** 52 pautas no quadro antes e depois (as 20 entregues são
+  todas dos últimos 30 dias — o recorte ainda não reduz nada; é prevenção para quando o histórico crescer);
+  11 fotos/logos, média de 443 KB e a maior com 2.029 KB. Conclusão: hoje o volume de pautas é pequeno; o
+  ganho real e imediato está nas imagens (uma foto de 2 MB do iPhone ocupa dezenas de MB decodificada).
 - Não foi possível rodar a simulação de iPhone (WebKit) logado: exigiria entrar com senha de usuário real
   na produção. O teste no iPhone fica para o Bloco 9 (checklist).
 
