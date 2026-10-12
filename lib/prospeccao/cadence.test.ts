@@ -32,6 +32,7 @@ function lead(overrides: Partial<CadenceLead> = {}): CadenceLead {
     manualReactivationOn: null,
     restartedAt: null,
     houseReturnOn: null,
+    analysisReturnOn: null,
     ...overrides,
   };
 }
@@ -54,6 +55,7 @@ describe("Toque 1", () => {
       isReactivation: false,
       nextDueDate: "2026-10-13",
       applicableScript: { kind: "toque", scriptTouchNumber: 1 },
+      analysisReturn: false,
     });
     assert.equal(state(l, [], "2026-10-14").status, "atrasado");
     assert.equal(state(l, [], "2026-10-12").status, "em_cadencia");
@@ -307,5 +309,51 @@ describe("fila Chamar hoje", () => {
         ["chamar_hoje", "2026-10-20"],
       ],
     );
+  });
+});
+
+describe("Em análise (cliente avaliando)", () => {
+  const touches = [sent(1, "2026-10-13"), sent(2, "2026-10-15")];
+
+  it("antes da data de retorno: pausa (não entra em Chamar hoje)", () => {
+    const state = getCadenceState(lead({ funnel: "analise", analysisReturnOn: "2026-10-22" }), touches, SAZONAL, calendar, "2026-10-19");
+    assert.equal(state?.status, "em_analise");
+    assert.equal(state?.nextDueDate, "2026-10-22");
+    assert.equal(state?.applicableScript, null);
+    assert.equal(isDueNow(state), false);
+  });
+
+  it("na data de retorno: volta para Chamar hoje com a reativação", () => {
+    const state = getCadenceState(lead({ funnel: "analise", analysisReturnOn: "2026-10-22" }), touches, SAZONAL, calendar, "2026-10-22");
+    assert.equal(state?.status, "chamar_hoje");
+    assert.equal(state?.isReactivation, true);
+    assert.equal(state?.analysisReturn, true);
+    assert.equal(isDueNow(state), true);
+  });
+
+  it("retorno no feriado passa para o próximo dia útil; depois disso fica atrasado", () => {
+    const state = getCadenceState(lead({ funnel: "analise", analysisReturnOn: "2026-11-02" }), touches, SAZONAL, calendar, "2026-11-04");
+    assert.equal(state?.nextDueDate, "2026-11-03");
+    assert.equal(state?.status, "atrasado");
+  });
+
+  it("ao sair da etapa, as regras normais voltam (o toque de retorno conta como reativação)", () => {
+    const state = getCadenceState(lead(), [...touches, { touchNumber: null, sentAt: at("2026-10-22") }], SAZONAL, calendar, "2026-10-23");
+    assert.equal(state?.status, "sem_resposta");
+  });
+});
+
+describe("horário efetivo e registros riscados", () => {
+  it("o próximo toque conta a partir do horário efetivo do anterior (registrado depois)", () => {
+    // Toque 1 feito na segunda (13/10) e registrado só na quarta: a cadência usa a segunda.
+    const state = getCadenceState(lead(), [sent(1, "2026-10-13")], SAZONAL, calendar, "2026-10-15");
+    assert.equal(state?.currentTouch, 2);
+    assert.equal(state?.nextDueDate, "2026-10-15");
+  });
+
+  it("toque riscado não conta: a cadência volta ao toque anterior", () => {
+    // Quem chama a função já filtra os riscados (deleted_at): sem o Toque 2, o próximo é o 2 de novo.
+    const state = getCadenceState(lead(), [sent(1, "2026-10-13")], SAZONAL, calendar, "2026-10-16");
+    assert.equal(state?.currentTouch, 2);
   });
 });

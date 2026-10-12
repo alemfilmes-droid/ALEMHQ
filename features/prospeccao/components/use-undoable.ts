@@ -4,13 +4,14 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import type { UndoableResult } from "@/features/prospeccao/cadence-actions";
 import { undoAction } from "@/features/prospeccao/cadence-actions";
+import { runAction } from "@/lib/actions/client-action";
 
 /** Roda uma ação desfazível e mostra o aviso com "Desfazer" por 10 segundos. */
 export function useUndoable() {
   const [pending, startTransition] = useTransition();
   function run(action: () => Promise<UndoableResult>) {
     startTransition(async () => {
-      const result = await action();
+      const result = await runAction(action);
       if (!result.ok) return void toast.error(result.error);
       toast.success(result.message, {
         duration: 10_000,

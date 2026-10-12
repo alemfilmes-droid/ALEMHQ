@@ -16,7 +16,7 @@ import { parseDealFilters } from "@/features/crm/filters";
 import { getDealFormOptions, getOpenRequestCounts, listDeals } from "@/features/crm/queries";
 import { PeriodSelector } from "@/features/finance/components/period-selector";
 import { resolvePeriod, todayISO } from "@/features/finance/period";
-import { canManageAllDeals, hasCapability } from "@/lib/auth/permissions";
+import { canManageAllDeals, hasCapability, isDirectorOrAdmin } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { CrmProspectView, loadQueue, type LeadsView } from "@/features/prospeccao/components/crm-prospect-view";
 import { isDemoEnabled } from "@/features/prospeccao/demo";
@@ -65,7 +65,7 @@ export default async function CrmPage({ searchParams }: { searchParams: SearchPa
   const [options, openRequests] = await Promise.all([getDealFormOptions(), getOpenRequestCounts()]);
 
   return (
-    <CrmFlowProvider options={options} canManageAll={canManageAll} canSeeFinance={canSeeFinance} currentUserId={profile.id} initialOpenId={params.negocio} openRequests={openRequests}>
+    <CrmFlowProvider options={options} canManageAll={canManageAll} canSeeFinance={canSeeFinance} currentUserId={profile.id} isCeo={isDirectorOrAdmin(profile)} initialOpenId={params.negocio} openRequests={openRequests}>
       <PageHeader
         panel="/crm"
         title="CRM."

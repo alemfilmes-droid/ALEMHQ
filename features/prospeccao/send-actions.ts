@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { recordTouchSentAction, type UndoableResult } from "@/features/prospeccao/cadence-actions";
 import { loadMessageInput } from "@/features/prospeccao/message-queries";
+import { parseEffectiveTime } from "@/lib/crm/effective-time";
 import { buildMessage, type Message } from "@/lib/prospeccao/message";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
@@ -40,11 +41,16 @@ export async function prepareSendAction(dealId: string): Promise<PrepareResult> 
   return { ...message, pendingText: same ? pending.body : null };
 }
 
-/** "Marcar enviado": grava o rascunho como o toque enviado (texto exato, com as edições). */
-export async function markSentAction(dealId: string): Promise<UndoableResult> {
+/**
+ * "Marcar enviado": grava o rascunho como o toque enviado (texto exato, com as edições). `occurred`
+ * ("Fiz em outro horário") vira o horário efetivo do toque — a cadência conta dali.
+ */
+export async function markSentAction(dealId: string, occurred: { date: string; time: string } | null = null): Promise<UndoableResult> {
   const supabase = await actor();
   if (!supabase) return { ok: false, error: "Só o squad comercial marca envios da prospecção." };
   if (!idSchema.safeParse(dealId).success) return { ok: false, error: "Lead inválido." };
+  const effective = occurred ? parseEffectiveTime(occurred.date, occurred.time, new Date()) : null;
+  if (effective && !effective.ok) return { ok: false, error: effective.error };
   const { data: pending } = await supabase.from("prospect_pending_sends").select("touch_number, script_kind, body").eq("deal_id", dealId).maybeSingle();
   if (!pending) return { ok: false, error: "Abra o WhatsApp pelo HQ antes de marcar enviado." };
 
@@ -54,7 +60,7 @@ export async function markSentAction(dealId: string): Promise<UndoableResult> {
   if (!state?.applicableScript || touchNumber !== pending.touch_number || state.applicableScript.kind !== pending.script_kind) {
     return { ok: false, error: "O toque mudou desde que o WhatsApp foi aberto. Abra a prévia de novo." };
   }
-  return recordTouchSentAction(dealId, pending.body);
+  return recordTouchSentAction(dealId, pending.body, effective?.iso ?? null);
 }
 
 export interface TouchHistoryItem {
@@ -63,6 +69,8 @@ export interface TouchHistoryItem {
   sentAt: string;
   text: string;
   sentBy: string | null;
+  /** Abordagem riscada (excluída com motivo): aparece riscada e não conta. */
+  struck: boolean;
 }
 
 /** Histórico de toques do card (carregado só quando a pessoa abre). */
@@ -72,8 +80,8 @@ export async function touchHistoryAction(dealId: string): Promise<TouchHistoryIt
   const supabase = await createClient();
   const { data } = await supabase
     .from("prospect_touch_logs")
-    .select("id, touch_number, sent_at, rendered_text, sender:profiles!prospect_touch_logs_sent_by_fkey(full_name)")
+    .select("id, touch_number, sent_at, deleted_at, rendered_text, sender:profiles!prospect_touch_logs_sent_by_fkey(full_name)")
     .eq("deal_id", dealId)
     .order("sent_at", { ascending: false });
-  return (data ?? []).map((row) => ({ id: row.id, touchNumber: row.touch_number, sentAt: row.sent_at, text: row.rendered_text, sentBy: row.sender?.full_name ?? null }));
+  return (data ?? []).map((row) => ({ id: row.id, touchNumber: row.touch_number, sentAt: row.sent_at, text: row.rendered_text, sentBy: row.sender?.full_name ?? null, struck: row.deleted_at !== null }));
 }

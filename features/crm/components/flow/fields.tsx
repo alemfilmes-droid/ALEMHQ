@@ -36,10 +36,12 @@ export function NextActionFields<F extends FieldValues & NextActionShape>({
   errors,
   idPrefix,
   optional = false,
-}: FieldsProps<F> & { optional?: boolean }) {
+  actionLabel = "Próxima ação",
+  dateLabel = "Quando",
+}: FieldsProps<F> & { optional?: boolean; actionLabel?: string; dateLabel?: string }) {
   return (
     <div className="space-y-3">
-      <FormField id={`${idPrefix}-next-action`} label="Próxima ação" hint={optional ? "Opcional." : undefined} error={message(errors, "nextAction")}>
+      <FormField id={`${idPrefix}-next-action`} label={actionLabel} hint={optional ? "Opcional." : undefined} error={message(errors, "nextAction")}>
         <Input
           id={`${idPrefix}-next-action`}
           placeholder="Ex.: ligar para confirmar a proposta"
@@ -48,7 +50,7 @@ export function NextActionFields<F extends FieldValues & NextActionShape>({
         />
       </FormField>
       <div className="grid gap-3 sm:grid-cols-2">
-        <FormField id={`${idPrefix}-next-date`} label="Quando" error={message(errors, "nextActionDate")}>
+        <FormField id={`${idPrefix}-next-date`} label={dateLabel} error={message(errors, "nextActionDate")}>
           <Input id={`${idPrefix}-next-date`} type="date" aria-invalid={!!message(errors, "nextActionDate")} {...register("nextActionDate" as Path<F>)} />
         </FormField>
         <FormField id={`${idPrefix}-next-time`} label="Horário" error={message(errors, "nextActionTime")}>

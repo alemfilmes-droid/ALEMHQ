@@ -30,6 +30,7 @@ describe("fluxo: prévia → edição → enviado → próximo toque → respond
       manualReactivationOn: null,
       restartedAt: null,
       houseReturnOn: null,
+      analysisReturnOn: null,
     };
     const touches: SentTouch[] = [];
     const today = "2026-10-13";

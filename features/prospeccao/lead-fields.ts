@@ -42,6 +42,7 @@ export async function writeProspectFields(supabase: Supabase, dealId: string, va
 }
 
 function nextActionLabel(state: CadenceState): string {
+  if (state.analysisReturn) return "Retorno · cliente em análise (WhatsApp)";
   if (state.isReactivation) return "Reativação · WhatsApp (prospecção)";
   return `Toque ${state.currentTouch} · WhatsApp (prospecção)`;
 }

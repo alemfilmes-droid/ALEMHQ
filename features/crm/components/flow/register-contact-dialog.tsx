@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { getPendingAttemptAction, logContactAction } from "@/features/crm/actions";
+import { EffectiveTimeField } from "@/features/crm/components/flow/effective-time-field";
 import { FlowDialog } from "@/features/crm/components/flow/flow-dialog";
 import { NextActionFields } from "@/features/crm/components/flow/fields";
 import { INTERACTION_CHANNEL_LABELS, INTERACTION_CHANNELS } from "@/features/crm/labels";
@@ -56,8 +57,11 @@ export function RegisterContactDialog({ deal, open, onOpenChange, onDone }: Regi
       nextAction: "",
       nextActionDate: "",
       nextActionTime: "09:00",
+      occurredDate: "",
+      occurredTime: "",
     },
   });
+  const [occurredDate, occurredTime] = watch(["occurredDate", "occurredTime"]);
   const previousResponded = watch("previousResponded");
 
   useEffect(() => {
@@ -162,6 +166,15 @@ export function RegisterContactDialog({ deal, open, onOpenChange, onDone }: Regi
       <FormField id="contact-next-step" label="Próximo passo combinado" hint="Opcional." error={errors.nextStep?.message}>
         <Input id="contact-next-step" placeholder="Ex.: retornar na quinta com o material" {...register("nextStep")} />
       </FormField>
+      <EffectiveTimeField
+        idPrefix="contact"
+        value={occurredDate ? { date: occurredDate, time: occurredTime } : null}
+        onChange={(next) => {
+          setValue("occurredDate", next?.date ?? "");
+          setValue("occurredTime", next?.time ?? "");
+        }}
+        error={errors.occurredDate?.message ?? errors.occurredTime?.message}
+      />
       <NextActionFields register={register} errors={errors} idPrefix="contact" optional />
       <p className="text-[13px] text-muted-foreground">
         Para atualizar a próxima ação, preencha texto e data. Se deixar em branco, a ação atual ({deal.next_action ?? "—"}) continua.

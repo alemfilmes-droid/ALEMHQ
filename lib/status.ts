@@ -84,6 +84,7 @@ export const DEAL_STAGE_TONE: Record<DealStage, StatusTone> = {
   prospeccao: "neutral",
   primeiro_contato: "neutral",
   tentativas_contato: "neutral",
+  em_analise: "neutral",
   qualificado: "neutral",
   reuniao_agendada: "warning",
   reuniao_realizada: "warning",

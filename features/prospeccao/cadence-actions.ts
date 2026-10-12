@@ -50,7 +50,7 @@ async function applicableScriptId(supabase: Supabase, cadence: LeadCadence): Pro
 }
 
 /** "Marcar enviado": grava o toque, registra a tentativa no funil e o próximo toque passa a valer. */
-export async function recordTouchSentAction(dealId: string, renderedText: string): Promise<UndoableResult> {
+export async function recordTouchSentAction(dealId: string, renderedText: string, occurredAt: string | null = null): Promise<UndoableResult> {
   const supabase = await crmClient();
   if (!supabase) return UNAUTHORIZED;
   const text = z.string().trim().min(1).max(4000).safeParse(renderedText);
@@ -66,8 +66,9 @@ export async function recordTouchSentAction(dealId: string, renderedText: string
     p_script_kind: script.kind,
     p_script_id: await applicableScriptId(supabase, cadence),
     p_rendered_text: text.data,
+    ...(occurredAt ? { p_occurred_at: occurredAt } : {}),
   });
-  if (error) return { ok: false, error: error.code === "23514" ? error.message : "Não foi possível registrar o toque." };
+  if (error) return { ok: false, error: error.code === "23514" || error.code === "22023" ? error.message : "Não foi possível registrar o toque." };
   await syncNextAction(supabase, dealId);
   refresh();
   return { ok: true, message: "Toque registrado.", undoId };

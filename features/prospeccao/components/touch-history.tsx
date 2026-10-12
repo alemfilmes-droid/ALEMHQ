@@ -28,7 +28,7 @@ export function TouchHistory({ dealId }: { dealId: string }) {
         ) : (
           <ol className="divide-y divide-border">
             {items.map((item) => (
-              <li key={item.id} className="space-y-1 py-2">
+              <li key={item.id} className={item.struck ? "space-y-1 py-2 text-subtle line-through" : "space-y-1 py-2"}>
                 <p className="text-[13px] font-semibold text-foreground">
                   {item.touchNumber === null ? "Reativação" : `Toque ${item.touchNumber}`}
                   <span className="font-normal text-muted-foreground">

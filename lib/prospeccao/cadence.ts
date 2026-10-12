@@ -18,6 +18,7 @@ export const CADENCE_STATUSES = [
   "aguardando_decisor",
   "em_conversa",
   "reuniao_marcada",
+  "em_analise",
   "sem_resposta",
   "pausado",
   "descartado",
@@ -29,7 +30,7 @@ export type CadenceStatus = (typeof CADENCE_STATUSES)[number];
  * Onde o negócio está no funil, do ponto de vista da cadência. "perdido" só volta à cadência com
  * data de reativação (ex.: orçamento recusado — spec 7.2).
  */
-export type FunnelPosition = "aberto" | "reuniao" | "perdido" | "fechado";
+export type FunnelPosition = "aberto" | "analise" | "reuniao" | "perdido" | "fechado";
 
 export interface CadenceLead {
   funnel: FunnelPosition;
@@ -50,6 +51,8 @@ export interface CadenceLead {
   restartedAt: string | null;
   /** Cliente da casa: dia (yyyy-mm-dd) em que entra na fila (entrega + prazo). */
   houseReturnOn: string | null;
+  /** Etapa "Em análise": dia (yyyy-mm-dd) do retorno combinado — a cadência pausa até lá. */
+  analysisReturnOn: string | null;
 }
 
 export interface SentTouch {
@@ -85,6 +88,8 @@ export interface CadenceState {
   nextDueDate: string | null;
   /** Script do próximo envio; nulo quando não há envio pendente agora (pausado, em conversa…). */
   applicableScript: ApplicableScript | null;
+  /** É o retorno combinado de quem estava "Em análise". */
+  analysisReturn: boolean;
 }
 
 function dayOf(iso: string): string {
@@ -135,11 +140,20 @@ export function getCadenceState(
   today: string,
 ): CadenceState | null {
   const totalTouches = rules.offsets.length;
-  const base = { totalTouches, currentTouch: null, isReactivation: false, nextDueDate: null, applicableScript: null };
+  const base = { totalTouches, currentTouch: null, isReactivation: false, nextDueDate: null, applicableScript: null, analysisReturn: false };
   if (lead.funnel === "fechado" || (lead.funnel === "perdido" && !lead.manualReactivationOn)) return null;
   if (lead.discardedAt) return { ...base, status: "descartado" };
   if (lead.pausedAt) return { ...base, status: "pausado" };
   if (lead.funnel === "reuniao") return { ...base, status: "reuniao_marcada" };
+
+  // "Em análise": o cliente está avaliando. A cadência pausa até a data de retorno; nela, o lead volta
+  // para "Chamar hoje" com o script de reativação (o envio devolve o negócio para Tentativas de contato).
+  if (lead.funnel === "analise") {
+    if (!lead.analysisReturnOn) return { ...base, status: "em_analise" };
+    const nextDueDate = nextBusinessDay(lead.analysisReturnOn, calendar);
+    if (nextDueDate > today) return { ...base, status: "em_analise", nextDueDate, analysisReturn: true };
+    return { ...base, status: dueStatus(nextDueDate, today), isReactivation: true, analysisReturn: true, nextDueDate, applicableScript: reactivationScript(lead, rules) };
+  }
 
   const restart = lead.restartedAt;
   const sorted = [...touches].filter((touch) => !restart || touch.sentAt >= restart).sort((a, b) => a.sentAt.localeCompare(b.sentAt));

@@ -50,6 +50,8 @@ export interface CrmFlow {
   /** Acesso ao financeiro: sem ele, o banco nem devolve valores — a UI só esconde as colunas vazias. */
   canSeeFinance: boolean;
   currentUserId: string;
+  /** Diretoria ou admin: edita/risca qualquer abordagem e abre o motivo dos riscados. */
+  isCeo: boolean;
   /** Pedidos de direcionamento abertos por negócio (badge no card). */
   openRequests: Readonly<Record<string, number>>;
 }
@@ -67,6 +69,7 @@ interface CrmFlowProviderProps {
   canManageAll: boolean;
   canSeeFinance: boolean;
   currentUserId: string;
+  isCeo: boolean;
   initialOpenId?: string;
   openRequests?: Readonly<Record<string, number>>;
   children: ReactNode;
@@ -74,7 +77,7 @@ interface CrmFlowProviderProps {
 
 const NO_REQUESTS: Readonly<Record<string, number>> = {};
 
-export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentUserId, initialOpenId, openRequests = NO_REQUESTS, children }: CrmFlowProviderProps) {
+export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentUserId, isCeo, initialOpenId, openRequests = NO_REQUESTS, children }: CrmFlowProviderProps) {
   const router = useRouter();
   const [active, setActive] = useState<ActiveFlow | null>(null);
   const [openDealId, setOpenDealId] = useState<string | null>(initialOpenId ?? null);
@@ -152,8 +155,9 @@ export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentU
       openRequests,
       canSeeFinance,
       currentUserId,
+      isCeo,
     }),
-    [version, requestStage, canManageAll, canSeeFinance, currentUserId, openRequests],
+    [version, requestStage, canManageAll, canSeeFinance, currentUserId, isCeo, openRequests],
   );
 
   const close = (next: boolean) => {

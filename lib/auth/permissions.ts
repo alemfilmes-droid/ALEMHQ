@@ -188,6 +188,11 @@ export function canManageTimeTracking(subject: Pick<Profile, "access_role"> & { 
   return subject.access_role === "admin" || subject.squads.includes("diretoria");
 }
 
+/** Diretoria ou admin — o "CEO/admin" das regras do CRM (espelha crm_is_ceo() no banco). */
+export function isDirectorOrAdmin(subject: Pick<Profile, "access_role"> & { squads: readonly Squad[] }) {
+  return subject.access_role === "admin" || subject.squads.includes("diretoria");
+}
+
 /**
  * Troca do logo de um cliente: diretoria, squad comercial ou admin. Espelha
  * can_manage_company_logos() no banco (RPC set_company_logo e policies do bucket "company-logos").

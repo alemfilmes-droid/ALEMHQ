@@ -80,7 +80,13 @@ export interface DealInteractionDetail {
   stage_to: DealStage | null;
   author_id: string | null;
   author: DealOptionMember | null;
+  /** Horário efetivo do contato (o que a cadência usa). */
   occurred_at: string;
+  /** Momento real do registro (auditoria). */
+  created_at: string;
+  edited_at: string | null;
+  /** Riscado (excluído com motivo): continua visível, riscado, e fora das contagens. */
+  deleted_at: string | null;
 }
 
 export interface DealMeetingDetail {

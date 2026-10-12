@@ -5,7 +5,8 @@ import type { ActionResult } from "@/types";
  * nunca chega a ser uma resposta: sem internet, app fechado no meio do envio, ou a tela aberta
  * desde antes de uma publicação nova (a função antiga não existe mais no servidor).
  */
-export type ClientActionResult = ActionResult | { ok: false; error: string; needsReload: true };
+export type ClientFailure = { ok: false; error: string } | { ok: false; error: string; needsReload: true };
+export type ClientActionResult = ActionResult | ClientFailure;
 
 const STALE_DEPLOY = [/failed to find server action/i, /unrecognizedactionerror/i, /older or newer deployment/i, /server action .* not found/i];
 const NETWORK = [/failed to fetch/i, /load failed/i, /networkerror/i, /network connection was lost/i, /network request failed/i, /internet connection appears to be offline/i, /aborted/i];
@@ -15,7 +16,7 @@ export const NETWORK_MESSAGE = "Sem conexão com o servidor. Nada foi salvo: con
 export const UNKNOWN_MESSAGE = "Algo deu errado e nada foi salvo. Tente de novo; se repetir, recarregue a página.";
 
 /** Traduz a exceção de uma chamada que não voltou em mensagem em português (pura, testável). */
-export function describeActionFailure(error: unknown): ClientActionResult {
+export function describeActionFailure(error: unknown): ClientFailure {
   const text = error instanceof Error ? `${error.name} ${error.message}` : String(error ?? "");
   if (STALE_DEPLOY.some((pattern) => pattern.test(text))) return { ok: false, error: STALE_DEPLOY_MESSAGE, needsReload: true };
   if (NETWORK.some((pattern) => pattern.test(text))) return { ok: false, error: NETWORK_MESSAGE };
@@ -23,7 +24,7 @@ export function describeActionFailure(error: unknown): ClientActionResult {
 }
 
 /** Chama a ação do servidor sem deixar erro escapar calado: sempre devolve um resultado. */
-export async function runAction<T extends ActionResult>(call: () => Promise<T>): Promise<T | ClientActionResult> {
+export async function runAction<T extends { ok: boolean }>(call: () => Promise<T>): Promise<T | ClientFailure> {
   try {
     return await call();
   } catch (error) {
@@ -32,6 +33,6 @@ export async function runAction<T extends ActionResult>(call: () => Promise<T>):
   }
 }
 
-export function needsReload(result: ClientActionResult): boolean {
+export function needsReload(result: { ok: boolean }): boolean {
   return !result.ok && "needsReload" in result;
 }

@@ -15,6 +15,7 @@ function state(overrides: Partial<CadenceState>): CadenceState {
     isReactivation: false,
     nextDueDate: "2026-10-13",
     applicableScript: { kind: "toque", scriptTouchNumber: 1 },
+    analysisReturn: false,
     ...overrides,
   };
 }

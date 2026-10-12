@@ -222,7 +222,12 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
                 </Button>
               </div>
             ) : null}
-            <InteractionsTimeline interactions={interactions} showCadence={!closed && !detail.prospect?.fields.prospect_playbook_id} />
+            <InteractionsTimeline
+              interactions={interactions}
+              showCadence={!closed && !detail.prospect?.fields.prospect_playbook_id}
+              viewer={{ id: flow.currentUserId, isCeo: flow.isCeo }}
+              onChanged={reload}
+            />
           </Section>
 
           <Section id="reunioes-title" title="Reuniões">

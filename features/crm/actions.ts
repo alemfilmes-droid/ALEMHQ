@@ -44,6 +44,7 @@ import type { DealDetail } from "@/features/crm/types";
 import { centsToNumber, parseMoneyToCents } from "@/features/finance/money";
 import { canManageAllDeals, hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { parseEffectiveTime } from "@/lib/crm/effective-time";
 import { nullIfEmpty } from "@/lib/validations/company";
 import { createClient } from "@/lib/supabase/server";
 import type { CompanyLifecycle, Tables } from "@/types";
@@ -253,6 +254,8 @@ export async function logContactAction(values: ContactValues): Promise<FlowResul
   if (!parsed.success) return INVALID;
   const d = parsed.data;
   const hasNext = d.nextAction !== "" && d.nextActionDate !== "";
+  const occurred = d.occurredDate ? parseEffectiveTime(d.occurredDate, d.occurredTime, new Date()) : null;
+  if (occurred && !occurred.ok) return { ok: false, error: occurred.error };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("deal_log_interaction", {
@@ -267,6 +270,7 @@ export async function logContactAction(values: ContactValues): Promise<FlowResul
     p_responded_to: arg<string>(null),
     p_next_action: hasNext ? d.nextAction : arg<string>(null),
     p_next_action_at: hasNext ? nextActionAt(d.nextActionDate, d.nextActionTime) : arg<string>(null),
+    ...(occurred ? { p_occurred_at: occurred.iso } : {}),
   });
   if (error) return dbFailure(error, "Não foi possível registrar o contato.");
 

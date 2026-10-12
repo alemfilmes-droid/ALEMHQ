@@ -161,3 +161,40 @@ abas Financeiro do projeto e do cliente.
 validação da migração no banco em `begin … rollback` (21 passos: motivo, conflito, estorno, nova baixa sem
 duplicar, cancelado, histórico imutável, permissão negada, recebimento). A sincronização da comissão não foi
 executada no banco (exigiria criar meta para um usuário real); foi revisada no código.
+
+## Bloco 4 — CRM (relatório do Paulo)
+
+**4.1 Horário do contato editável**
+- "+ Registrar contato" e "Marcar enviado" (card do lead) usam agora por padrão; "Fiz em outro horário" /
+  "Enviei em outro horário" abrem data e hora — até 7 dias para trás, nunca no futuro (tela, servidor e banco).
+- O horário efetivo vai em `deal_interactions.occurred_at` e `prospect_touch_logs.sent_at` (cadência e meta de
+  toques contam por ele); `created_at` continua sendo o momento real do registro (auditoria). O detalhe do
+  contato mostra "registrado em …" quando os dois diferem.
+- A cadência é calculada na leitura: o próximo toque passa a contar do horário efetivo, sem recálculo guardado.
+
+**4.2 Etapa "Em análise"** (logo depois de "Tentativas de contato"; bola com o SDR)
+- Valor novo `em_analise` (migração própria). Entrar nela pede a **data de retorno** (a próxima ação; o banco
+  recusa sem data). A cadência fica pausada ("Em análise") até a data; nela o lead volta para **Chamar hoje**
+  com o script de reativação. Enviar esse retorno devolve o negócio para "Tentativas de contato" e as regras
+  normais voltam. Sem playbook, a data aparece como próxima ação do negócio (alertas e "vence hoje").
+- Atualizados: ordem do funil, rótulos, probabilidade (15%), status da pauta do negócio, roteamento da bola.
+
+**4.3 Histórico de abordagens** (linha do tempo do negócio)
+- Autor do registro e diretoria/admin: **Editar** (canal, data/horário efetivo, observação) e **Riscar**
+  (motivo obrigatório). O riscado continua visível, cortado, para todos; só a diretoria/admin toca nele para
+  ver motivo, quem riscou e quando (o banco só devolve esses dados para eles).
+- Riscados saem da cadência (lead e indicador de tentativas), das tentativas por canal e da meta de toques.
+  Editar o horário de um toque da prospecção corrige também o toque ligado (a cadência recalcula).
+- Histórico imutável de cada edição/risco em `deal_interaction_history` ("Editado · ver histórico").
+
+**Migrações**: `20261018090000_crm_analysis_stage_enum.sql`, `20261018090100_crm_effective_time_and_approaches.sql`
+(só adicionam; `deal_log_interaction` e `prospect_record_touch` ganham `p_occurred_at` opcional no fim).
+
+**Telas afetadas**: CRM (funil com a coluna "Em análise", janela do negócio, Registrar contato, mudar etapa),
+Chamar hoje / card do lead (Marcar enviado, histórico de toques), painel de esforço (meta de toques).
+
+**Testes**: `lib/crm/effective-time.test.ts` (limites de 7 dias e futuro, fuso), `lib/prospeccao/cadence.test.ts`
+(Em análise: pausa, retorno, feriado, saída; horário efetivo; riscado), `lib/crm/approaches.test.ts` (quem
+edita/risca, quem vê o motivo, riscado fora da contagem). Migrações validadas no banco em `begin … rollback`
+(regras de horário; funções e permissões criadas). O fluxo completo com um negócio real não foi executado no
+banco (exigiria criar negócio/pessoa) — fica no checklist do Bloco 9.

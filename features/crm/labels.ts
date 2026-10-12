@@ -17,6 +17,7 @@ export const DEAL_STAGES = [
   "prospeccao",
   "primeiro_contato",
   "tentativas_contato",
+  "em_analise",
   "qualificado",
   "reuniao_agendada",
   "reuniao_realizada",
@@ -30,6 +31,7 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
   prospeccao: "Prospecção",
   primeiro_contato: "Primeiro contato",
   tentativas_contato: "Tentativas de contato",
+  em_analise: "Em análise",
   qualificado: "Qualificado",
   reuniao_agendada: "Reunião agendada",
   reuniao_realizada: "Reunião realizada",
@@ -235,6 +237,6 @@ export const TEMPERATURE_LABELS: Record<Temperature, string> = {
 
 /** Etapa sugerida depois de "Cliente respondeu". */
 export function suggestedStageAfterResponse(stage: DealStage): DealStage | null {
-  if (stage === "prospeccao" || stage === "primeiro_contato" || stage === "tentativas_contato") return "qualificado";
+  if (stage === "prospeccao" || stage === "primeiro_contato" || stage === "tentativas_contato" || stage === "em_analise") return "qualificado";
   return null;
 }

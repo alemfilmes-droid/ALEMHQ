@@ -1,15 +1,20 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, CircleCheck, Clock } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, CircleCheck, Clock, Pencil, Strikethrough } from "lucide-react";
 import { CADENCE_MAX_ATTEMPTS, cadenceStatus, interactionReplyLabel, interactionReplyTone } from "@/features/crm/cadence";
 import { ChannelIcon } from "@/features/crm/components/channel-icon";
+import { ApproachEditDialog, ApproachStrikeDialog } from "@/features/crm/components/detail/approach-dialogs";
+import { ApproachHistory } from "@/features/crm/components/detail/approach-history";
 import { DEAL_STAGE_LABELS, INTERACTION_CHANNEL_LABELS, INTERACTION_KIND_LABELS } from "@/features/crm/labels";
 import type { DealInteractionDetail } from "@/features/crm/types";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatDateTime } from "@/lib/format";
+import { activeOnly, canChangeApproach, canOpenStruckDetails, type ApproachViewer } from "@/lib/crm/approaches";
 import { toneColor } from "@/lib/status";
 import type { DealInteractionChannel, DealStage } from "@/types";
 
@@ -26,7 +31,7 @@ function groupByStage(interactions: DealInteractionDetail[]) {
 
 function attemptsByChannel(interactions: DealInteractionDetail[]) {
   const counts = new Map<DealInteractionChannel, number>();
-  for (const item of interactions) {
+  for (const item of activeOnly(interactions)) {
     if (item.kind !== "tentativa_contato" || !item.channel) continue;
     counts.set(item.channel, (counts.get(item.channel) ?? 0) + 1);
   }
@@ -55,7 +60,20 @@ function CadenceIndicator({ interactions }: { interactions: DealInteractionDetai
   );
 }
 
-function Detail({ item, byId }: { item: DealInteractionDetail; byId: Map<string, DealInteractionDetail> }) {
+/** Registrado bem depois do contato (horário efetivo informado): mostra os dois. */
+function registeredLater(item: DealInteractionDetail): boolean {
+  return Math.abs(new Date(item.created_at).getTime() - new Date(item.occurred_at).getTime()) > 5 * 60 * 1000;
+}
+
+interface DetailProps {
+  item: DealInteractionDetail;
+  byId: Map<string, DealInteractionDetail>;
+  canChange: boolean;
+  onEdit: () => void;
+  onStrike: () => void;
+}
+
+function Detail({ item, byId, canChange, onEdit, onStrike }: DetailProps) {
   const linked = item.responded_to_interaction_id ? byId.get(item.responded_to_interaction_id) : null;
   const summary = item.summary ?? item.body;
   const fullApproach = item.summary && item.body && item.body !== item.summary ? item.body : null;
@@ -69,7 +87,10 @@ function Detail({ item, byId }: { item: DealInteractionDetail; byId: Map<string,
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[13px]">
         <dt className="text-subtle">Quando</dt>
-        <dd>{formatDateTime(item.occurred_at)}</dd>
+        <dd>
+          {formatDateTime(item.occurred_at)}
+          {registeredLater(item) ? <span className="block text-subtle">registrado em {formatDateTime(item.created_at)}</span> : null}
+        </dd>
         <dt className="text-subtle">Canal</dt>
         <dd className="flex items-center gap-1.5">
           <ChannelIcon channel={item.channel} />
@@ -118,7 +139,60 @@ function Detail({ item, byId }: { item: DealInteractionDetail; byId: Map<string,
           <p className="whitespace-pre-wrap text-[13px] text-muted-foreground">{fullApproach}</p>
         </div>
       ) : null}
+      {item.edited_at ? (
+        <details className="text-[13px]">
+          <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-muted-foreground sm:min-h-0">Editado · ver histórico</summary>
+          <div className="mt-2">
+            <ApproachHistory interactionId={item.id} />
+          </div>
+        </details>
+      ) : null}
+      {canChange ? (
+        <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+          <Button type="button" variant="secondary" size="lg" onClick={onEdit}>
+            <Pencil aria-hidden />
+            Editar
+          </Button>
+          <Button type="button" variant="ghost" size="lg" onClick={onStrike}>
+            <Strikethrough aria-hidden />
+            Riscar
+          </Button>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+/** Registro riscado: texto cortado para todos; só a diretoria/admin abre motivo, quem e quando. */
+function StruckRow({ item, canOpen }: { item: DealInteractionDetail; canOpen: boolean }) {
+  const content = (
+    <>
+      <Strikethrough className="size-3.5 shrink-0" aria-hidden />
+      <span className="shrink-0 font-semibold">{item.channel ? INTERACTION_CHANNEL_LABELS[item.channel] : INTERACTION_KIND_LABELS[item.kind]}</span>
+      <span className="min-w-0 flex-1 truncate">{item.approach ?? item.summary ?? item.body}</span>
+      <span className="shrink-0 tabular-nums">{formatDateTime(item.occurred_at)}</span>
+    </>
+  );
+  const className = "flex w-full items-center gap-2 rounded-md border border-dashed border-border py-2 pl-4 pr-3 text-left text-[13px] text-subtle line-through";
+  if (!canOpen) {
+    return (
+      <div className={className} aria-label={`Registro riscado de ${formatDateTime(item.occurred_at)}`}>
+        {content}
+      </div>
+    );
+  }
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className={`${className} min-h-11 hover:bg-surface-hover`} aria-label={`Registro riscado de ${formatDateTime(item.occurred_at)} — ver motivo`}>
+          {content}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(26rem,calc(100vw-2rem))] space-y-2">
+        <p className="eyebrow">Registro riscado</p>
+        <ApproachHistory interactionId={item.id} />
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -127,7 +201,17 @@ function Detail({ item, byId }: { item: DealInteractionDetail; byId: Map<string,
  * com barra e ponto — verde quando teve resposta, vermelho quando não teve, neutro enquanto aguarda.
  * Clique abre o detalhe completo.
  */
-export function InteractionsTimeline({ interactions, showCadence = true }: { interactions: DealInteractionDetail[]; showCadence?: boolean }) {
+interface InteractionsTimelineProps {
+  interactions: DealInteractionDetail[];
+  showCadence?: boolean;
+  viewer: ApproachViewer;
+  /** Depois de editar/riscar: recarrega o negócio. */
+  onChanged: () => void;
+}
+
+export function InteractionsTimeline({ interactions, showCadence = true, viewer, onChanged }: InteractionsTimelineProps) {
+  const [editing, setEditing] = useState<DealInteractionDetail | null>(null);
+  const [striking, setStriking] = useState<DealInteractionDetail | null>(null);
   if (interactions.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhum contato registrado ainda.</p>;
   }
@@ -160,6 +244,13 @@ export function InteractionsTimeline({ interactions, showCadence = true }: { int
           <p className="eyebrow">{DEAL_STAGE_LABELS[group.stage]}</p>
           <ul className="space-y-1">
             {group.items.map((item) => {
+              if (item.deleted_at) {
+                return (
+                  <li key={item.id}>
+                    <StruckRow item={item} canOpen={canOpenStruckDetails(item, viewer)} />
+                  </li>
+                );
+              }
               const tone = interactionReplyTone(item);
               const color = toneColor(tone) ?? "var(--border-strong)";
               const reply = interactionReplyLabel(item);
@@ -193,7 +284,7 @@ export function InteractionsTimeline({ interactions, showCadence = true }: { int
                       </button>
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-[min(26rem,calc(100vw-2rem))]">
-                      <Detail item={item} byId={byId} />
+                      <Detail item={item} byId={byId} canChange={canChangeApproach(item, viewer)} onEdit={() => setEditing(item)} onStrike={() => setStriking(item)} />
                     </PopoverContent>
                   </Popover>
                 </li>
@@ -202,6 +293,8 @@ export function InteractionsTimeline({ interactions, showCadence = true }: { int
           </ul>
         </section>
       ))}
+      {editing ? <ApproachEditDialog item={editing} onOpenChange={(open) => !open && setEditing(null)} onDone={onChanged} /> : null}
+      {striking ? <ApproachStrikeDialog item={striking} onOpenChange={(open) => !open && setStriking(null)} onDone={onChanged} /> : null}
     </div>
   );
 }

@@ -110,7 +110,7 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
       supabase
         .from("deal_interactions")
         .select(
-          "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url)",
+          "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, created_at, edited_at, deleted_at, author:profiles!deal_interactions_author_id_fkey(id, full_name, avatar_url)",
         )
         .eq("deal_id", id)
         .order("occurred_at", { ascending: false }),
@@ -165,6 +165,9 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
     author_id: row.author_id,
     author: row.author,
     occurred_at: row.occurred_at,
+    created_at: row.created_at,
+    edited_at: row.edited_at,
+    deleted_at: row.deleted_at,
   }));
 
   const meetings: DealMeetingDetail[] = (meetingsResult.data ?? []).map((row) => ({
@@ -212,7 +215,7 @@ export async function listInteractionsFeed(filters: { ownerId?: string[]; kind?:
   let query = supabase
     .from("deal_interactions")
     .select(
-      "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, author:profiles(id, full_name, avatar_url), deal:deals!inner(title, code, owner_id, company:companies(name))",
+      "id, deal_id, kind, channel, approach, body, summary, next_step, responded, responded_to_interaction_id, stage, stage_to, author_id, occurred_at, created_at, edited_at, deleted_at, author:profiles!deal_interactions_author_id_fkey(id, full_name, avatar_url), deal:deals!inner(title, code, owner_id, company:companies(name))",
     )
     .order("occurred_at", { ascending: false })
     .limit(LIST_LIMIT);
@@ -238,6 +241,9 @@ export async function listInteractionsFeed(filters: { ownerId?: string[]; kind?:
     author_id: row.author_id,
     author: row.author,
     occurred_at: row.occurred_at,
+    created_at: row.created_at,
+    edited_at: row.edited_at,
+    deleted_at: row.deleted_at,
     deal_title: row.deal?.title ?? "—",
     deal_code: row.deal?.code ?? null,
     company_name: row.deal?.company?.name ?? "—",

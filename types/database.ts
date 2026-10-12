@@ -1052,6 +1052,47 @@ export type Database = {
           },
         ]
       }
+      deal_interaction_history: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          changes: Json
+          deal_id: string
+          id: string
+          interaction_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          changes: Json
+          deal_id: string
+          id?: string
+          interaction_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          changes?: Json
+          deal_id?: string
+          id?: string
+          interaction_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_interaction_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_interactions: {
         Row: {
           approach: string | null
@@ -1063,6 +1104,9 @@ export type Database = {
           consumed_at: string | null
           created_at: string
           deal_id: string
+          deleted_at: string | null
+          edited_at: string | null
+          edited_by: string | null
           id: string
           kind: Database["public"]["Enums"]["deal_interaction_kind"]
           next_step: string | null
@@ -1083,6 +1127,9 @@ export type Database = {
           consumed_at?: string | null
           created_at?: string
           deal_id: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           kind: Database["public"]["Enums"]["deal_interaction_kind"]
           next_step?: string | null
@@ -1103,6 +1150,9 @@ export type Database = {
           consumed_at?: string | null
           created_at?: string
           deal_id?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          edited_by?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["deal_interaction_kind"]
           next_step?: string | null
@@ -4792,6 +4842,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["prospect_channel"]
           created_at: string
           deal_id: string
+          deleted_at: string | null
           id: string
           interaction_id: string | null
           playbook_id: string
@@ -4806,6 +4857,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["prospect_channel"]
           created_at?: string
           deal_id: string
+          deleted_at?: string | null
           id?: string
           interaction_id?: string | null
           playbook_id: string
@@ -4820,6 +4872,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["prospect_channel"]
           created_at?: string
           deal_id?: string
+          deleted_at?: string | null
           id?: string
           interaction_id?: string | null
           playbook_id?: string
@@ -6500,11 +6553,26 @@ export type Database = {
           p_next_action?: string
           p_next_action_at?: string
           p_next_step?: string
+          p_occurred_at?: string
           p_previous_responded?: boolean
           p_responded_to?: string
           p_summary?: string
         }
         Returns: string
+      }
+      deal_interaction_delete: {
+        Args: { p_interaction_id: string; p_reason: string }
+        Returns: undefined
+      }
+      deal_interaction_update: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["deal_interaction_channel"]
+          p_interaction_id: string
+          p_occurred_at: string
+          p_reason?: string
+          p_summary: string
+        }
+        Returns: undefined
       }
       deal_mark_lost: {
         Args: {
@@ -7282,6 +7350,7 @@ export type Database = {
       prospect_record_touch: {
         Args: {
           p_deal_id: string
+          p_occurred_at?: string
           p_rendered_text: string
           p_script_id: string | null
           p_script_kind: Database["public"]["Enums"]["prospect_script_kind"]
@@ -7417,6 +7486,7 @@ export type Database = {
         | "prospeccao"
         | "primeiro_contato"
         | "tentativas_contato"
+        | "em_analise"
         | "qualificado"
         | "reuniao_agendada"
         | "reuniao_realizada"
@@ -7824,6 +7894,7 @@ export const Constants = {
         "prospeccao",
         "primeiro_contato",
         "tentativas_contato",
+        "em_analise",
         "qualificado",
         "reuniao_agendada",
         "reuniao_realizada",

@@ -29,7 +29,8 @@ export async function loadEffort(onlyId?: string): Promise<Effort> {
 
   const [settings, touches, meetings, squad] = await Promise.all([
     supabase.from("prospect_settings").select("daily_touch_target, weekly_meeting_target").eq("id", true).maybeSingle(),
-    supabase.from("prospect_touch_logs").select("sent_at, sent_by").gte("sent_at", day.from).lt("sent_at", day.to),
+    // Meta de toques: conta pelo horário efetivo e ignora os riscados.
+    supabase.from("prospect_touch_logs").select("sent_at, sent_by").is("deleted_at", null).gte("sent_at", day.from).lt("sent_at", day.to),
     supabase.from("deal_meetings").select("created_at, created_by").gte("created_at", week.from).lt("created_at", week.to),
     supabase.from("profile_squads").select("profile:profiles!inner(id, full_name, is_active)").eq("squad", "comercial").eq("profile.is_active", true),
   ]);

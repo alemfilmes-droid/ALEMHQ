@@ -143,6 +143,9 @@ export const contactSchema = z
     nextAction: z.string().trim().max(200, "Use até 200 caracteres."),
     nextActionDate: optionalIsoDate,
     nextActionTime: time,
+    /** "Fiz em outro horário": vazio = agora. Até 7 dias para trás (o servidor e o banco conferem). */
+    occurredDate: optionalIsoDate,
+    occurredTime: time.or(z.literal("")),
   })
   .refine((value) => !value.hasPendingAttempt || value.previousResponded !== "", {
     message: "Responda se a tentativa anterior teve resposta.",

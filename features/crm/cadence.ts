@@ -26,6 +26,7 @@ export function cadenceStatus(interactions: readonly DealInteractionDetail[], no
   let streak = 0;
   let lastAttemptAt: string | null = null;
   for (const item of sorted) {
+    if (item.deleted_at) continue;
     if (item.kind === "resposta_cliente" || (item.kind === "tentativa_contato" && item.responded === true)) break;
     if (item.kind !== "tentativa_contato") continue;
     streak += 1;

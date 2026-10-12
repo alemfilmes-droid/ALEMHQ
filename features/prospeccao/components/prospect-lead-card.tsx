@@ -13,6 +13,7 @@ import { MeetingDialog } from "@/features/prospeccao/components/meeting-dialog";
 import { ObjectionDialog } from "@/features/prospeccao/components/objection-dialog";
 import { ReasonDialog } from "@/features/prospeccao/components/reason-dialog";
 import { SendPreviewDialog } from "@/features/prospeccao/components/send-preview-dialog";
+import { SentAtDialog } from "@/features/prospeccao/components/sent-at-dialog";
 import { TouchHistory } from "@/features/prospeccao/components/touch-history";
 import { useSave } from "@/features/prospeccao/components/use-save";
 import { useUndoable } from "@/features/prospeccao/components/use-undoable";
@@ -54,7 +55,7 @@ interface Props {
 /** Card do lead na fila: topo com status, "Enviar no WhatsApp" em destaque e as outras ações abaixo. */
 export function ProspectLeadCard({ item, today, canAct, objections }: Props) {
   const flow = useCrmFlow();
-  const [dialog, setDialog] = useState<"enviar" | "objecao" | "motivo" | "reuniao" | null>(null);
+  const [dialog, setDialog] = useState<"enviar" | "enviado_em" | "objecao" | "motivo" | "reuniao" | null>(null);
   const undoable = useUndoable();
   const resume = useSave();
   const { state } = item;
@@ -174,6 +175,11 @@ export function ProspectLeadCard({ item, today, canAct, objections }: Props) {
           ) : null}
         </div>
       ) : null}
+      {canAct && !item.demo && state.applicableScript && item.hasPending ? (
+        <Button type="button" variant="link" className="min-h-11 self-start sm:min-h-0" onClick={() => setDialog("enviado_em")}>
+          Enviei em outro horário
+        </Button>
+      ) : null}
 
       {item.demo ? null : <TouchHistory dealId={item.dealId} />}
 
@@ -184,6 +190,14 @@ export function ProspectLeadCard({ item, today, canAct, objections }: Props) {
         <>
           <ObjectionDialog dealId={item.dealId} objections={objections} today={today} open={dialog === "objecao"} onOpenChange={(open) => setDialog(open ? "objecao" : null)} />
           <ReasonDialog dealId={item.dealId} open={dialog === "motivo"} onOpenChange={(open) => setDialog(open ? "motivo" : null)} />
+          {dialog === "enviado_em" ? (
+            <SentAtDialog
+              leadName={item.leadName}
+              open
+              onOpenChange={(open) => setDialog(open ? "enviado_em" : null)}
+              onConfirm={(occurred) => undoable.run(() => markSentAction(item.dealId, occurred))}
+            />
+          ) : null}
           {!item.meeting ? (
             <MeetingDialog dealId={item.dealId} leadName={item.leadName} open={dialog === "reuniao"} onOpenChange={(open) => setDialog(open ? "reuniao" : null)} />
           ) : null}
