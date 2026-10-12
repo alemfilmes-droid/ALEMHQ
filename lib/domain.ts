@@ -1,6 +1,6 @@
 import type { ClientTier, CompanyLifecycle, CompanySource, ProjectModel, ProjectPriority, ProjectStage, ServiceType } from "@/types";
 
-/** Situações escolhíveis no formulário. "Ex-cliente" só entra pelo encerramento (e sai por "Reativar cliente"). */
+/** Situações escolhíveis no formulário. "Inativo" só entra pelo encerramento ou pausa (e sai por "Reativar cliente"). */
 export const COMPANY_LIFECYCLES = ["client", "prospect"] as const satisfies readonly CompanyLifecycle[];
 export const ALL_COMPANY_LIFECYCLES = ["client", "prospect", "former_client"] as const satisfies readonly CompanyLifecycle[];
 
@@ -35,7 +35,7 @@ export const ALL_PROJECT_STAGES = [...PROJECT_STAGES, "encerrado"] as const sati
 export const LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
   client: "Cliente",
   prospect: "Prospect",
-  former_client: "Ex-cliente",
+  former_client: "Inativo",
 };
 
 export const SOURCE_LABELS: Record<CompanySource, string> = {

@@ -9,9 +9,10 @@ import { PageHeader } from "@/components/layout/page-header";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { inactiveStatusOf, type InactiveStatus } from "@/lib/clients/lifecycle";
 import { CLIENT_HEALTHS } from "@/lib/validations/health";
 import { createClient } from "@/lib/supabase/server";
-import type { ClientHealth, Company, CompanyLifecycle } from "@/types";
+import type { ClientHealth, ClosureReason, Company, CompanyLifecycle } from "@/types";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -26,7 +27,8 @@ function escapeLike(value: string) {
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
   const { aba, saude, cidade, busca } = await searchParams;
-  const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : aba === "ex-clientes" ? "former_client" : "client";
+  // "Ex-clientes" virou a coluna Inativos do quadro de clientes (links antigos caem no quadro).
+  const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : "client";
   const isClientTab = lifecycle === "client";
   const canManage = hasCapability(profile, "manageCompanies");
 
@@ -34,7 +36,11 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   const search = busca?.trim();
 
   const supabase = await createClient();
-  let query = supabase.from("companies").select("*").eq("lifecycle", lifecycle).order("name");
+  let query = supabase
+    .from("companies")
+    .select("*")
+    .in("lifecycle", isClientTab ? ["client", "former_client"] : [lifecycle])
+    .order("name");
   if (health) query = query.eq("health", health);
   if (cidade) query = query.ilike("city", `%${escapeLike(cidade)}%`);
   if (search) query = query.ilike("name", `%${escapeLike(search)}%`);
@@ -47,9 +53,17 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   ]);
   const companyIds = (companies ?? []).map((company) => company.id);
 
-  const { data: projects } = companyIds.length
-    ? await supabase.from("projects").select("company_id, stage, created_at").in("company_id", companyIds)
-    : { data: [] as { company_id: string | null; stage: string; created_at: string }[] };
+  const formerIds = (companies ?? []).filter((company) => company.lifecycle === "former_client").map((company) => company.id);
+  const [{ data: projects }, { data: closures }] = await Promise.all([
+    companyIds.length
+      ? supabase.from("projects").select("company_id, stage, created_at").in("company_id", companyIds)
+      : Promise.resolve({ data: [] as { company_id: string | null; stage: string; created_at: string }[] }),
+    formerIds.length
+      ? supabase.from("client_closures").select("company_id, reason, created_at").in("company_id", formerIds).is("project_id", null).is("reopened_at", null).order("created_at")
+      : Promise.resolve({ data: [] as { company_id: string; reason: ClosureReason; created_at: string }[] }),
+  ]);
+  // Etiqueta do inativo: o encerramento em aberto mais recente (ordem crescente → o último vence).
+  const inactiveById = new Map((closures ?? []).map((row) => [row.company_id, inactiveStatusOf(row.reason)]));
 
   const stats = new Map<string, CompanyStats>();
   for (const project of projects ?? []) {
@@ -63,7 +77,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   const rankById = new Map((ranking.data ?? []).map((row) => [row.company_id, row]));
   const hasFilters = Boolean(health || cidade || search);
 
-  function card(company: Company, hideTier: boolean) {
+  function card(company: Company, hideTier: boolean, inactiveStatus: InactiveStatus | null = null) {
     const companyStats = stats.get(company.id) ?? { active: 0, lastActivity: null };
     return (
       <CompanyCard
@@ -74,13 +88,18 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         canManage={canManage}
         contractValue={rankById.get(company.id)?.total_value ?? null}
         hideTier={hideTier}
+        inactiveStatus={inactiveStatus}
       />
     );
   }
 
   // Coluna por nível, cada uma do maior para o menor valor de contrato (sem contrato: por nome, no fim).
   const columns = new Map<TierColumnKey, Company[]>(TIER_COLUMNS.map((key) => [key, []]));
-  for (const company of companies ?? []) columns.get(company.tier ?? "sem_nivel")?.push(company);
+  const inactive: Company[] = [];
+  for (const company of companies ?? []) {
+    if (company.lifecycle === "former_client") inactive.push(company);
+    else columns.get(company.tier ?? "sem_nivel")?.push(company);
+  }
   for (const list of columns.values()) {
     list.sort((a, b) => (rankById.get(a.id)?.rank ?? Number.MAX_SAFE_INTEGER) - (rankById.get(b.id)?.rank ?? Number.MAX_SAFE_INTEGER) || a.name.localeCompare(b.name, "pt-BR"));
   }
@@ -95,8 +114,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         panel="/clientes"
         eyebrow="Operação"
         title="Clientes."
-        description="Clientes por nível de ticket, do maior para o menor contrato. Prospects ficam na aba própria."
-        actions={canManage && lifecycle !== "former_client" ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
+        description="Clientes por nível de ticket, do maior para o menor contrato; inativos (churn, pausados e encerrados) na última coluna. Prospects ficam na aba própria."
+        actions={canManage ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
       />
 
       <div className="mb-6">
@@ -105,7 +124,6 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
           tabs={[
             { href: "/clientes", label: "Clientes", active: isClientTab },
             { href: "/clientes?aba=prospects", label: "Prospects", active: lifecycle === "prospect" },
-            { href: "/clientes?aba=ex-clientes", label: "Ex-clientes", active: lifecycle === "former_client" },
           ]}
         />
       </div>
@@ -125,7 +143,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         <div className="flex flex-col items-center rounded-lg border border-dashed border-border-strong px-6 py-16 text-center">
           <Building2 className="mb-3 size-6 text-muted-foreground" aria-hidden />
           <p className="font-bold">
-            {hasFilters ? "Nenhuma empresa com esses filtros." : isClientTab ? "Nenhum cliente cadastrado." : lifecycle === "former_client" ? "Nenhum ex-cliente." : "Nenhum prospect cadastrado."}
+            {hasFilters ? "Nenhuma empresa com esses filtros." : isClientTab ? "Nenhum cliente cadastrado." : "Nenhum prospect cadastrado."}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{hasFilters ? "Ajuste ou limpe os filtros." : "Use “Nova empresa” para começar."}</p>
         </div>
@@ -139,6 +157,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
               </TierColumn>
             );
           })}
+          <TierColumn tier="inativos" count={inactive.length}>
+            {inactive.map((company) => card(company, false, inactiveById.get(company.id) ?? null))}
+          </TierColumn>
         </ClientTierBoard>
       ) : (
         <div className="card-grid">{companies.map((company) => card(company, false))}</div>

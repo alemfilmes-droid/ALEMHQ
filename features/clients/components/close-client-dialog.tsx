@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { closeClientAction, getClosurePreviewAction, type ClosurePreview } from "@/features/clients/closure-actions";
-import { CLOSURE_REASONS, CLOSURE_REASON_LABELS, PROSPECT_POTENTIALS, PROSPECT_POTENTIAL_LABELS, closureHealth } from "@/features/clients/closures";
+import { CLOSURE_REASONS, CLOSURE_REASON_LABELS, PROSPECT_POTENTIALS, PROSPECT_POTENTIAL_LABELS } from "@/features/clients/closures";
 import { toCents } from "@/features/finance/money";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,18 +17,17 @@ import { Money } from "@/components/ui/money";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { LIFECYCLE_LABELS, STAGE_LABELS } from "@/lib/domain";
+import { STAGE_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/format";
 import { todayInFortaleza } from "@/lib/pautas";
-import { CLIENT_HEALTH_LABELS } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import type { ClosureReason, ProspectPotential } from "@/types";
 
 interface CloseClientDialogProps {
   companyId: string;
   companyName: string;
-  /** Preenchido: encerra só este projeto (o cliente continua). */
-  project?: { id: string; name: string };
+  /** O projeto encerrado (o cliente continua). Encerrar o cliente inteiro é o fluxo guiado (close-flow). */
+  project: { id: string; name: string };
 }
 
 type YesNo = "sim" | "nao" | "";
@@ -132,7 +131,7 @@ function PendingPicker({
 }
 
 /**
- * "Encerrar" cliente ou projeto (diretoria e master). Pergunta o motivo, o que aconteceu, a data e se
+ * "Encerrar projeto" (diretoria e master). Pergunta o motivo, o que aconteceu, a data e se
  * ainda há valores a receber/pagar — e mostra exatamente o que vai acontecer ANTES de confirmar. A
  * cascata inteira roda no banco (close_client), numa transação só.
  */
@@ -169,13 +168,13 @@ function CloseClientForm({ companyId, companyName, project, onClose }: CloseClie
     let active = true;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(closedAt)) return;
     setPreview(undefined);
-    getClosurePreviewAction(companyId, project?.id ?? null, closedAt).then((data) => {
+    getClosurePreviewAction(companyId, project.id, closedAt).then((data) => {
       if (active) setPreview(data);
     });
     return () => {
       active = false;
     };
-  }, [companyId, project?.id, closedAt]);
+  }, [companyId, project.id, closedAt]);
 
   const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((item) => item !== id) : [...list, id]);
 
@@ -195,7 +194,7 @@ function CloseClientForm({ companyId, companyName, project, onClose }: CloseClie
     startTransition(async () => {
       const result = await closeClientAction({
         companyId,
-        projectId: project?.id ?? "",
+        projectId: project.id,
         reason: reason as ClosureReason,
         description,
         closedAt,
@@ -218,15 +217,15 @@ function CloseClientForm({ companyId, companyName, project, onClose }: CloseClie
     });
   }
 
-  const target = project ? `o projeto ${project.name}` : `o cliente ${companyName}`;
+  const target = `o projeto ${project.name}`;
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="flex max-h-[90dvh] max-w-3xl flex-col">
         <DialogHeader>
-          <DialogTitle>{project ? "Encerrar projeto." : "Encerrar cliente."}</DialogTitle>
+          <DialogTitle>Encerrar projeto.</DialogTitle>
           <DialogDescription>
-            {project ? `${project.name} · ${companyName}` : companyName}. Confira o que vai acontecer antes de confirmar.
+            {project.name} · {companyName}. Confira o que vai acontecer antes de confirmar.
           </DialogDescription>
         </DialogHeader>
 
@@ -322,15 +321,6 @@ function CloseClientForm({ companyId, companyName, project, onClose }: CloseClie
               <p className="text-sm text-muted-foreground">Não foi possível montar a prévia. Verifique a data e tente de novo.</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
-                {!project ? (
-                  <li className="flex flex-wrap items-center gap-1.5">
-                    <ArrowRight className="size-3.5 shrink-0" aria-hidden />
-                    Cliente: {LIFECYCLE_LABELS[preview.company.lifecycle]} → <strong>{LIFECYCLE_LABELS.former_client}</strong>
-                    {reason && closureHealth(reason, preview.company.health) !== preview.company.health
-                      ? ` · saúde ${CLIENT_HEALTH_LABELS[preview.company.health]} → ${CLIENT_HEALTH_LABELS[closureHealth(reason, preview.company.health)]}`
-                      : ""}
-                  </li>
-                ) : null}
                 <li className="flex flex-wrap items-center gap-1.5">
                   <ArrowRight className="size-3.5 shrink-0" aria-hidden />
                   {preview.projects.length === 0 ? (
@@ -389,8 +379,7 @@ function CloseClientForm({ companyId, companyName, project, onClose }: CloseClie
                 ) : null}
                 <li className="flex flex-wrap items-center gap-1.5">
                   <ArrowRight className="size-3.5 shrink-0" aria-hidden />
-                  Previsão, fluxo de caixa e “Em negociação” deixam de contar {project ? "este projeto" : "este cliente"}
-                  {!project && preview.openDeals > 0 ? ` (${plural(preview.openDeals, "negócio aberto", "negócios abertos")} no CRM continuam lá para decidir)` : ""}.
+                  Previsão, fluxo de caixa e “Em negociação” deixam de contar este projeto.
                 </li>
               </ul>
             )}

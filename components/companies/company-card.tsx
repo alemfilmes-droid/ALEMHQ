@@ -7,8 +7,11 @@ import { Pencil } from "lucide-react";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { HealthQuickDialog } from "@/components/companies/health-quick-dialog";
 import { HealthDot, LifecycleBadge, TierBadge } from "@/components/companies/company-meta";
+import { Badge } from "@/components/ui/badge";
 import { StatusBar } from "@/components/ui/status-bar";
+import { StatusDot } from "@/components/ui/status-dot";
 import { toCents } from "@/features/finance/money";
+import { INACTIVE_STATUS_LABELS, INACTIVE_STATUS_TONE, type InactiveStatus } from "@/lib/clients/lifecycle";
 import { CLIENT_HEALTH_TONE } from "@/lib/status";
 import { formatDateShort } from "@/lib/format";
 import { SURFACE } from "@/lib/theme";
@@ -24,6 +27,8 @@ interface CompanyCardProps {
   contractValue?: number | null;
   /** No quadro por nível o selo de nível é redundante. */
   hideTier?: boolean;
+  /** Coluna Inativos: Churn / Pausado / Encerrado. */
+  inactiveStatus?: InactiveStatus | null;
 }
 
 /**
@@ -31,7 +36,7 @@ interface CompanyCardProps {
  * logo/monograma, cidade, projetos ativos e última atividade. Prospect tem borda tracejada — nunca
  * se confunde com cliente.
  */
-export function CompanyCard({ company, activeProjects, lastActivity, canManage, contractValue, hideTier = false }: CompanyCardProps) {
+export function CompanyCard({ company, activeProjects, lastActivity, canManage, contractValue, hideTier = false, inactiveStatus = null }: CompanyCardProps) {
   const [healthOpen, setHealthOpen] = useState(false);
   const isProspect = company.lifecycle === "prospect";
 
@@ -54,6 +59,12 @@ export function CompanyCard({ company, activeProjects, lastActivity, canManage, 
             </div>
           </div>
           {isProspect ? <LifecycleBadge lifecycle={company.lifecycle} /> : null}
+          {inactiveStatus ? (
+            <Badge variant="outline" className="shrink-0">
+              <StatusDot tone={INACTIVE_STATUS_TONE[inactiveStatus]} />
+              {INACTIVE_STATUS_LABELS[inactiveStatus]}
+            </Badge>
+          ) : null}
         </div>
 
         {!hideTier && company.tier ? (

@@ -2949,6 +2949,7 @@ export type Database = {
           lead_id: string
           location_address: string | null
           previous_assignee_id: string | null
+          paused_closure_id: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           project_id: string | null
           returned_at: string | null
@@ -2998,6 +2999,7 @@ export type Database = {
           lead_id: string
           location_address?: string | null
           previous_assignee_id?: string | null
+          paused_closure_id?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           project_id?: string | null
           returned_at?: string | null
@@ -3047,6 +3049,7 @@ export type Database = {
           lead_id?: string
           location_address?: string | null
           previous_assignee_id?: string | null
+          paused_closure_id?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           project_id?: string | null
           returned_at?: string | null
@@ -3184,6 +3187,8 @@ export type Database = {
         Row: {
           amount: number
           cancelled_at: string | null
+          cancel_reason: string | null
+          cancelled_by: string | null
           category: Database["public"]["Enums"]["payable_category"]
           company_id: string | null
           cost_scope: Database["public"]["Enums"]["cost_scope"]
@@ -3230,6 +3235,8 @@ export type Database = {
         Insert: {
           amount: number
           cancelled_at?: string | null
+          cancel_reason?: string | null
+          cancelled_by?: string | null
           category: Database["public"]["Enums"]["payable_category"]
           company_id?: string | null
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
@@ -3278,6 +3285,8 @@ export type Database = {
         Update: {
           amount?: number
           cancelled_at?: string | null
+          cancel_reason?: string | null
+          cancelled_by?: string | null
           category?: Database["public"]["Enums"]["payable_category"]
           company_id?: string | null
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
@@ -4042,6 +4051,8 @@ export type Database = {
           location_notes: string | null
           margin_alert_at: string | null
           model: Database["public"]["Enums"]["project_model"]
+          paused_closure_id: string | null
+          paused_from_stage: Database["public"]["Enums"]["project_stage"] | null
           name: string
           owner_id: string
           payment_check_notified_at: string | null
@@ -4078,6 +4089,8 @@ export type Database = {
           location_notes?: string | null
           margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
+          paused_closure_id?: string | null
+          paused_from_stage?: Database["public"]["Enums"]["project_stage"] | null
           name: string
           owner_id: string
           payment_check_notified_at?: string | null
@@ -4114,6 +4127,8 @@ export type Database = {
           location_notes?: string | null
           margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
+          paused_closure_id?: string | null
+          paused_from_stage?: Database["public"]["Enums"]["project_stage"] | null
           name?: string
           owner_id?: string
           payment_check_notified_at?: string | null
@@ -4301,6 +4316,7 @@ export type Database = {
       }
       prospect_house_entries: {
         Row: {
+          cancelled_at: string | null
           claimed_at: string | null
           company_id: string
           created_at: string
@@ -4311,6 +4327,7 @@ export type Database = {
           project_name: string
         }
         Insert: {
+          cancelled_at?: string | null
           claimed_at?: string | null
           company_id: string
           created_at?: string
@@ -4321,6 +4338,7 @@ export type Database = {
           project_name: string
         }
         Update: {
+          cancelled_at?: string | null
           claimed_at?: string | null
           company_id?: string
           created_at?: string
@@ -5050,6 +5068,8 @@ export type Database = {
         Row: {
           amount: number
           cancelled_at: string | null
+          cancel_reason: string | null
+          cancelled_by: string | null
           company_id: string
           competence_month: string | null
           created_at: string
@@ -5079,6 +5099,8 @@ export type Database = {
         Insert: {
           amount: number
           cancelled_at?: string | null
+          cancel_reason?: string | null
+          cancelled_by?: string | null
           company_id: string
           competence_month?: string | null
           created_at?: string
@@ -5108,6 +5130,8 @@ export type Database = {
         Update: {
           amount?: number
           cancelled_at?: string | null
+          cancel_reason?: string | null
+          cancelled_by?: string | null
           company_id?: string
           competence_month?: string | null
           created_at?: string
@@ -6341,6 +6365,29 @@ export type Database = {
           p_project_id?: string
         }
         Returns: Json
+      }
+      client_close: {
+        Args: {
+          p_closed_at: string
+          p_company_id: string
+          p_description: string
+          p_keep_payable_ids: string[]
+          p_keep_receivable_ids: string[]
+          p_manual_payables: Json
+          p_manual_receivables: Json
+          p_notes?: string
+          p_potential: Database["public"]["Enums"]["prospect_potential"]
+          p_reason: Database["public"]["Enums"]["closure_reason"]
+        }
+        Returns: string
+      }
+      client_pause: {
+        Args: { p_closed_at: string; p_company_id: string; p_description: string; p_notes?: string }
+        Returns: string
+      }
+      client_reactivate: {
+        Args: { p_company_id: string; p_restore_paused: boolean }
+        Returns: undefined
       }
       close_client: {
         Args: {

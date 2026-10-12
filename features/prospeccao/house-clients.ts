@@ -123,6 +123,7 @@ export async function materializeHouseClients(): Promise<void> {
     .from("prospect_house_entries")
     .select("project_id")
     .is("deal_id", null)
+    .is("cancelled_at", null)
     .or(`claimed_at.is.null,claimed_at.lt.${staleBefore}`)
     .limit(20);
   if (!pending?.length) return;
@@ -136,6 +137,7 @@ export async function materializeHouseClients(): Promise<void> {
       .update({ claimed_at: new Date().toISOString() })
       .eq("project_id", project_id)
       .is("deal_id", null)
+      .is("cancelled_at", null)
       .or(`claimed_at.is.null,claimed_at.lt.${staleBefore}`)
       .select("project_id, company_id, project_name, delivered_at, origin_deal_id")
       .maybeSingle();

@@ -154,18 +154,3 @@ export async function closeClientAction(values: CloseClientValues): Promise<Acti
   refresh(d.companyId, projectId);
   return { ok: true, message: projectId ? "Projeto encerrado." : "Cliente encerrado." };
 }
-
-/** Volta a ser cliente. Projetos encerrados e lançamentos cancelados continuam como estão. */
-export async function reopenClientAction(companyId: string): Promise<ActionResult> {
-  const profile = await getCurrentProfile();
-  if (!profile) return UNAUTHENTICATED;
-  if (!canCloseClients(profile)) return { ok: false, error: "Só diretoria e master reativam clientes." };
-  if (!uuid.safeParse(companyId).success) return { ok: false, error: "Cliente inválido." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("reopen_client", { p_company_id: companyId });
-  if (error) return failure(error, "Não foi possível reativar o cliente.");
-
-  refresh(companyId, null);
-  return { ok: true, message: "Cliente reativado." };
-}

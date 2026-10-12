@@ -4,6 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Flag } from "lucide-react";
 import { toast } from "sonner";
+import { ClientCloseFlow } from "@/features/clients/components/close-flow/client-close-flow";
+import { lastProjectCheckAction } from "@/features/clients/lifecycle-actions";
 import { finalizeProjectAction, getProjectFinalizationAction, type ProjectFinalizationStatus } from "@/features/projects/actions";
 import { PROJECT_CHECK_EVENT } from "@/features/projects/finalize-events";
 import { Alert } from "@/components/ui/alert";
@@ -18,6 +20,9 @@ function plural(count: number, one: string, many: string) {
 export function FinalizeProjectDialog({ status, open, onOpenChange }: { status: ProjectFinalizationStatus; open: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Era o último projeto ativo do cliente: pergunta se o cliente foi finalizado (e abre o encerramento).
+  const [lastOf, setLastOf] = useState<{ companyId: string; companyName: string } | null>(null);
+  const [closingClient, setClosingClient] = useState(false);
   const pendencies = [
     status.pendingPautas > 0 ? plural(status.pendingPautas, "pauta ainda não aprovada", "pautas ainda não aprovadas") : null,
     status.openReceivables > 0 ? plural(status.openReceivables, "recebimento em aberto", "recebimentos em aberto") : null,
@@ -31,9 +36,42 @@ export function FinalizeProjectDialog({ status, open, onOpenChange }: { status: 
         return;
       }
       toast.success(result.message);
-      onOpenChange(false);
       router.refresh();
+      const last = await lastProjectCheckAction(status.projectId).catch(() => null);
+      if (last) setLastOf(last);
+      else onOpenChange(false);
     });
+  }
+
+  if (lastOf && closingClient) {
+    return (
+      <ClientCloseFlow
+        companyId={lastOf.companyId}
+        companyName={lastOf.companyName}
+        initial={{ status: "encerrado", reason: "projeto_concluido" }}
+        onClose={() => onOpenChange(false)}
+      />
+    );
+  }
+  if (lastOf) {
+    return (
+      <Dialog open onOpenChange={(next) => !next && onOpenChange(false)}>
+        <DialogContent className="p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>O cliente foi finalizado?</DialogTitle>
+            <DialogDescription>{lastOf.companyName} não tem outro projeto ativo.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="secondary" size="lg" onClick={() => onOpenChange(false)}>
+              Não, cliente continua ativo
+            </Button>
+            <Button type="button" size="lg" onClick={() => setClosingClient(true)}>
+              Sim, encerrar cliente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (

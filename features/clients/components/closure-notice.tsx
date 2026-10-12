@@ -13,7 +13,7 @@ export function ClosureNotice({ closure, compact = false }: { closure: ClientClo
     <div className="space-y-2 rounded-md border border-border bg-surface-raised p-3 text-sm">
       <p className="flex flex-wrap items-center gap-2 font-semibold">
         <History className="size-4 text-subtle" aria-hidden />
-        {closure.reopenedAt ? "Ex-cliente reativado" : "Ex-cliente"} · {CLOSURE_REASON_LABELS[closure.reason]} em {formatDate(closure.closedAt)}
+        {closure.reopenedAt ? "Cliente reativado" : "Inativo"} · {CLOSURE_REASON_LABELS[closure.reason]} em {formatDate(closure.closedAt)}
         <Badge variant="outline">
           <StatusDot tone={PROSPECT_POTENTIAL_TONE[closure.potential]} />
           Potencial de voltar: {PROSPECT_POTENTIAL_LABELS[closure.potential]}

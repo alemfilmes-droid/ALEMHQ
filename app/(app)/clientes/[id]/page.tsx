@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Ban, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { AddContactDialog } from "@/components/companies/add-contact-dialog";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { CompanyLogoUploader } from "@/components/companies/company-logo-uploader";
@@ -27,8 +27,8 @@ import { canCloseClients, canManageCompanyLogos, hasCapability } from "@/lib/aut
 import { CLOSURE_SELECT, toClosureInfo } from "@/features/clients/closures";
 import { ClosureCard } from "@/features/clients/components/closure-card";
 import { ClosureNotice } from "@/features/clients/components/closure-notice";
-import { CloseClientDialog } from "@/features/clients/components/close-client-dialog";
-import { ReopenClientButton } from "@/features/clients/components/reopen-client-button";
+import { ClientLifecycleActions } from "@/features/clients/components/close-flow/client-lifecycle-actions";
+import { INACTIVE_STATUS_LABELS, inactiveStatusOf } from "@/lib/clients/lifecycle";
 import { requireProfile } from "@/lib/auth/session";
 import { MODEL_LABELS, STAGE_LABELS, TIER_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/format";
@@ -86,13 +86,14 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
   const projects = projectsResult.data ?? [];
   const origin = sourceSummary(company);
   const isClient = company.lifecycle === "client";
+  const inactiveStatus = company.lifecycle === "former_client" && closure && !closure.reopenedAt ? inactiveStatusOf(closure.reason) : null;
 
   return (
     <>
       <PageHeader
         eyebrow={
           company.lifecycle === "former_client"
-            ? `Ex-cliente${closure ? ` desde ${formatDate(closure.closedAt)}` : ""}`
+            ? `Inativo${closure ? ` desde ${formatDate(closure.closedAt)}` : ""}`
             : company.became_client_at
               ? `Cliente desde ${formatDate(company.became_client_at)}`
               : "Prospect"
@@ -109,19 +110,10 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <LifecycleBadge lifecycle={company.lifecycle} />
-            {canClose && company.lifecycle === "client" ? (
-              <CloseClientDialog
-                companyId={company.id}
-                companyName={company.name}
-                trigger={
-                  <Button variant="secondary" size="sm">
-                    <Ban aria-hidden />
-                    Encerrar
-                  </Button>
-                }
-              />
+            {inactiveStatus ? <Badge variant="outline">{INACTIVE_STATUS_LABELS[inactiveStatus]}</Badge> : null}
+            {canClose && (company.lifecycle === "client" || company.lifecycle === "former_client") ? (
+              <ClientLifecycleActions companyId={company.id} companyName={company.name} inactive={inactiveStatus} />
             ) : null}
-            {canClose && company.lifecycle === "former_client" ? <ReopenClientButton companyId={company.id} /> : null}
             {canManage ? (
               <CompanyFormDialog
                 mode="edit"

@@ -26,7 +26,7 @@ function toCompanyRow(values: z.infer<typeof companySchema>) {
   const source = values.source === "" ? null : values.source;
   return {
     name: values.name,
-    // "Ex-cliente" só pelo encerramento: o formulário nunca grava nem desfaz essa situação.
+    // "Inativo" só pelo encerramento ou pausa: o formulário nunca grava nem desfaz essa situação.
     ...(values.lifecycle === "former_client" ? {} : { lifecycle: values.lifecycle }),
     source,
     source_detail: source ? nullIfEmpty(values.sourceDetail) : null,

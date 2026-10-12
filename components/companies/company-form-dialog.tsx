@@ -126,7 +126,7 @@ export function CompanyFormDialog(props: CompanyFormDialogProps) {
           </FormField>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <FormField id="company-lifecycle" label="Situação" hint={watch("lifecycle") === "former_client" ? "Ex-cliente: use “Reativar cliente”." : undefined}>
+            <FormField id="company-lifecycle" label="Situação" hint={watch("lifecycle") === "former_client" ? "Inativo: use “Reativar cliente”." : undefined}>
               <Controller
                 control={control}
                 name="lifecycle"

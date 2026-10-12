@@ -251,3 +251,50 @@ mesmos casos de bola (12) e de notificação (57) conferidos contra o banco em `
   pautas automáticas do financeiro não cria a tarefa de emitir nota daquele recebimento (inclusive nas parcelas);
   a lista mostra "Sem nota fiscal".
 - Casos conferidos no código e no banco: bola 15/15, notificações 57/57.
+
+## Bloco 6 — Ciclo de vida do cliente (pedido do Anderson)
+
+**Coluna "Inativos"**: o quadro de Clientes ganhou a coluna Inativos (churn, pausados e encerrados), cada um com a
+etiqueta **Churn / Pausado / Encerrado** (sai do encerramento em aberto: churn → Churn; pausa → Pausado; fim de
+contrato, projeto concluído ou outro → Encerrado). A aba **"Ex-clientes" duplicava isso e foi juntada à coluna**
+(links antigos `?aba=ex-clientes` caem no quadro). "Ex-cliente" passou a se chamar "Inativo".
+
+**Encerrar cliente (Churn ou Encerrado) — passo a passo** (`features/clients/components/close-flow/`):
+1. Situação: Churn ou Encerrado (motivo), data, o que aconteceu, potencial futuro.
+2. Projetos e pautas que serão finalizados (lista + "Entendi").
+3. "O cliente ainda precisa pagar algo?" Sim → marca os recebimentos em aberto que continuam e pode lançar novos
+   (descrição, valor, vencimento — criados no Financeiro); os não marcados são cancelados. Não → lista "serão
+   cancelados" e exige confirmação explícita.
+4. "Existem custos deste cliente a pagar?" — igual (lançamento novo pede também o favorecido).
+5. Revisão e "Confirmar encerramento".
+- Cancelar = status (`cancelled_at`) com `cancel_reason` "Encerramento do cliente (…)" e `cancelled_by`; nunca
+  apaga. O que já foi pago/recebido nunca muda. Agora vale para TODO lançamento em aberto não marcado (antes, os
+  vencidos e os agendados ficavam abertos sozinhos).
+- Regra fixa no banco: cliente inativo não ganha projeto nem pauta nova até reativar (negócio do CRM e tarefas
+  automáticas do financeiro continuam; projeto vindo de negócio ganho reativa o cliente, como já era).
+
+**Pausar cliente**: projetos ativos → Pausado (guardando a etapa), pautas abertas → pausadas (saem dos quadros, não
+são finalizadas); financeiro intacto. **Reativar**: se estava pausado, pergunta "Só o cliente" ou "Cliente, projetos
+e pautas" (voltam à etapa de antes).
+
+**Reabrir prospecção** (cliente inativo): negócio novo no CRM ligado ao cliente, com playbook, SDR (padrão: o SDR das
+configurações) e objetivo; origem "cliente antigo"; o histórico continua no cliente e no negócio anterior.
+
+**Último projeto**: ao finalizar o último projeto ativo do cliente, a diretoria vê "O cliente foi finalizado?" →
+"Sim, encerrar cliente" (abre o encerramento como Encerrado / projeto concluído) ou "Não, cliente continua ativo".
+
+**Cliente da casa**: continua para Encerrado; não para Churn (a entrega de projeto de cliente em churn não gera
+retorno); no churn, retornos pendentes são cancelados (`prospect_house_entries.cancelled_at`) e o negócio de
+retorno que ainda não começou é descartado.
+
+**Encerrar projeto isolado**: continua na janela anterior (só para projeto).
+
+**Migração**: `20261020090000_client_lifecycle.sql` (colunas nulas + funções `client_close`, `client_pause`,
+`client_reactivate`, gatilhos de bloqueio; prévia inclui pautas diretas do cliente).
+
+**Telas afetadas**: Clientes (quadro), página do cliente (Encerrar / Pausar / Reativar / Reabrir prospecção), projeto
+(finalizar), Financeiro (cancelados e lançamentos novos), CRM (negócio reaberto), Pautas (pausadas/finalizadas).
+
+**Testes**: `lib/clients/lifecycle.test.ts` (status, plano do financeiro Sim/Não, lançamento manual, último projeto) +
+cenário completo no banco em `begin … rollback` (23 passos: encerrar com marcado/não marcado/vencido/pago, manuais,
+bloqueio de projeto e pauta novos, reativar, pausar e reativar com tudo, churn cancelando cliente da casa, recusas).

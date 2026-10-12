@@ -1,5 +1,5 @@
 import type { StatusTone } from "@/lib/status";
-import type { ClientHealth, ClosureReason, Json, ProspectPotential } from "@/types";
+import type { ClosureReason, Json, ProspectPotential } from "@/types";
 
 /** Puro (sem servidor): rótulos e formato do encerramento, usados no cliente, no projeto e no CRM. */
 
@@ -28,13 +28,6 @@ export const PROSPECT_POTENTIAL_TONE: Record<ProspectPotential, StatusTone> = {
   baixo: "alert",
   nenhum: "danger",
 };
-
-/** Espelha closure_health() no banco: churn → churn; pausa → atenção; fim planejado mantém a saúde. */
-export function closureHealth(reason: ClosureReason, current: ClientHealth): ClientHealth {
-  if (reason === "churn") return "churn";
-  if (reason === "pausa_temporaria") return "atencao";
-  return current;
-}
 
 export interface ClosureSummary {
   projects: number;
