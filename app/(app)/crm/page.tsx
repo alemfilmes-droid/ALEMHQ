@@ -107,10 +107,8 @@ async function FunilTab({ params, options }: { params: Params; options: Options 
       <Suspense>
         <DealsFiltersPopover options={options} />
       </Suspense>
-      {/* Igual ao quadro de pautas: a página não rola — só cada coluna do funil rola. */}
-      <div className="flex h-[calc(100dvh-24rem)] min-h-[480px] flex-col">
-        <DealKanbanBoard deals={deals} />
-      </div>
+      {/* A página não rola: o quadro ocupa o resto da tela e só ele rola na horizontal; cada coluna, na vertical. */}
+      <DealKanbanBoard deals={deals} />
     </div>
   );
 }

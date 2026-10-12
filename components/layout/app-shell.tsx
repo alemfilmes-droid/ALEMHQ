@@ -77,7 +77,8 @@ export function AppShell({ profile, notifications, squadDirectory, badges = {}, 
               />
             </div>
             <main id="conteudo" className="flex-1 px-4 py-8 sm:px-8 sm:py-10">
-              <div className="mx-auto w-full max-w-7xl">
+              {/* Celular igual; no computador (≥1024px) a tela usa a largura disponível, com teto em telas muito largas. */}
+              <div className="mx-auto w-full max-w-7xl lg:max-w-[1920px]">
                 <PushPrompt />
                 {children}
               </div>

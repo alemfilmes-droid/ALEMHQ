@@ -179,7 +179,8 @@ export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentU
       ) : null}
 
       {active?.type === "stage" ? (
-        <StageChangeDialog deal={active.deal} stage={active.stage} open onOpenChange={close} onDone={() => finish()} />
+        // key: outra etapa (ou outro negócio) recomeça o formulário com os padrões dela.
+        <StageChangeDialog key={`${active.deal.id}-${active.stage}`} deal={active.deal} stage={active.stage} open onOpenChange={close} onDone={() => finish()} />
       ) : null}
       {active?.type === "contact" ? <RegisterContactDialog deal={active.deal} open onOpenChange={close} onDone={() => finish()} /> : null}
       {active?.type === "response" ? (

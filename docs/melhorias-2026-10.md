@@ -339,3 +339,29 @@ formulário de meta, Financeiro (pagamento de comissão), popup em qualquer tela
 `lib/notifications/routing.test.ts`; cenário no banco em `begin … rollback` (18 passos: valor final obrigatório, sem
 pagamento automático, comemoração única, avisos, não alcançada com 18%, pagamento ligado e avulso, paga, editar sem repetir).
 O modo "valor fixo" não roda no banco antes de existir de fato (valor novo de enum); está coberto pelos testes do código.
+
+## Bloco 8 — Telas largas no computador e rolagem do CRM (pedido do Anderson)
+
+**Largura**: o esqueleto das telas (`components/layout/app-shell.tsx`) limitava tudo a 1280 px — daí o espaço vazio à
+direita. No computador (≥1024 px) a tela agora usa a largura disponível, com teto de 1920 px em telas muito largas; no
+celular nada muda. Vale para todas as telas que usam o esqueleto (Início, CRM, Clientes, Projetos, Pautas, Metas,
+Financeiro, Agenda, Orçamentos). Textos longos continuam com largura confortável (descrição do cabeçalho limitada; páginas
+de texto já tinham o próprio limite).
+
+**Quadro do CRM** (`deal-kanban-board.tsx`, `components/kanban/use-fill-viewport.ts`, `components/ui/link-tabs.tsx`):
+- A barrinha de rolagem ao lado das abas era o sublinhado da aba ativa vazando: as abas rolam só na horizontal, sem barra
+  visível (vale para todas as abas do HQ).
+- A altura do quadro era um cálculo fixo ("tela − 24rem") que não batia com o cabeçalho e fazia a página rolar junto. No
+  computador o quadro mede onde começa e ocupa exatamente o resto da tela: **uma** rolagem horizontal (o quadro) e uma
+  vertical por coluna; a página não rola em nenhuma direção.
+- O "encaixe" por coluna (snap) agora só no celular: no computador deixava o trackpad e o shift+roda aos trancos.
+- A janela de mudança de etapa recomeça do zero quando a etapa muda (achado no teste de arrastar).
+
+**Teste em navegador de verdade** (página de teste com 60 negócios inventados, só numa cópia fora do projeto, já apagada):
+1568×900 → largura útil 1238 px (antes ~1050), rolagem da página 0 na vertical e na horizontal, um único rolador
+horizontal (o quadro) + um vertical por coluna, nenhuma barra perto das abas, quadro rolando 600 px na horizontal, snap
+desligado; arrastar um card entre colunas abriu a janela da etapa ("Em análise" com o retorno sugerido para +7 dias).
+Celular (375×812): sem rolagem para os lados, encaixe por coluna mantido, altura como antes. Em janelas muito baixas
+(menos de ~860 px de altura) o quadro mantém 420 px de altura mínima e a página rola um pouco, de propósito.
+
+**Sem migração.** Telas afetadas: todas no computador; CRM (quadro e abas); abas de todas as telas.
