@@ -243,13 +243,16 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
   const people = `lead_id.eq.${profileId},current_assignee_id.eq.${profileId},created_for.eq.${profileId}${memberIds.length ? `,id.in.(${memberIds.join(",")})` : ""}`;
   const { data: pautas } = await admin
     .from("pautas_with_details")
-    .select("id, title, status, board_column, scheduled_at, duration_minutes, due_date, due_time, location_address, company_name, squad")
+    .select("id, title, status, board_column, scheduled_at, duration_minutes, due_date, due_time, location_address, company_name, squad, source, current_assignee_id")
     .or(people)
     .is("archived_at", null);
   const linkedPautas = new Set([...commitments.values()].map((row) => row.pauta_id).filter(Boolean));
 
   for (const pauta of pautas ?? []) {
     if (!pauta.id || !pauta.title) continue;
+    // Negócio do CRM só vai para o Google de quem está com a bola (o SDR não enche a agenda do CEO). O que
+    // deixa de valer aqui é apagado do Google na próxima sincronização — só a cópia, nunca a tarefa.
+    if (pauta.source === "crm" && pauta.current_assignee_id !== profileId) continue;
     const url = link(`/minhas-pautas?pauta=${pauta.id}`);
     const client = pauta.company_name ? ` · ${pauta.company_name}` : "";
     if (pauta.scheduled_at && !linkedPautas.has(pauta.id) && pauta.scheduled_at >= fromIso && pauta.scheduled_at <= toIso) {

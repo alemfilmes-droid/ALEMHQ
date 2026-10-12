@@ -154,7 +154,7 @@ export const MEETING_OUTCOME_LABELS: Record<MeetingOutcome, string> = {
 };
 
 export const MEETING_OUTCOME_HINTS: Record<MeetingOutcome, string> = {
-  enviar_proposta: "A bola continua com você: você envia a proposta.",
+  enviar_proposta: "O negócio volta para o SDR, que envia a proposta.",
   fechado_na_call: "Abre o fechamento do negócio em seguida.",
   follow_up_sdr: "O negócio volta para o SDR, com a sua nota.",
   sem_interesse: "O negócio volta para o SDR decidir o destino do lead.",

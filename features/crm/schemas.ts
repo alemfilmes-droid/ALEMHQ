@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MEETING_HOST_CHOICES } from "@/lib/prospeccao/meeting-host";
 import {
   DEAL_LOSS_REASONS,
   DEAL_STAGES,
@@ -183,7 +184,8 @@ export const meetingSchema = z.object({
     .trim()
     .regex(/^\d+$/, "Informe a duração em minutos.")
     .refine((value) => Number(value) >= 15 && Number(value) <= 480, "Use de 15 a 480 minutos."),
-  attendeeId: z.string().uuid("Selecione quem vai atender."),
+  /** Obrigatório: com o Anderson (bola com ele) ou com o SDR (kick-off, nada chega ao Anderson). */
+  host: z.enum(MEETING_HOST_CHOICES, { message: "Escolha com quem é a reunião." }),
   locationOrLink: z.string().trim().max(300, "Use até 300 caracteres."),
 });
 

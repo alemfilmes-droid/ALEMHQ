@@ -8,16 +8,15 @@ import { scheduleDealMeetingAction } from "@/features/crm/actions";
 import { tomorrowISO } from "@/features/crm/dates";
 import { FlowDialog } from "@/features/crm/components/flow/flow-dialog";
 import { meetingSchema, type MeetingValues } from "@/features/crm/schemas";
+import { hostChoiceLabel, MEETING_HOST_CHOICES } from "@/lib/prospeccao/meeting-host";
 import type { DealFormOptions } from "@/features/crm/types";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import type { DealWithDetails } from "@/types";
 
 interface ScheduleMeetingDialogProps {
   deal: DealWithDetails;
   options: DealFormOptions;
-  currentUserId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
@@ -26,7 +25,7 @@ interface ScheduleMeetingDialogProps {
 }
 
 /** Agenda a reunião: cria o compromisso na agenda de quem atende, move o negócio e avisa com o resumo da qualificação. */
-export function ScheduleMeetingDialog({ deal, options, currentUserId, open, onOpenChange, onDone, onNeedsQualification }: ScheduleMeetingDialogProps) {
+export function ScheduleMeetingDialog({ deal, options, open, onOpenChange, onDone, onNeedsQualification }: ScheduleMeetingDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const {
@@ -40,7 +39,7 @@ export function ScheduleMeetingDialog({ deal, options, currentUserId, open, onOp
       scheduledDate: tomorrowISO(),
       scheduledTime: "10:00",
       durationMinutes: "60",
-      attendeeId: deal.responsible_id && deal.responsible_id !== deal.owner_id ? deal.responsible_id : currentUserId,
+      host: undefined as never,
       locationOrLink: "",
     },
   });
@@ -65,7 +64,7 @@ export function ScheduleMeetingDialog({ deal, options, currentUserId, open, onOp
       open={open}
       onOpenChange={onOpenChange}
       title="Agendar reunião."
-      description="Entra na agenda de quem vai atender e o negócio passa para Reunião agendada, com essa pessoa como responsável."
+      description="Entra na agenda de quem vai atender e o negócio passa para Reunião agendada, com essa pessoa com a bola. Com o SDR (kick-off), nada vai para o Anderson."
       error={error}
       pending={pending}
       submitLabel="Agendar"
@@ -83,16 +82,17 @@ export function ScheduleMeetingDialog({ deal, options, currentUserId, open, onOp
         <FormField id="meeting-duration" label="Duração (minutos)" error={errors.durationMinutes?.message}>
           <Input id="meeting-duration" inputMode="numeric" {...register("durationMinutes")} />
         </FormField>
-        <FormField id="meeting-attendee" label="Quem vai atender" error={errors.attendeeId?.message}>
-          <NativeSelect id="meeting-attendee" {...register("attendeeId")}>
-            {options.members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.full_name}
-              </option>
-            ))}
-          </NativeSelect>
-        </FormField>
       </div>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-semibold">Com quem é a reunião?</legend>
+        {MEETING_HOST_CHOICES.map((choice) => (
+          <label key={choice} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-border-strong px-3 text-sm has-[:checked]:border-foreground has-[:checked]:font-semibold">
+            <input type="radio" value={choice} className="size-4 accent-current" {...register("host")} />
+            {hostChoiceLabel(choice, { ceo: options.ceo?.full_name ?? "Anderson", sdr: deal.owner_name ?? "SDR" })}
+          </label>
+        ))}
+        {errors.host?.message ? <p className="text-[13px] font-semibold">{errors.host.message}</p> : null}
+      </fieldset>
       <FormField id="meeting-location" label="Link ou endereço" hint="Opcional." error={errors.locationOrLink?.message}>
         <Input id="meeting-location" placeholder="https://meet.google.com/… ou endereço" {...register("locationOrLink")} />
       </FormField>

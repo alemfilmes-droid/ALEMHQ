@@ -198,3 +198,44 @@ Chamar hoje / card do lead (Marcar enviado, histórico de toques), painel de esf
 edita/risca, quem vê o motivo, riscado fora da contagem). Migrações validadas no banco em `begin … rollback`
 (regras de horário; funções e permissões criadas). O fluxo completo com um negócio real não foi executado no
 banco (exigiria criar negócio/pessoa) — fica no checklist do Bloco 9.
+
+## Bloco 5 — Bola, agenda e notificações (pedido do Anderson)
+
+**Bola ("Com a bola agora" = `deals.responsible_id`, fonte única)**
+- Regra pura `crm_ball_for_stage` (espelho `lib/crm/ball.ts`, casos em `lib/crm/ball-cases.json`): prospecção e
+  "Em análise" → SDR; **Qualificado → o CEO** (conta master; antes ia para o líder do squad comercial);
+  Reunião agendada → quem atende; reunião realizada, proposta e negociação → **volta para o SDR** (antes ficava
+  com quem atendeu a reunião); perdido → ninguém; ganho → o fechamento define. Direcionamento do CEO → SDR
+  (já era assim). Texto do resultado "Enviar proposta" atualizado ("O negócio volta para o SDR…").
+
+**Marcar reunião** (prospecção e funil do CRM): escolha obrigatória **"Reunião com Anderson"** ou **"Reunião com
+Paulo (kick-off)"** (primeiro nome do SDR dono do lead). Com o Anderson: horários livres do Google dele + HQ,
+evento no Google dele, bola com ele. Com o SDR: horários da agenda do HQ do SDR (+ Google dele só se conectado),
+evento na agenda dele, nada chega ao Anderson. Reagendar e cancelar mantêm quem atende. (`lib/prospeccao/meeting-host.ts`,
+`features/prospeccao/busy-sources.ts`, `meeting-actions.ts`, `meeting-dialog.tsx`, `schedule-meeting-dialog.tsx`.)
+
+**Agenda e Google**: item de negócio (prazo da pauta do CRM = próxima ação, abordagem vencida, compromisso do
+negócio) só aparece para quem está com a bola ou participa do compromisso (`agenda_feed` e
+`lib/google/calendar.server.ts`). Os itens do SDR saem da agenda do Anderson; nada é apagado — as tarefas
+continuam no CRM; a próxima sincronização remove do Google só as cópias que o HQ tinha criado.
+
+**Notificações — regra única** (`public.notification_rule`, aplicada por gatilho a TODA notificação inserida;
+espelho `lib/notifications/routing.ts`, 57 casos em `lib/notifications/routing-cases.json`, conferidos no código e
+no banco):
+- Prazo/tarefa de negócio (próxima ação vencida, lead parado, prazo de pauta do CRM): só para quem está com a bola.
+- CEO · audiovisual (e diretoria): como estava.
+- CEO · comercial: só resposta/resolução de direcionamento dele, negócio enviado para a revisão dele
+  (Qualificado), bola passando para ele (e prazos dos negócios em que ele está com a bola).
+- CEO · financeiro: só **recebimento vencido** e **pagamento vencendo hoje**. Bloqueados: pagamento vencido, recebimento
+  vencendo hoje, emitir nota, pagamento agendado sem baixa, relatório/alerta de margem, tarefas do financeiro.
+- CEO · metas e comissões: como estão (o Bloco 7 define os lembretes).
+- Demais (avisos, projetos): como estavam.
+
+**Migração**: `20261019090000_ball_agenda_notifications.sql` (substitui funções com a mesma assinatura e cria
+`ceo_id`, `crm_ball_for_stage`, `notification_rule`, `notification_allowed` e o gatilho `notifications_route`).
+
+**Telas afetadas**: CRM (marcar reunião, resultado da reunião), Chamar hoje (Marcar reunião), Agenda, Google Agenda,
+sino de notificações e push.
+
+**Testes**: `lib/crm/ball.test.ts`, `lib/notifications/routing.test.ts`, `lib/prospeccao/meeting-host.test.ts`; os
+mesmos casos de bola (12) e de notificação (57) conferidos contra o banco em `begin … rollback`.

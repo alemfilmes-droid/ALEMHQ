@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { getDealDetail } from "@/features/crm/queries";
 import {
@@ -45,6 +46,8 @@ import { centsToNumber, parseMoneyToCents } from "@/features/finance/money";
 import { canManageAllDeals, hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { parseEffectiveTime } from "@/lib/crm/effective-time";
+import { syncGoogleForProfiles } from "@/lib/google/calendar.server";
+import { meetingAttendee } from "@/lib/prospeccao/meeting-host";
 import { nullIfEmpty } from "@/lib/validations/company";
 import { createClient } from "@/lib/supabase/server";
 import type { CompanyLifecycle, Tables } from "@/types";
@@ -380,16 +383,26 @@ export async function scheduleDealMeetingAction(values: MeetingValues): Promise<
   const d = parsed.data;
 
   const supabase = await createClient();
+  const [{ data: deal }, { data: ceo }] = await Promise.all([
+    supabase.from("deals").select("owner_id").eq("id", d.dealId).maybeSingle(),
+    supabase.from("profiles").select("id").eq("org_level", "master").eq("is_active", true).order("created_at").limit(1).maybeSingle(),
+  ]);
+  if (!deal) return { ok: false, error: "Negócio não encontrado ou sem permissão." };
+  const attendee = meetingAttendee(d.host, { ceoId: ceo?.id ?? null, ownerId: deal.owner_id });
+  if (!attendee) return { ok: false, error: "Não achei a conta do Anderson para a reunião." };
+
   const { error } = await supabase.from("deal_meetings").insert({
     deal_id: d.dealId,
     scheduled_at: dateOnlyToFortalezaTimestamp(d.scheduledDate, d.scheduledTime),
     duration_minutes: Number(d.durationMinutes),
-    attendee_id: d.attendeeId,
+    attendee_id: attendee,
     location_or_link: nullIfEmpty(d.locationOrLink),
     created_by: profile.id,
   });
   if (error) return dbFailure(error, "Não foi possível agendar a reunião.");
 
+  // O evento vai para o Google de quem atende (se conectado) — com o SDR, nada chega ao Anderson.
+  after(() => syncGoogleForProfiles([attendee]).catch(() => undefined));
   refresh();
   return { ok: true, message: "Reunião agendada." };
 }

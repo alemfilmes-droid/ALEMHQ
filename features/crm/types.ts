@@ -60,6 +60,8 @@ export interface DealFormOptions {
   contacts: DealOptionContact[];
   members: DealOptionMember[];
   atendimento: DealOptionMember[];
+  /** CEO (conta master): "Reunião com Anderson". */
+  ceo: DealOptionMember | null;
   prospect: ProspectFormOptions;
 }
 

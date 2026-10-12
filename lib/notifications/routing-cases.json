@@ -1,0 +1,515 @@
+[
+ {
+  "name": "CEO · audiovisual · pauta_in_review",
+  "ceo": true,
+  "type": "pauta_in_review",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_approved",
+  "ceo": true,
+  "type": "pauta_approved",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_adjustment",
+  "ceo": true,
+  "type": "pauta_adjustment",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_comment",
+  "ceo": true,
+  "type": "pauta_comment",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_log",
+  "ceo": true,
+  "type": "pauta_log",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_lead_assigned",
+  "ceo": true,
+  "type": "pauta_lead_assigned",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_member_added",
+  "ceo": true,
+  "type": "pauta_member_added",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_assignee_changed",
+  "ceo": true,
+  "type": "pauta_assignee_changed",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_closed",
+  "ceo": true,
+  "type": "pauta_closed",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_due_today",
+  "ceo": true,
+  "type": "pauta_due_today",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · audiovisual · pauta_overdue",
+  "ceo": true,
+  "type": "pauta_overdue",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · pauta da diretoria",
+  "ceo": true,
+  "type": "pauta_in_review",
+  "squad": "diretoria",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · Paulo respondeu o direcionamento",
+  "ceo": true,
+  "type": "deal_request_reply",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": true
+ },
+ {
+  "name": "CEO · direcionamento resolvido",
+  "ceo": true,
+  "type": "deal_request_resolved",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": true
+ },
+ {
+  "name": "CEO · negócio enviado para revisão (qualificado)",
+  "ceo": true,
+  "type": "deal_qualification_review",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "CEO · bola passou para ele",
+  "ceo": true,
+  "type": "deal_responsible",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "CEO · pedido de direcionamento para ele",
+  "ceo": true,
+  "type": "deal_request",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": true
+ },
+ {
+  "name": "CEO · lead frio para reaquecer (é do SDR)",
+  "ceo": true,
+  "type": "crm_reheat_ready",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "CEO · próxima ação vencida de negócio do SDR",
+  "ceo": true,
+  "type": "crm_action_overdue",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "CEO · próxima ação vencida de negócio com a bola dele",
+  "ceo": true,
+  "type": "crm_action_overdue",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "CEO · lead parado do SDR",
+  "ceo": true,
+  "type": "crm_stale_prospection",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "CEO · prazo de pauta do CRM do SDR",
+  "ceo": true,
+  "type": "pauta_due_today",
+  "squad": "comercial",
+  "crm": true,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "CEO · pauta do CRM em revisão",
+  "ceo": true,
+  "type": "pauta_in_review",
+  "squad": "comercial",
+  "crm": true,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "CEO · pauta comercial (não CRM)",
+  "ceo": true,
+  "type": "pauta_assignee_changed",
+  "squad": "comercial",
+  "crm": false,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · recebimento vencido",
+  "ceo": true,
+  "type": "finance_overdue_receivable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · pagamento vencendo hoje",
+  "ceo": true,
+  "type": "finance_due_today_payable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · pagamento vencido (tarefa do financeiro)",
+  "ceo": true,
+  "type": "finance_overdue_payable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · recebimento vence hoje (tarefa)",
+  "ceo": true,
+  "type": "finance_due_today_receivable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · emitir nota fiscal (tarefa)",
+  "ceo": true,
+  "type": "finance_invoice_due",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · pagamento agendado sem baixa (tarefa)",
+  "ceo": true,
+  "type": "finance_payment_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · relatório de margem",
+  "ceo": true,
+  "type": "finance_margin_report",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · margem crítica",
+  "ceo": true,
+  "type": "finance_margin_critical",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · tarefa do financeiro em revisão",
+  "ceo": true,
+  "type": "pauta_in_review",
+  "squad": "financeiro",
+  "crm": false,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · metas/comissões · goal_review",
+  "ceo": true,
+  "type": "goal_review",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_entry_pending",
+  "ceo": true,
+  "type": "goal_entry_pending",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_milestone",
+  "ceo": true,
+  "type": "goal_milestone",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_period_ended",
+  "ceo": true,
+  "type": "goal_period_ended",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · finance_commission",
+  "ceo": true,
+  "type": "finance_commission",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · finance_commission_updated",
+  "ceo": true,
+  "type": "finance_commission_updated",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · outros · announcement_published",
+  "ceo": true,
+  "type": "announcement_published",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · outros · project_ready_to_finalize",
+  "ceo": true,
+  "type": "project_ready_to_finalize",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · outros · project_payment_check",
+  "ceo": true,
+  "type": "project_payment_check",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · outros · project_closed",
+  "ceo": true,
+  "type": "project_closed",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · finance_overdue_payable",
+  "ceo": false,
+  "type": "finance_overdue_payable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · finance_due_today_receivable",
+  "ceo": false,
+  "type": "finance_due_today_receivable",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · finance_invoice_due",
+  "ceo": false,
+  "type": "finance_invoice_due",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · finance_payment_scheduled",
+  "ceo": false,
+  "type": "finance_payment_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · deal_request",
+  "ceo": false,
+  "type": "deal_request",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · crm_reheat_ready",
+  "ceo": false,
+  "type": "crm_reheat_ready",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "Equipe · goal_daily",
+  "ceo": false,
+  "type": "goal_daily",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · pauta_in_review",
+  "ceo": false,
+  "type": "pauta_in_review",
+  "squad": "financeiro",
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "SDR · prazo de pauta do CRM com a bola dele",
+  "ceo": false,
+  "type": "pauta_due_today",
+  "squad": "comercial",
+  "crm": true,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "SDR · prazo de pauta do CRM com a bola no Anderson",
+  "ceo": false,
+  "type": "pauta_overdue",
+  "squad": "comercial",
+  "crm": true,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "SDR · próxima ação vencida com a bola dele",
+  "ceo": false,
+  "type": "crm_action_overdue",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "SDR · próxima ação vencida com a bola no Anderson",
+  "ceo": false,
+  "type": "crm_needs_update",
+  "squad": null,
+  "crm": null,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "SDR · retorno ao cliente (pauta CRM) sem a bola",
+  "ceo": false,
+  "type": "pauta_client_followup",
+  "squad": "comercial",
+  "crm": true,
+  "holds": false,
+  "expected": false
+ },
+ {
+  "name": "Audiovisual · prazo da própria pauta",
+  "ceo": false,
+  "type": "pauta_overdue",
+  "squad": "audiovisual",
+  "crm": false,
+  "holds": false,
+  "expected": true
+ }
+]

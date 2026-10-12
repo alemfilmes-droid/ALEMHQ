@@ -197,7 +197,6 @@ export function CrmFlowProvider({ options, canManageAll, canSeeFinance, currentU
         <ScheduleMeetingDialog
           deal={active.deal}
           options={options}
-          currentUserId={currentUserId}
           open
           onOpenChange={close}
           onDone={() => finish()}

@@ -75,7 +75,7 @@ export async function listDeals(filters: DealFilters): Promise<DealWithDetails[]
 
 export async function getDealFormOptions(): Promise<DealFormOptions> {
   const supabase = await createClient();
-  const [companies, contacts, members, comercial, prospect] = await Promise.all([
+  const [companies, contacts, members, comercial, prospect, ceo] = await Promise.all([
     supabase.from("companies").select("id, name, lifecycle").order("name"),
     supabase.from("contacts").select("id, company_id, full_name").order("full_name"),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
@@ -84,6 +84,7 @@ export async function getDealFormOptions(): Promise<DealFormOptions> {
       .select("profile:profiles!inner(id, full_name, avatar_url, is_active)")
       .eq("squad", "comercial"),
     getProspectFormOptions(supabase),
+    supabase.from("profiles").select("id, full_name, avatar_url").eq("org_level", "master").eq("is_active", true).order("created_at").limit(1).maybeSingle(),
   ]);
 
   const atendimento = (comercial.data ?? [])
@@ -98,6 +99,7 @@ export async function getDealFormOptions(): Promise<DealFormOptions> {
     members: members.data ?? [],
     atendimento,
     prospect,
+    ceo: ceo.data ?? null,
   };
 }
 

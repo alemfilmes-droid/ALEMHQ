@@ -18,12 +18,14 @@ import { WhatsAppIcon } from "@/features/prospeccao/components/whatsapp-icon";
 import {
   checkSlotAction,
   confirmMeetingAction,
+  meetingHostOptionsAction,
   rescheduleMeetingAction,
   suggestMeetingAction,
   type SuggestResult,
   type SuggestedSlot,
 } from "@/features/prospeccao/meeting-actions";
 import { appZoneToIso } from "@/lib/calendar";
+import { hostChoiceLabel, MEETING_HOST_CHOICES, type MeetingHostChoice } from "@/lib/prospeccao/meeting-host";
 import { whatsappUrl } from "@/lib/prospeccao/message";
 import { cn } from "@/lib/utils";
 
@@ -38,9 +40,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Horários livres do Anderson, frase para o cliente e confirmação (spec 7.1). */
+/**
+ * Marcar reunião: primeiro a escolha obrigatória — com o Anderson ou com o SDR (kick-off); depois os
+ * horários livres de quem atende, a frase para o cliente e a confirmação. Reagendar mantém quem atende.
+ */
 export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange }: Props) {
   const flow = useCrmFlow();
+  const [host, setHost] = useState<MeetingHostChoice | null>(null);
+  const [names, setNames] = useState<{ ceo: string | null; sdr: string | null } | null>(null);
   const [suggestion, setSuggestion] = useState<SuggestResult | null>(null);
   const [slots, setSlots] = useState<SuggestedSlot[]>([]);
   const [choice, setChoice] = useState<string>("0");
@@ -51,19 +58,31 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function load() {
+  const choosing = !meetingId && host === null;
+
+  function load(choice: MeetingHostChoice | null = host) {
     setSuggestion(null);
     setError(null);
-    suggestMeetingAction(dealId).then((result) => {
+    suggestMeetingAction(dealId, choice, meetingId).then((result) => {
       setSuggestion(result);
       if (result.ok) setSlots(result.slots);
     });
   }
 
   useEffect(() => {
-    if (open) load();
+    if (!open) return;
+    if (meetingId) load(null);
+    else {
+      setHost(null);
+      meetingHostOptionsAction(dealId).then(setNames);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- recarrega só ao abrir
   }, [open, dealId]);
+
+  function choose(choice: MeetingHostChoice) {
+    setHost(choice);
+    load(choice);
+  }
 
   const otherIso = other.date ? appZoneToIso(other.date, other.time) : null;
   const startIso = choice === OTHER ? otherIso : (slots[Number(choice)]?.start ?? null);
@@ -72,7 +91,7 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
     if (!otherIso) return;
     setOtherCheck(null);
     setOverride(false);
-    checkSlotAction(otherIso).then((result) => (result.ok ? setOtherCheck(result) : setError(result.error)));
+    checkSlotAction(otherIso, dealId, host, meetingId).then((result) => (result.ok ? setOtherCheck(result) : setError(result.error)));
   }
 
   function confirm() {
@@ -80,7 +99,7 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
     setError(null);
     startTransition(async () => {
       const input = { startIso, meet, override };
-      const result = meetingId ? await rescheduleMeetingAction(meetingId, input) : await confirmMeetingAction(dealId, input);
+      const result = meetingId ? await rescheduleMeetingAction(meetingId, input) : await confirmMeetingAction(dealId, host, input);
       if (result.ok) {
         toast.success(result.message);
         onOpenChange(false);
@@ -114,10 +133,25 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
       <DialogContent className={`max-w-xl ${SHEET_ON_MOBILE}`}>
         <DialogHeader>
           <DialogTitle>{meetingId ? "Reagendar reunião" : "Marcar reunião"} · {leadName}</DialogTitle>
-          <DialogDescription>Horários livres na agenda do Anderson, só em dias úteis.</DialogDescription>
+          <DialogDescription>
+            {choosing
+              ? "Com quem é a reunião? Os horários livres e o evento saem da agenda de quem vai atender."
+              : `Horários livres na agenda de ${suggestion?.ok ? suggestion.hostName.split(" ")[0] : "quem atende"}, só em dias úteis.`}
+          </DialogDescription>
         </DialogHeader>
 
-        {!suggestion ? (
+        {choosing ? (
+          <fieldset className="space-y-2">
+            <legend className="sr-only">Com quem é a reunião</legend>
+            {MEETING_HOST_CHOICES.map((choice) => (
+              <button key={choice} type="button" className={option(false)} disabled={!names} onClick={() => choose(choice)}>
+                <CalendarClock className="size-5 shrink-0" aria-hidden />
+                {names ? hostChoiceLabel(choice, { ceo: names.ceo ?? "Anderson", sdr: names.sdr ?? "SDR" }) : "Carregando…"}
+              </button>
+            ))}
+            <p className="text-[13px] text-muted-foreground">Com o SDR (kick-off), a reunião fica na agenda dele e nada vai para o Anderson.</p>
+          </fieldset>
+        ) : !suggestion ? (
           <div className="space-y-3">
             <Skeleton className="h-14 w-full" />
             <Skeleton className="h-14 w-full" />
@@ -137,7 +171,7 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
                 Abrir qualificação
               </Button>
             ) : (
-              <Button type="button" size="lg" variant="secondary" onClick={load}>
+              <Button type="button" size="lg" variant="secondary" onClick={() => load()}>
                 <RefreshCcw aria-hidden />
                 Tentar de novo
               </Button>
@@ -170,13 +204,13 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
                     Conferir
                   </Button>
                   {otherCheck && otherCheck.free && otherCheck.insideWindows ? (
-                    <p className="text-[13px] font-semibold text-[#86EFAC] sm:col-span-3">Livre na agenda do Anderson.</p>
+                    <p className="text-[13px] font-semibold text-[#86EFAC] sm:col-span-3">Livre na agenda de {suggestion.hostName.split(" ")[0]}.</p>
                   ) : null}
                   {needsOverride ? (
                     <div className="space-y-2 sm:col-span-3">
                       <p className="flex items-center gap-2 text-[13px] font-semibold text-[#FCD34D]">
                         <AlertTriangle className="size-4 shrink-0" aria-hidden />
-                        {!otherCheck?.free ? "O Anderson já tem compromisso nesse horário." : "Fora das janelas de reunião (9h–12h e 14h–17h, dias úteis)."}
+                        {!otherCheck?.free ? `${suggestion.hostName.split(" ")[0]} já tem compromisso nesse horário.` : "Fora das janelas de reunião (9h–12h e 14h–17h, dias úteis)."}
                       </p>
                       <label className="flex min-h-11 items-center gap-3 text-sm">
                         <Checkbox checked={override} onCheckedChange={(checked) => setOverride(checked === true)} className="size-5" />
@@ -210,10 +244,12 @@ export function MeetingDialog({ dealId, leadName, meetingId, open, onOpenChange 
               </div>
             ) : null}
 
-            <label className="flex min-h-11 items-center gap-3 text-sm">
-              <Checkbox checked={meet} onCheckedChange={(checked) => setMeet(checked === true)} className="size-5" />
-              Gerar link do Google Meet
-            </label>
+            {suggestion.hostGoogle ? (
+              <label className="flex min-h-11 items-center gap-3 text-sm">
+                <Checkbox checked={meet} onCheckedChange={(checked) => setMeet(checked === true)} className="size-5" />
+                Gerar link do Google Meet
+              </label>
+            ) : null}
 
             {error ? <Alert variant="error">{error}</Alert> : null}
 
