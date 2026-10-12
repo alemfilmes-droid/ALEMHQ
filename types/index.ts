@@ -107,3 +107,15 @@ export type ClosureReason = Database["public"]["Enums"]["closure_reason"];
 export type ProspectPotential = Database["public"]["Enums"]["prospect_potential"];
 export type ClientClosure = Tables["client_closures"]["Row"];
 export type DealNote = Tables["deal_notes"]["Row"];
+
+export type ProspectPlaybook = Tables["prospect_playbooks"]["Row"];
+export type ProspectScript = Tables["prospect_scripts"]["Row"];
+export type ProspectCadence = Tables["prospect_cadences"]["Row"];
+export type ProspectObjection = Tables["prospect_objections"]["Row"];
+export type ProspectHoliday = Tables["prospect_holidays"]["Row"];
+export type ProspectAudience = Database["public"]["Enums"]["prospect_audience"];
+export type ProspectCadenceType = Database["public"]["Enums"]["prospect_cadence_type"];
+export type ProspectTouchZeroVariant = Database["public"]["Enums"]["prospect_touch_zero_variant"];
+export type ProspectScriptKind = Database["public"]["Enums"]["prospect_script_kind"];
+export type ProspectObjectionAction = Database["public"]["Enums"]["prospect_objection_action"];
+export type ProspectHolidayScope = Database["public"]["Enums"]["prospect_holiday_scope"];

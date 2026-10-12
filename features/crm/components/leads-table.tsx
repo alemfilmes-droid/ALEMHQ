@@ -20,15 +20,19 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatDate } from "@/lib/format";
 import { TEMPERATURE_TONE } from "@/lib/status";
+import { CadenceStatusTag } from "@/features/prospeccao/components/cadence-status-tag";
+import type { CadenceStatus } from "@/lib/prospeccao/cadence";
 import type { DealWithDetails } from "@/types";
 
 interface LeadsTableProps {
   deals: DealWithDetails[];
   options: DealFormOptions;
   canManageAll: boolean;
+  /** Leads com playbook: status da cadência, toque e playbook (calculados no servidor). */
+  prospect?: Record<string, { status: CadenceStatus; touch: string | null; playbookName: string }>;
 }
 
-export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
+export function LeadsTable({ deals, options, canManageAll, prospect = {} }: LeadsTableProps) {
   const flow = useCrmFlow();
   const [selected, setSelected] = useState<string[]>([]);
   const [reassignOwner, setReassignOwner] = useState("");
@@ -133,6 +137,7 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
           {deals.map((deal) => {
             const temperature = (deal.temperature ?? "neutral") as Temperature;
             const open = deal.stage !== "ganho" && deal.stage !== "perdido";
+            const cadence = prospect[deal.id!];
             return (
               <tr key={deal.id} className="cursor-pointer hover:bg-surface-hover" onClick={() => flow.openDeal(deal.id!)}>
                 {canManageAll ? (
@@ -150,6 +155,13 @@ export function LeadsTable({ deals, options, canManageAll }: LeadsTableProps) {
                     {deal.company_name}
                   </Link>
                   <span className="block text-[13px] text-muted-foreground">{deal.title}</span>
+                  {cadence ? (
+                    <span className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
+                      <CadenceStatusTag status={cadence.status} />
+                      {cadence.playbookName}
+                      {cadence.touch ? ` · ${cadence.touch}` : ""}
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3">
                   <span className="flex items-center gap-2">

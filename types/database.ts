@@ -1,7 +1,7 @@
 // AJUSTE MANUAL após `npm run db:types`: em Functions.generate_installments.Args, marque
 // p_project_id, p_company_id e p_payment_method como `| null`; em
 // Functions.project_apply_contract_change.Args, p_budget_id como `| null`; em Functions.close_client.Args,
-// p_project_id como `| null` (as funções aceitam NULL, mas o gerador não indica). Ver README → Migrações.
+// p_project_id como `| null`; em Functions.prospect_record_touch.Args, p_touch_number e p_script_id como `| null` (as funções aceitam NULL, mas o gerador não indica). Ver README → Migrações.
 export type Json =
   | string
   | number
@@ -14,7 +14,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -574,6 +574,7 @@ export type Database = {
           all_day: boolean
           attendees: string[]
           company_id: string | null
+          conference_requested: boolean
           created_at: string
           created_by: string | null
           deal_id: string | null
@@ -585,6 +586,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["commitment_kind"]
           location_or_link: string | null
+          meet_link: string | null
           notes: string | null
           owner_id: string
           pauta_id: string | null
@@ -601,6 +603,7 @@ export type Database = {
           all_day?: boolean
           attendees?: string[]
           company_id?: string | null
+          conference_requested?: boolean
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -612,6 +615,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["commitment_kind"]
           location_or_link?: string | null
+          meet_link?: string | null
           notes?: string | null
           owner_id: string
           pauta_id?: string | null
@@ -628,6 +632,7 @@ export type Database = {
           all_day?: boolean
           attendees?: string[]
           company_id?: string | null
+          conference_requested?: boolean
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -639,6 +644,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["commitment_kind"]
           location_or_link?: string | null
+          meet_link?: string | null
           notes?: string | null
           owner_id?: string
           pauta_id?: string | null
@@ -1647,6 +1653,29 @@ export type Database = {
           next_action_at: string | null
           owner_id: string
           primary_contact_id: string | null
+          prospect_cadence_restarted_at: string | null
+          prospect_cadence_started_at: string | null
+          prospect_contact_is_decision_maker: boolean | null
+          prospect_decision_maker_name: string | null
+          prospect_decision_maker_role: string | null
+          prospect_decision_maker_set_at: string | null
+          prospect_decision_maker_whatsapp: string | null
+          prospect_discard_reason: string | null
+          prospect_discarded_at: string | null
+          prospect_goal_id: string | null
+          prospect_hook: string | null
+          prospect_house_return_on: string | null
+          prospect_last_delivered_project: string | null
+          prospect_lead_type:
+            | Database["public"]["Enums"]["prospect_audience"]
+            | null
+          prospect_manual_reactivation_on: string | null
+          prospect_origin_deal_id: string | null
+          prospect_pause_reason: string | null
+          prospect_paused_at: string | null
+          prospect_playbook_id: string | null
+          prospect_replied_at: string | null
+          prospect_resumed_at: string | null
           prospection_goals: Database["public"]["Enums"]["prospection_goal"][]
           reheat_due_at: string | null
           reheat_status: Database["public"]["Enums"]["reheat_status"] | null
@@ -1678,6 +1707,29 @@ export type Database = {
           next_action_at?: string | null
           owner_id: string
           primary_contact_id?: string | null
+          prospect_cadence_restarted_at?: string | null
+          prospect_cadence_started_at?: string | null
+          prospect_contact_is_decision_maker?: boolean | null
+          prospect_decision_maker_name?: string | null
+          prospect_decision_maker_role?: string | null
+          prospect_decision_maker_set_at?: string | null
+          prospect_decision_maker_whatsapp?: string | null
+          prospect_discard_reason?: string | null
+          prospect_discarded_at?: string | null
+          prospect_goal_id?: string | null
+          prospect_hook?: string | null
+          prospect_house_return_on?: string | null
+          prospect_last_delivered_project?: string | null
+          prospect_lead_type?:
+            | Database["public"]["Enums"]["prospect_audience"]
+            | null
+          prospect_manual_reactivation_on?: string | null
+          prospect_origin_deal_id?: string | null
+          prospect_pause_reason?: string | null
+          prospect_paused_at?: string | null
+          prospect_playbook_id?: string | null
+          prospect_replied_at?: string | null
+          prospect_resumed_at?: string | null
           prospection_goals?: Database["public"]["Enums"]["prospection_goal"][]
           reheat_due_at?: string | null
           reheat_status?: Database["public"]["Enums"]["reheat_status"] | null
@@ -1709,6 +1761,29 @@ export type Database = {
           next_action_at?: string | null
           owner_id?: string
           primary_contact_id?: string | null
+          prospect_cadence_restarted_at?: string | null
+          prospect_cadence_started_at?: string | null
+          prospect_contact_is_decision_maker?: boolean | null
+          prospect_decision_maker_name?: string | null
+          prospect_decision_maker_role?: string | null
+          prospect_decision_maker_set_at?: string | null
+          prospect_decision_maker_whatsapp?: string | null
+          prospect_discard_reason?: string | null
+          prospect_discarded_at?: string | null
+          prospect_goal_id?: string | null
+          prospect_hook?: string | null
+          prospect_house_return_on?: string | null
+          prospect_last_delivered_project?: string | null
+          prospect_lead_type?:
+            | Database["public"]["Enums"]["prospect_audience"]
+            | null
+          prospect_manual_reactivation_on?: string | null
+          prospect_origin_deal_id?: string | null
+          prospect_pause_reason?: string | null
+          prospect_paused_at?: string | null
+          prospect_playbook_id?: string | null
+          prospect_replied_at?: string | null
+          prospect_resumed_at?: string | null
           prospection_goals?: Database["public"]["Enums"]["prospection_goal"][]
           reheat_due_at?: string | null
           reheat_status?: Database["public"]["Enums"]["reheat_status"] | null
@@ -1754,6 +1829,55 @@ export type Database = {
             columns: ["primary_contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_goal_id_fkey"
+            columns: ["prospect_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_goal_id_fkey"
+            columns: ["prospect_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_origin_deal_id_fkey"
+            columns: ["prospect_origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_origin_deal_id_fkey"
+            columns: ["prospect_origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_origin_deal_id_fkey"
+            columns: ["prospect_origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_origin_deal_id_fkey"
+            columns: ["prospect_origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_playbook_id_fkey"
+            columns: ["prospect_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
             referencedColumns: ["id"]
           },
           {
@@ -3989,6 +4113,788 @@ export type Database = {
             columns: ["reactivation_pauta_id"]
             isOneToOne: false
             referencedRelation: "pautas_with_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_cadences: {
+        Row: {
+          cadence_type: Database["public"]["Enums"]["prospect_cadence_type"]
+          reactivation_days: number
+          touch_offsets: number[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cadence_type: Database["public"]["Enums"]["prospect_cadence_type"]
+          reactivation_days: number
+          touch_offsets: number[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cadence_type?: Database["public"]["Enums"]["prospect_cadence_type"]
+          reactivation_days?: number
+          touch_offsets?: number[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_cadences_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_holidays: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          holiday_date: string
+          id: string
+          name: string
+          needs_confirmation: boolean
+          optional: boolean
+          recurring: boolean
+          scope: Database["public"]["Enums"]["prospect_holiday_scope"]
+          skip_prospecting: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date: string
+          id?: string
+          name: string
+          needs_confirmation?: boolean
+          optional?: boolean
+          recurring?: boolean
+          scope: Database["public"]["Enums"]["prospect_holiday_scope"]
+          skip_prospecting?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date?: string
+          id?: string
+          name?: string
+          needs_confirmation?: boolean
+          optional?: boolean
+          recurring?: boolean
+          scope?: Database["public"]["Enums"]["prospect_holiday_scope"]
+          skip_prospecting?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_holidays_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_house_entries: {
+        Row: {
+          claimed_at: string | null
+          company_id: string
+          created_at: string
+          deal_id: string | null
+          delivered_at: string
+          origin_deal_id: string | null
+          project_id: string
+          project_name: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          company_id: string
+          created_at?: string
+          deal_id?: string | null
+          delivered_at: string
+          origin_deal_id?: string | null
+          project_id: string
+          project_name: string
+        }
+        Update: {
+          claimed_at?: string | null
+          company_id?: string
+          created_at?: string
+          deal_id?: string | null
+          delivered_at?: string
+          origin_deal_id?: string | null
+          project_id?: string
+          project_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_house_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "finance_by_client"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_origin_deal_id_fkey"
+            columns: ["origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_origin_deal_id_fkey"
+            columns: ["origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_origin_deal_id_fkey"
+            columns: ["origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_origin_deal_id_fkey"
+            columns: ["origin_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "project_profitability"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "prospect_house_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_house_suggestions: {
+        Row: {
+          closed_playbook_id: string
+          position: number
+          suggested_playbook_id: string
+        }
+        Insert: {
+          closed_playbook_id: string
+          position?: number
+          suggested_playbook_id: string
+        }
+        Update: {
+          closed_playbook_id?: string
+          position?: number
+          suggested_playbook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_house_suggestions_closed_playbook_id_fkey"
+            columns: ["closed_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_house_suggestions_suggested_playbook_id_fkey"
+            columns: ["suggested_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_lead_objections: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          id: string
+          objection_id: string
+          playbook_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          id?: string
+          objection_id: string
+          playbook_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          id?: string
+          objection_id?: string
+          playbook_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_lead_objections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_objection_id_fkey"
+            columns: ["objection_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_objections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_lead_objections_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_objections: {
+        Row: {
+          active: boolean
+          hq_action: Database["public"]["Enums"]["prospect_objection_action"]
+          id: string
+          label: string
+          position: number
+          response_body: string
+          shortcut: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          hq_action?: Database["public"]["Enums"]["prospect_objection_action"]
+          id?: string
+          label: string
+          position?: number
+          response_body: string
+          shortcut: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          hq_action?: Database["public"]["Enums"]["prospect_objection_action"]
+          id?: string
+          label?: string
+          position?: number
+          response_body?: string
+          shortcut?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_objections_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_pending_sends: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          recipient: string
+          script_id: string | null
+          script_kind: Database["public"]["Enums"]["prospect_script_kind"]
+          touch_number: number | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          recipient: string
+          script_id?: string | null
+          script_kind: Database["public"]["Enums"]["prospect_script_kind"]
+          touch_number?: number | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          recipient?: string
+          script_id?: string | null
+          script_kind?: Database["public"]["Enums"]["prospect_script_kind"]
+          touch_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_pending_sends_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_pending_sends_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_pending_sends_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_pending_sends_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_pending_sends_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_pending_sends_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_playbooks: {
+        Row: {
+          active: boolean
+          audience: Database["public"]["Enums"]["prospect_audience"]
+          cadence_type: Database["public"]["Enums"]["prospect_cadence_type"]
+          case_text: string | null
+          created_at: string
+          crm_goal: Database["public"]["Enums"]["prospection_goal"]
+          id: string
+          link_appends_school_param: boolean
+          link_base: string
+          name: string
+          position: number
+          slug: string
+          suggested_goal_id: string | null
+          touch_zero_variant: Database["public"]["Enums"]["prospect_touch_zero_variant"]
+          updated_at: string
+          updated_by: string | null
+          uses_house_client_script: boolean
+        }
+        Insert: {
+          active?: boolean
+          audience: Database["public"]["Enums"]["prospect_audience"]
+          cadence_type: Database["public"]["Enums"]["prospect_cadence_type"]
+          case_text?: string | null
+          created_at?: string
+          crm_goal?: Database["public"]["Enums"]["prospection_goal"]
+          id?: string
+          link_appends_school_param?: boolean
+          link_base?: string
+          name: string
+          position?: number
+          slug: string
+          suggested_goal_id?: string | null
+          touch_zero_variant: Database["public"]["Enums"]["prospect_touch_zero_variant"]
+          updated_at?: string
+          updated_by?: string | null
+          uses_house_client_script?: boolean
+        }
+        Update: {
+          active?: boolean
+          audience?: Database["public"]["Enums"]["prospect_audience"]
+          cadence_type?: Database["public"]["Enums"]["prospect_cadence_type"]
+          case_text?: string | null
+          created_at?: string
+          crm_goal?: Database["public"]["Enums"]["prospection_goal"]
+          id?: string
+          link_appends_school_param?: boolean
+          link_base?: string
+          name?: string
+          position?: number
+          slug?: string
+          suggested_goal_id?: string | null
+          touch_zero_variant?: Database["public"]["Enums"]["prospect_touch_zero_variant"]
+          updated_at?: string
+          updated_by?: string | null
+          uses_house_client_script?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_playbooks_cadence_type_fkey"
+            columns: ["cadence_type"]
+            isOneToOne: false
+            referencedRelation: "prospect_cadences"
+            referencedColumns: ["cadence_type"]
+          },
+          {
+            foreignKeyName: "prospect_playbooks_suggested_goal_id_fkey"
+            columns: ["suggested_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_playbooks_suggested_goal_id_fkey"
+            columns: ["suggested_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_playbooks_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_scripts: {
+        Row: {
+          audience: Database["public"]["Enums"]["prospect_audience"] | null
+          body: string
+          channel: Database["public"]["Enums"]["prospect_channel"]
+          id: string
+          kind: Database["public"]["Enums"]["prospect_script_kind"]
+          playbook_id: string | null
+          touch_number: number | null
+          touch_zero_variant:
+            | Database["public"]["Enums"]["prospect_touch_zero_variant"]
+            | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          audience?: Database["public"]["Enums"]["prospect_audience"] | null
+          body?: string
+          channel?: Database["public"]["Enums"]["prospect_channel"]
+          id?: string
+          kind: Database["public"]["Enums"]["prospect_script_kind"]
+          playbook_id?: string | null
+          touch_number?: number | null
+          touch_zero_variant?:
+            | Database["public"]["Enums"]["prospect_touch_zero_variant"]
+            | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          audience?: Database["public"]["Enums"]["prospect_audience"] | null
+          body?: string
+          channel?: Database["public"]["Enums"]["prospect_channel"]
+          id?: string
+          kind?: Database["public"]["Enums"]["prospect_script_kind"]
+          playbook_id?: string | null
+          touch_number?: number | null
+          touch_zero_variant?:
+            | Database["public"]["Enums"]["prospect_touch_zero_variant"]
+            | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_scripts_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_scripts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_settings: {
+        Row: {
+          daily_touch_target: number
+          house_client_delay_days: number
+          id: boolean
+          meeting_duration_minutes: number
+          meeting_windows: Json
+          updated_at: string
+          updated_by: string | null
+          weekly_meeting_target: number
+        }
+        Insert: {
+          daily_touch_target?: number
+          house_client_delay_days?: number
+          id?: boolean
+          meeting_duration_minutes?: number
+          meeting_windows?: Json
+          updated_at?: string
+          updated_by?: string | null
+          weekly_meeting_target?: number
+        }
+        Update: {
+          daily_touch_target?: number
+          house_client_delay_days?: number
+          id?: boolean
+          meeting_duration_minutes?: number
+          meeting_windows?: Json
+          updated_at?: string
+          updated_by?: string | null
+          weekly_meeting_target?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_touch_logs: {
+        Row: {
+          channel: Database["public"]["Enums"]["prospect_channel"]
+          created_at: string
+          deal_id: string
+          id: string
+          interaction_id: string | null
+          playbook_id: string
+          rendered_text: string
+          script_id: string | null
+          script_kind: Database["public"]["Enums"]["prospect_script_kind"]
+          sent_at: string
+          sent_by: string | null
+          touch_number: number | null
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["prospect_channel"]
+          created_at?: string
+          deal_id: string
+          id?: string
+          interaction_id?: string | null
+          playbook_id: string
+          rendered_text: string
+          script_id?: string | null
+          script_kind: Database["public"]["Enums"]["prospect_script_kind"]
+          sent_at?: string
+          sent_by?: string | null
+          touch_number?: number | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["prospect_channel"]
+          created_at?: string
+          deal_id?: string
+          id?: string
+          interaction_id?: string | null
+          playbook_id?: string
+          rendered_text?: string
+          script_id?: string | null
+          script_kind?: Database["public"]["Enums"]["prospect_script_kind"]
+          sent_at?: string
+          sent_by?: string | null
+          touch_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_touch_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "deal_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "prospect_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_touch_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_undo_ops: {
+        Row: {
+          created_at: string
+          created_by: string
+          deal_id: string
+          id: string
+          kind: Database["public"]["Enums"]["prospect_undo_kind"]
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          deal_id: string
+          id?: string
+          kind: Database["public"]["Enums"]["prospect_undo_kind"]
+          payload: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["prospect_undo_kind"]
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_undo_ops_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_undo_ops_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_undo_ops_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_undo_ops_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "prospect_undo_ops_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
             referencedColumns: ["id"]
           },
         ]
@@ -6251,6 +7157,66 @@ export type Database = {
         Returns: undefined
       }
       project_margin_pct: { Args: { p_project_id: string }; Returns: number }
+      prospect_can_act: { Args: { p_deal_id: string }; Returns: boolean }
+      prospect_cancel_meeting: {
+        Args: { p_meeting_id: string; p_reason: string }
+        Returns: undefined
+      }
+      prospect_mark_responded: { Args: { p_deal_id: string }; Returns: string }
+      prospect_meeting_outcome: {
+        Args: { p_held: boolean; p_meeting_id: string; p_note: string }
+        Returns: string
+      }
+      prospect_offsets_increasing: {
+        Args: { p_offsets: number[] }
+        Returns: boolean
+      }
+      prospect_quote_approved: {
+        Args: { p_budget_id: string }
+        Returns: {
+          amount: number
+          deal_id: string
+        }[]
+      }
+      prospect_quote_rejected: {
+        Args: {
+          p_budget_id: string
+          p_note: string
+          p_reactivate_on: string
+          p_reason: Database["public"]["Enums"]["deal_loss_reason"]
+        }
+        Returns: undefined
+      }
+      prospect_record_touch: {
+        Args: {
+          p_deal_id: string
+          p_rendered_text: string
+          p_script_id: string | null
+          p_script_kind: Database["public"]["Enums"]["prospect_script_kind"]
+          p_touch_number: number | null
+        }
+        Returns: string
+      }
+      prospect_reschedule_meeting: {
+        Args: { p_meet: boolean; p_meeting_id: string; p_starts_at: string }
+        Returns: undefined
+      }
+      prospect_schedule_meeting: {
+        Args: {
+          p_attendee_id: string
+          p_deal_id: string
+          p_duration_minutes: number
+          p_meet: boolean
+          p_notes: string
+          p_starts_at: string
+          p_title: string
+        }
+        Returns: string
+      }
+      prospect_undo: {
+        Args: { p_op_id: string }
+        Returns: Database["public"]["Enums"]["prospect_undo_kind"]
+      }
       publish_due_announcements: { Args: never; Returns: number }
       register_push_subscription: {
         Args: {
@@ -6507,7 +7473,27 @@ export type Database = {
         | "presencial"
         | "outro"
       proposal_status: "enviada" | "em_negociacao" | "aceita" | "recusada"
+      prospect_audience: "escola" | "empresa"
+      prospect_cadence_type: "sazonal" | "relacionamento"
+      prospect_channel: "whatsapp"
+      prospect_holiday_scope: "nacional" | "rn" | "natal"
+      prospect_objection_action:
+        | "registrar"
+        | "pedir_data_reativacao"
+        | "novo_decisor"
       prospect_potential: "alto" | "medio" | "baixo" | "nenhum"
+      prospect_script_kind:
+        | "toque_zero"
+        | "toque"
+        | "sem_gancho"
+        | "reativacao"
+        | "cliente_da_casa"
+        | "oferta_reuniao"
+      prospect_touch_zero_variant:
+        | "escola_matricula_recorrente"
+        | "escola_espetaculos"
+        | "empresa"
+      prospect_undo_kind: "toque" | "respondeu"
       prospection_goal:
         | "recorrencia"
         | "campanha_institucional"
@@ -6906,7 +7892,30 @@ export const Constants = {
         "outro",
       ],
       proposal_status: ["enviada", "em_negociacao", "aceita", "recusada"],
+      prospect_audience: ["escola", "empresa"],
+      prospect_cadence_type: ["sazonal", "relacionamento"],
+      prospect_channel: ["whatsapp"],
+      prospect_holiday_scope: ["nacional", "rn", "natal"],
+      prospect_objection_action: [
+        "registrar",
+        "pedir_data_reativacao",
+        "novo_decisor",
+      ],
       prospect_potential: ["alto", "medio", "baixo", "nenhum"],
+      prospect_script_kind: [
+        "toque_zero",
+        "toque",
+        "sem_gancho",
+        "reativacao",
+        "cliente_da_casa",
+        "oferta_reuniao",
+      ],
+      prospect_touch_zero_variant: [
+        "escola_matricula_recorrente",
+        "escola_espetaculos",
+        "empresa",
+      ],
+      prospect_undo_kind: ["toque", "respondeu"],
       prospection_goal: [
         "recorrencia",
         "campanha_institucional",

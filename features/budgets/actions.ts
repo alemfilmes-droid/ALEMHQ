@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { computeBudget } from "@/features/budgets/pricing";
+import { DEAL_LOSS_REASONS } from "@/features/crm/labels";
+import "@/features/prospeccao/goal-handlers";
+import { quoteApproved } from "@/lib/prospeccao/events";
 import { getBudget } from "@/features/budgets/queries";
 import { deliverableItemSchema, parsePresentation, presentationSchema, proposalProfileSchema, type PresentationContent, type ProposalProfile } from "@/features/budgets/types";
 import { hasCapability } from "@/lib/auth/permissions";
@@ -241,26 +244,51 @@ export async function sendBudgetAction(id: string, input: { dealId: string; chan
 
 const DECISION_TO_PROPOSAL = { aprovado: "aceita", em_ajuste: "em_negociacao", recusado: "recusada" } as const;
 
-export async function decideBudgetAction(id: string, input: { status: "aprovado" | "em_ajuste" | "recusado"; note: string }): Promise<ActionResult> {
+const decisionSchema = z.object({
+  status: z.enum(["aprovado", "em_ajuste", "recusado"]),
+  note: z.string().trim().max(1000),
+  /** Recusa de orçamento ligado a um negócio: motivo e data em que o lead volta ao CRM (spec 7.2). */
+  lossReason: z.enum(DEAL_LOSS_REASONS).optional(),
+  reactivateOn: z.string().optional(),
+});
+
+export async function decideBudgetAction(id: string, input: z.input<typeof decisionSchema>): Promise<ActionResult> {
   if (!(await requireMaster())) return FORBIDDEN;
-  const parsed = z.object({ status: z.enum(["aprovado", "em_ajuste", "recusado"]), note: z.string().trim().max(1000) }).safeParse(input);
+  const parsed = decisionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Revise a decisão." };
+  const d = parsed.data;
   const supabase = await createClient();
+  const { data: budget } = await supabase.from("budgets").select("deal_id").eq("id", id).maybeSingle();
+  const dealId = budget?.deal_id ?? null;
+  if (d.status === "recusado" && dealId && (!d.lossReason || !d.reactivateOn || d.note.length < 2)) {
+    return { ok: false, error: "Informe o motivo da recusa e a data para o lead voltar ao CRM." };
+  }
+
   const { error } = await supabase
     .from("budgets")
-    .update({ status: parsed.data.status, status_note: parsed.data.note || null, decided_at: new Date().toISOString() })
+    .update({ status: d.status, status_note: d.note || null, decided_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false, error: "Não foi possível atualizar." };
-  await supabase.rpc("budget_set_proposal_status", { p_budget_id: id, p_status: DECISION_TO_PROPOSAL[parsed.data.status] });
+  await supabase.rpc("budget_set_proposal_status", { p_budget_id: id, p_status: DECISION_TO_PROPOSAL[d.status] });
+
+  let message: string;
+  if (d.status === "recusado" && dealId && d.lossReason && d.reactivateOn) {
+    const rejected = await supabase.rpc("prospect_quote_rejected", { p_budget_id: id, p_reason: d.lossReason, p_note: d.note, p_reactivate_on: d.reactivateOn });
+    if (rejected.error) return { ok: false, error: rejected.error.code === "23514" ? rejected.error.message : "Recusado, mas o negócio não voltou ao CRM. Tente de novo." };
+    message = `Recusado. O negócio foi para Perdido e volta ao CRM em ${d.reactivateOn.split("-").reverse().join("/")}.`;
+  } else if (d.status === "aprovado") {
+    const approved = await supabase.rpc("prospect_quote_approved", { p_budget_id: id });
+    const row = approved.data?.[0];
+    if (row?.deal_id) await quoteApproved({ leadId: row.deal_id, quoteId: id, amount: Number(row.amount ?? 0) });
+    message = "Aprovado! A empresa agora é cliente. Para fechar o negócio no CRM, marque como ganho no card.";
+  } else {
+    message = d.status === "em_ajuste" ? "Marcado em ajuste. Use “Refazer” para criar a nova versão." : "Marcado como recusado.";
+  }
   refresh(id);
   revalidatePath("/crm");
   revalidatePath("/financeiro");
-  const messages = {
-    aprovado: "Aprovado! Para fechar o negócio no CRM, marque como ganho no card do cliente.",
-    em_ajuste: "Marcado em ajuste. Use “Refazer” para criar a nova versão.",
-    recusado: "Marcado como recusado.",
-  } as const;
-  return { ok: true, message: messages[parsed.data.status] };
+  revalidatePath("/clientes", "layout");
+  return { ok: true, message };
 }
 
 /** Refazer: nova versão (v2, v3…) a partir desta, com o mesmo número, para ajustar e reenviar. */

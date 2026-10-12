@@ -154,6 +154,8 @@ interface DesiredEvent {
   reminders?: { useDefault: false; overrides: { method: "popup"; minutes: number }[] };
   /** Cor do evento na paleta fixa do Google (1–11); sem cor = azul padrão da agenda. */
   colorId?: string;
+  /** Pede sala do Google Meet (compromisso com conference_requested — reunião da prospecção). */
+  conference?: boolean;
 }
 
 /**
@@ -225,6 +227,8 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
       recurrence: row.recurrence_rule ? [`RRULE:${row.recurrence_rule}`] : undefined,
       reminders: { useDefault: false as const, overrides: row.reminder_minutes.slice(0, 5).map((minutes) => ({ method: "popup" as const, minutes })) },
       colorId: commitmentColor(row.kind, row.pauta_id ? (squadOfPauta.get(row.pauta_id) ?? null) : null, Boolean(row.deal_id)),
+      // undefined (e não false) quando não pede: o hash dos eventos que já existem não muda.
+      conference: row.conference_requested || undefined,
     };
     if (row.all_day) {
       const startDay = dateInZone(row.starts_at);
@@ -302,7 +306,23 @@ function toGoogleBody(event: DesiredEvent) {
     colorId: event.colorId,
     source: { title: "Além HQ", url: publicEnv.NEXT_PUBLIC_SITE_URL },
     extendedProperties: { private: { [HQ_KEY]: event.key } },
+    ...(event.conference
+      ? { conferenceData: { createRequest: { requestId: createHash("sha256").update(event.key).digest("hex").slice(0, 32), conferenceSolutionKey: { type: "hangoutsMeet" } } } }
+      : {}),
   };
+}
+
+/** conferenceDataVersion=1 faz o Google criar a sala do Meet pedida em conferenceData. */
+function eventUrl(base: string, event: DesiredEvent): string {
+  return event.conference ? `${base}?conferenceDataVersion=1` : base;
+}
+
+/** Guarda no compromisso o link do Meet que o Google devolveu. */
+async function rememberMeetLink(event: DesiredEvent, response: Response): Promise<void> {
+  if (!event.conference || !event.key.startsWith("c:")) return;
+  const body = (await response.clone().json().catch(() => null)) as { hangoutLink?: string } | null;
+  if (!body?.hangoutLink) return;
+  await createAdminClient().from("commitments").update({ meet_link: body.hangoutLink }).eq("id", event.key.slice(2));
 }
 
 async function googleFetch(token: string, url: string, init: RequestInit = {}): Promise<Response> {
@@ -334,8 +354,12 @@ export async function syncGoogleForProfile(profileId: string): Promise<{ created
       if (existing && existing.content_hash === hash) continue;
 
       if (existing) {
-        const response = await googleFetch(token, `${API}/${encodeURIComponent(existing.google_event_id)}`, { method: "PUT", body: JSON.stringify(toGoogleBody(event)) });
+        const response = await googleFetch(token, eventUrl(`${API}/${encodeURIComponent(existing.google_event_id)}`, event), {
+          method: "PUT",
+          body: JSON.stringify(toGoogleBody(event)),
+        });
         if (response.ok) {
+          await rememberMeetLink(event, response);
           await admin.from("google_event_links").update({ content_hash: hash, updated_at: new Date().toISOString() }).eq("profile_id", profileId).eq("source_key", event.key);
           stats.updated += 1;
           continue;
@@ -344,8 +368,9 @@ export async function syncGoogleForProfile(profileId: string): Promise<{ created
         // Apagado no Google: cria de novo abaixo.
       }
 
-      const response = await googleFetch(token, API, { method: "POST", body: JSON.stringify(toGoogleBody(event)) });
+      const response = await googleFetch(token, eventUrl(API, event), { method: "POST", body: JSON.stringify(toGoogleBody(event)) });
       if (!response.ok) continue;
+      await rememberMeetLink(event, response);
       const created = (await response.json()) as { id: string };
       await admin
         .from("google_event_links")
@@ -434,6 +459,38 @@ async function importGoogleEvents(token: string, profileId: string, windowStart:
 
   await admin.from("google_calendar_events").delete().eq("profile_id", profileId);
   if (rows.length > 0) await admin.from("google_calendar_events").insert(rows);
+}
+
+/**
+ * Horários ocupados ao vivo na agenda principal da pessoa (eventos do HQ e do próprio Google; os
+ * marcados como "livre" não contam). Lança erro se o Google não responder — quem chama decide o
+ * que mostrar. Usa o escopo calendar.events que o HQ já tem.
+ */
+export async function listGoogleBusy(profileId: string, from: Date, to: Date): Promise<{ start: string; end: string }[]> {
+  const admin = createAdminClient();
+  const { data: account } = await admin.from("google_accounts").select("profile_id, refresh_token, access_token, access_token_expires_at").eq("profile_id", profileId).maybeSingle();
+  if (!account) throw new GoogleAuthError("Agenda do Google não conectada.");
+  const token = await accessTokenFor(account);
+
+  const busy: { start: string; end: string }[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < 5; page += 1) {
+    const params = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "250" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const response = await googleFetch(token, `${API}?${params.toString()}`);
+    if (response.status === 401 || response.status === 403) throw new GoogleAuthError("O acesso ao Google expirou ou foi removido.");
+    if (!response.ok) throw new Error(`Google Agenda respondeu ${response.status}.`);
+    const data = (await response.json()) as { items?: GoogleListedEvent[]; nextPageToken?: string };
+    for (const item of data.items ?? []) {
+      if (item.status === "cancelled" || item.transparency === "transparent") continue;
+      const start = item.start?.dateTime ?? (item.start?.date ? fortalezaToIso(item.start.date, "00:00") : null);
+      const end = item.end?.dateTime ?? (item.end?.date ? fortalezaToIso(item.end.date, "00:00") : null);
+      if (start && end) busy.push({ start: new Date(start).toISOString(), end: new Date(end).toISOString() });
+    }
+    pageToken = data.nextPageToken;
+    if (!pageToken) break;
+  }
+  return busy;
 }
 
 /** Sincroniza todas as contas conectadas (job a cada 15 min). */

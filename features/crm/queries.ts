@@ -22,6 +22,7 @@ import type {
   WorkdayItem,
 } from "@/features/crm/types";
 import { sumCents, toCents } from "@/features/finance/money";
+import { getLeadProspect, getProspectFormOptions } from "@/features/prospeccao/lead-options";
 import { createClient } from "@/lib/supabase/server";
 import type { Commitment, DealLossReason, DealStage, DealWithDetails } from "@/types";
 
@@ -74,7 +75,7 @@ export async function listDeals(filters: DealFilters): Promise<DealWithDetails[]
 
 export async function getDealFormOptions(): Promise<DealFormOptions> {
   const supabase = await createClient();
-  const [companies, contacts, members, comercial] = await Promise.all([
+  const [companies, contacts, members, comercial, prospect] = await Promise.all([
     supabase.from("companies").select("id, name, lifecycle").order("name"),
     supabase.from("contacts").select("id, company_id, full_name").order("full_name"),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
@@ -82,6 +83,7 @@ export async function getDealFormOptions(): Promise<DealFormOptions> {
       .from("profile_squads")
       .select("profile:profiles!inner(id, full_name, avatar_url, is_active)")
       .eq("squad", "comercial"),
+    getProspectFormOptions(supabase),
   ]);
 
   const atendimento = (comercial.data ?? [])
@@ -95,6 +97,7 @@ export async function getDealFormOptions(): Promise<DealFormOptions> {
     contacts: contacts.data ?? [],
     members: members.data ?? [],
     atendimento,
+    prospect,
   };
 }
 
@@ -131,7 +134,7 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
 
   if (!dealResult.data) return null;
 
-  const [requestsResult, closureResult] = await Promise.all([
+  const [requestsResult, closureResult, prospect] = await Promise.all([
     supabase.from("deal_notes").select("id", { count: "exact", head: true }).eq("deal_id", id).eq("is_request", true).is("resolved_at", null),
     dealResult.data.company_id
       ? supabase
@@ -143,6 +146,7 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    getLeadProspect(supabase, id),
   ]);
 
   const interactions: DealInteractionDetail[] = (interactionsResult.data ?? []).map((row) => ({
@@ -195,6 +199,7 @@ export async function getDealDetail(id: string): Promise<DealDetail | null> {
     log,
     openRequests: requestsResult.count ?? 0,
     closure: closureResult.data ? toClosureInfo(closureResult.data) : null,
+    prospect,
   };
 }
 

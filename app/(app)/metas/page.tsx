@@ -7,6 +7,8 @@ import { listGoalOwnerOptions, listGoals } from "@/features/goals/queries";
 import { GOAL_TABS, GOAL_TAB_LABELS, type GoalTab } from "@/features/goals/types";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
+import { EffortPanel } from "@/features/prospeccao/components/effort-panel";
+import { loadEffort } from "@/features/prospeccao/effort-queries";
 
 export const metadata: Metadata = { title: "Metas" };
 
@@ -18,7 +20,13 @@ export default async function GoalsPage({ searchParams }: { searchParams: Search
   const isManager = hasCapability(profile, "manageCompany");
   const tab: GoalTab = GOAL_TABS.find((item) => item === params.aba) ?? "ativas";
   // A RLS já devolve só as metas da pessoa para quem não é diretoria.
-  const [goals, owners] = await Promise.all([listGoals(tab), isManager ? listGoalOwnerOptions() : Promise.resolve([])]);
+  // Esforço da prospecção: a gestão vê todo o comercial; quem é do comercial vê o próprio.
+  const showEffort = isManager || profile.squads.includes("comercial");
+  const [goals, owners, effort] = await Promise.all([
+    listGoals(tab),
+    isManager ? listGoalOwnerOptions() : Promise.resolve([]),
+    showEffort ? loadEffort(isManager ? undefined : profile.id) : Promise.resolve(null),
+  ]);
 
   return (
     <>
@@ -33,6 +41,8 @@ export default async function GoalsPage({ searchParams }: { searchParams: Search
         }
         actions={isManager ? <NewGoalButton owners={owners} /> : undefined}
       />
+
+      {effort ? <EffortPanel effort={effort} /> : null}
 
       <div className="mb-6">
         <LinkTabs

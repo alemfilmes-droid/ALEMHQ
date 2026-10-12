@@ -16,6 +16,7 @@ import { NextActionCard } from "@/features/crm/components/detail/next-action-car
 import { ProposalsSection } from "@/features/crm/components/detail/proposals-section";
 import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { QualificationForm } from "@/features/crm/components/qualification-form";
+import { ProspectSection } from "@/features/prospeccao/components/prospect-section";
 import { DEAL_STAGES, DEAL_STAGE_LABELS, TEMPERATURE_LABELS, type Temperature } from "@/features/crm/labels";
 import type { DealDetail, DealFormOptions } from "@/features/crm/types";
 import { toCents } from "@/features/finance/money";
@@ -192,6 +193,12 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
 
           <DealFieldsForm deal={deal} options={options} canManageAll={canManageAll} onSaved={reload} />
 
+          {detail.prospect && !closed ? (
+            <Section id="prospeccao-title" title="Prospecção">
+              <ProspectSection dealId={deal.id!} prospect={detail.prospect} options={options.prospect} onSaved={reload} />
+            </Section>
+          ) : null}
+
           <Section id="qualificacao-title" title="Qualificação">
             <QualificationForm dealId={deal.id!} qualification={qualification} onSaved={reload} />
           </Section>
@@ -215,7 +222,7 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
                 </Button>
               </div>
             ) : null}
-            <InteractionsTimeline interactions={interactions} showCadence={!closed} />
+            <InteractionsTimeline interactions={interactions} showCadence={!closed && !detail.prospect?.fields.prospect_playbook_id} />
           </Section>
 
           <Section id="reunioes-title" title="Reuniões">

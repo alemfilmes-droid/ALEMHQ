@@ -56,7 +56,8 @@ export function EntriesTable({ goal, entries, isManager, isOwner }: EntriesTable
   const [rejecting, setRejecting] = useState<string[] | null>(null);
   const [pending, startTransition] = useTransition();
   const open = OPEN.has(goal.status);
-  const canAdd = open && (isManager || (isOwner && goal.status === "ativa"));
+  // Meta automática não aceita lançamento à mão (o banco também barra): evita contar duas vezes.
+  const canAdd = open && !goal.autoFromCrm && (isManager || (isOwner && goal.status === "ativa"));
   const pendingIds = entries.filter((entry) => entry.status === "pendente").map((entry) => entry.id);
   const allPendingSelected = pendingIds.length > 0 && pendingIds.every((id) => selected.includes(id));
 

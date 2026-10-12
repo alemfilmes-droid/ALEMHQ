@@ -76,6 +76,11 @@ export function GoalCard({ goal, showOwner = false, highlight = false, className
             </span>
           </p>
         </div>
+        {goal.autoFromCrm ? (
+          <Badge variant="outline" className="shrink-0" title="O andamento vem sozinho do CRM; não aceita lançamento à mão.">
+            Automática
+          </Badge>
+        ) : null}
         {goal.status !== "ativa" || goal.pendingCount > 0 ? (
           goal.status === "ativa" ? (
             <Badge variant="outline" className="shrink-0">

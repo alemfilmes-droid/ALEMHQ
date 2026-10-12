@@ -57,6 +57,7 @@ export const CAPABILITY_ROUTES: Record<string, Capability> = {
   "/pautas": "managePautas",
   "/crm": "crm",
   "/orcamentos": "budgets",
+  "/configuracoes/prospeccao": "manageProspecting",
 };
 
 export const ACTION_ACCESS = {
@@ -159,6 +160,10 @@ const CAPABILITIES = {
     subject.org_level === "master" || subject.org_level === "diretoria" || subject.squads.includes("diretoria"),
   /** Painel de orçamentos e propostas comerciais: master e squad Financeiro (espelha can_manage_budgets()). */
   budgets: (subject: CapabilitySubject) => subject.org_level === "master" || subject.squads.includes("financeiro"),
+  /** Configurações > Prospecção (playbooks, scripts, cadências): só o master. Espelha is_master() na RLS de prospect_*. */
+  manageProspecting: (subject: CapabilitySubject) => subject.org_level === "master",
+  /** Ações do card de prospecção (enviar, marcar enviado, objeção…): squad comercial e master. Os demais só leem. */
+  prospectActions: (subject: CapabilitySubject) => subject.org_level === "master" || subject.squads.includes("comercial"),
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;

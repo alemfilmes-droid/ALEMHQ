@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, Building, ChevronRight, Moon, User } from "lucide-react";
+import { Bell, Building, ChevronRight, MessageCircle, Moon, User } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AvatarUploader } from "@/components/profile/avatar-uploader";
 import { ProfileForm } from "@/components/profile/profile-form";
@@ -35,6 +35,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const profile = await requireProfile();
   const params = await searchParams;
   const canManageCompany = hasCapability(profile, "manageCompany");
+  const canManageProspecting = hasCapability(profile, "manageProspecting");
   const supabase = await createClient();
   const [preferences, company, commissionRules, googleResult] = await Promise.all([
     getNotificationPreferences(profile.id),
@@ -73,6 +74,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
                 </a>
               </li>
             ))}
+            {canManageProspecting ? (
+              <li className="shrink-0">
+                <Link
+                  href="/configuracoes/prospeccao"
+                  className="flex min-h-11 items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  Prospecção
+                  <ChevronRight className="size-3.5" aria-hidden />
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </nav>
 
@@ -116,6 +128,29 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
           </Card>
 
           <GoogleCalendarSettings account={googleAccount} configured={googleConfigured()} result={params.google} />
+
+          {canManageProspecting ? (
+            <Card variant="static" id="prospeccao" className="scroll-mt-24">
+              <CardHeading
+                icon={MessageCircle}
+                tone="slate"
+                title="Prospecção por WhatsApp"
+                action={
+                  <Button asChild variant="secondary" size="lg">
+                    <Link href="/configuracoes/prospeccao">
+                      Abrir
+                      <ChevronRight aria-hidden />
+                    </Link>
+                  </Button>
+                }
+              />
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Playbooks, scripts, cadências, objeções, feriados e a meta sugerida por playbook. Só você vê e edita.
+                </p>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {canManageCompany && company ? (
             <div id="empresa" className="grid scroll-mt-24 gap-6">

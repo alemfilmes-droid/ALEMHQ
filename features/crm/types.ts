@@ -1,6 +1,7 @@
 import type { ClientClosureInfo } from "@/features/clients/closures";
 import type { Temperature } from "@/features/crm/labels";
 import type { BoardPeriod } from "@/features/crm/period";
+import type { LeadProspect, ProspectFormOptions } from "@/features/prospeccao/types";
 import type { Cents } from "@/features/finance/money";
 import type {
   CompanySource,
@@ -59,6 +60,7 @@ export interface DealFormOptions {
   contacts: DealOptionContact[];
   members: DealOptionMember[];
   atendimento: DealOptionMember[];
+  prospect: ProspectFormOptions;
 }
 
 export interface DealInteractionDetail {
@@ -125,6 +127,8 @@ export interface DealDetail {
   openRequests: number;
   /** Último encerramento do cliente (por que saiu e se vale voltar a abordar). */
   closure: ClientClosureInfo | null;
+  /** Campos e cadência da prospecção (nulo se o negócio não foi encontrado). */
+  prospect: LeadProspect | null;
 }
 
 export interface StageColumnSummary {
