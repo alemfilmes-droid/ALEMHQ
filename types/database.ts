@@ -434,33 +434,6 @@ export type Database = {
           },
         ]
       }
-      client_deletion_log: {
-        Row: {
-          action: string
-          actor_id: string | null
-          company_id: string
-          created_at: string
-          id: string
-          summary: Json
-        }
-        Insert: {
-          action: string
-          actor_id?: string | null
-          company_id: string
-          created_at?: string
-          id?: string
-          summary: Json
-        }
-        Update: {
-          action?: string
-          actor_id?: string | null
-          company_id?: string
-          created_at?: string
-          id?: string
-          summary?: Json
-        }
-        Relationships: []
-      }
       client_closures: {
         Row: {
           closed_at: string
@@ -558,6 +531,110 @@ export type Database = {
           {
             foreignKeyName: "client_closures_reopened_by_fkey"
             columns: ["reopened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_deletion_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          summary: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          summary: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_deletion_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_celebrations: {
+        Row: {
+          amount: number
+          created_at: string
+          goal_id: string | null
+          goal_title: string | null
+          id: string
+          payable_id: string | null
+          profile_id: string
+          seen_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          goal_id?: string | null
+          goal_title?: string | null
+          id?: string
+          payable_id?: string | null
+          profile_id: string
+          seen_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          goal_id?: string | null
+          goal_title?: string | null
+          id?: string
+          payable_id?: string | null
+          profile_id?: string
+          seen_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_celebrations_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_celebrations_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_celebrations_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_celebrations_payable_id_fkey"
+            columns: ["payable_id"]
+            isOneToOne: false
+            referencedRelation: "payables_with_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_celebrations_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -771,49 +848,16 @@ export type Database = {
           },
         ]
       }
-      commission_celebrations: {
-        Row: {
-          amount: number
-          created_at: string
-          goal_id: string | null
-          goal_title: string | null
-          id: string
-          payable_id: string | null
-          profile_id: string
-          seen_at: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          goal_id?: string | null
-          goal_title?: string | null
-          id?: string
-          payable_id?: string | null
-          profile_id: string
-          seen_at?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          goal_id?: string | null
-          goal_title?: string | null
-          id?: string
-          payable_id?: string | null
-          profile_id?: string
-          seen_at?: string | null
-        }
-        Relationships: []
-      }
       companies: {
         Row: {
           anonymized_at: string | null
-          delete_reason: string | null
-          deleted_at: string | null
-          deleted_by: string | null
           became_client_at: string | null
           city: string | null
           created_at: string
           created_by: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           document: string | null
           health: Database["public"]["Enums"]["client_health"]
           health_note: string | null
@@ -833,13 +877,13 @@ export type Database = {
         }
         Insert: {
           anonymized_at?: string | null
-          delete_reason?: string | null
-          deleted_at?: string | null
-          deleted_by?: string | null
           became_client_at?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           document?: string | null
           health?: Database["public"]["Enums"]["client_health"]
           health_note?: string | null
@@ -859,13 +903,13 @@ export type Database = {
         }
         Update: {
           anonymized_at?: string | null
-          delete_reason?: string | null
-          deleted_at?: string | null
-          deleted_by?: string | null
           became_client_at?: string | null
           city?: string | null
           created_at?: string
           created_by?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           document?: string | null
           health?: Database["public"]["Enums"]["client_health"]
           health_note?: string | null
@@ -887,6 +931,13 @@ export type Database = {
           {
             foreignKeyName: "companies_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_deleted_by_fkey"
+            columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1163,6 +1214,41 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deal_interaction_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_interaction_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_interaction_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "deal_interaction_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_interaction_history_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "deal_interactions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       deal_interactions: {
@@ -1269,6 +1355,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals_with_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_interactions_edited_by_fkey"
+            columns: ["edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1756,7 +1849,6 @@ export type Database = {
       }
       deals: {
         Row: {
-          hidden_by_client_deletion: boolean
           archived_at: string | null
           code: string | null
           company_id: string
@@ -1767,6 +1859,7 @@ export type Database = {
           estimated_value: number | null
           expected_close_date: string | null
           fast_track: boolean
+          hidden_by_client_deletion: boolean
           id: string
           is_reheated: boolean
           lost_at: string | null
@@ -1811,7 +1904,6 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
-          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           code?: string | null
           company_id: string
@@ -1822,6 +1914,7 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           fast_track?: boolean
+          hidden_by_client_deletion?: boolean
           id?: string
           is_reheated?: boolean
           lost_at?: string | null
@@ -1866,7 +1959,6 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
-          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           code?: string | null
           company_id?: string
@@ -1877,6 +1969,7 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           fast_track?: boolean
+          hidden_by_client_deletion?: boolean
           id?: string
           is_reheated?: boolean
           lost_at?: string | null
@@ -2997,7 +3090,6 @@ export type Database = {
       }
       pautas: {
         Row: {
-          hidden_by_client_deletion: boolean
           archived_at: string | null
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing: string | null
@@ -3022,13 +3114,14 @@ export type Database = {
           equipment_notes: string | null
           format: string | null
           freelancer_id: string | null
+          hidden_by_client_deletion: boolean
           id: string
           is_critical: boolean
           is_standalone: boolean
           lead_id: string
           location_address: string | null
-          previous_assignee_id: string | null
           paused_closure_id: string | null
+          previous_assignee_id: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           project_id: string | null
           returned_at: string | null
@@ -3048,7 +3141,6 @@ export type Database = {
           waiting_on_contact_id: string | null
         }
         Insert: {
-          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
@@ -3073,13 +3165,14 @@ export type Database = {
           equipment_notes?: string | null
           format?: string | null
           freelancer_id?: string | null
+          hidden_by_client_deletion?: boolean
           id?: string
           is_critical?: boolean
           is_standalone?: boolean
           lead_id: string
           location_address?: string | null
-          previous_assignee_id?: string | null
           paused_closure_id?: string | null
+          previous_assignee_id?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           project_id?: string | null
           returned_at?: string | null
@@ -3099,7 +3192,6 @@ export type Database = {
           waiting_on_contact_id?: string | null
         }
         Update: {
-          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           board_column?: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
@@ -3124,13 +3216,14 @@ export type Database = {
           equipment_notes?: string | null
           format?: string | null
           freelancer_id?: string | null
+          hidden_by_client_deletion?: boolean
           id?: string
           is_critical?: boolean
           is_standalone?: boolean
           lead_id?: string
           location_address?: string | null
-          previous_assignee_id?: string | null
           paused_closure_id?: string | null
+          previous_assignee_id?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           project_id?: string | null
           returned_at?: string | null
@@ -3235,6 +3328,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pautas_paused_closure_id_fkey"
+            columns: ["paused_closure_id"]
+            isOneToOne: false
+            referencedRelation: "client_closures"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pautas_previous_assignee_id_fkey"
             columns: ["previous_assignee_id"]
             isOneToOne: false
@@ -3267,8 +3367,8 @@ export type Database = {
       payables: {
         Row: {
           amount: number
-          cancelled_at: string | null
           cancel_reason: string | null
+          cancelled_at: string | null
           cancelled_by: string | null
           category: Database["public"]["Enums"]["payable_category"]
           commission_goal_id: string | null
@@ -3278,16 +3378,13 @@ export type Database = {
           created_by: string | null
           description: string
           due_date: string
+          edited_at: string | null
           id: string
           is_fixed: boolean
           late_reason: string | null
           notes: string | null
           original_amount: number | null
           paid_at: string | null
-          settle_key: string | null
-          version: number
-          updated_by: string | null
-          edited_at: string | null
           paid_late: boolean
           payee_account_type:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3312,12 +3409,15 @@ export type Database = {
           scheduled_at: string | null
           scheduled_by: string | null
           scheduled_for: string | null
+          settle_key: string | null
           updated_at: string
+          updated_by: string | null
+          version: number
         }
         Insert: {
           amount: number
-          cancelled_at?: string | null
           cancel_reason?: string | null
+          cancelled_at?: string | null
           cancelled_by?: string | null
           category: Database["public"]["Enums"]["payable_category"]
           commission_goal_id?: string | null
@@ -3327,16 +3427,13 @@ export type Database = {
           created_by?: string | null
           description: string
           due_date: string
+          edited_at?: string | null
           id?: string
           is_fixed?: boolean
           late_reason?: string | null
           notes?: string | null
           original_amount?: number | null
           paid_at?: string | null
-          settle_key?: string | null
-          version?: number
-          updated_by?: string | null
-          edited_at?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3363,12 +3460,15 @@ export type Database = {
           scheduled_at?: string | null
           scheduled_by?: string | null
           scheduled_for?: string | null
+          settle_key?: string | null
           updated_at?: string
+          updated_by?: string | null
+          version?: number
         }
         Update: {
           amount?: number
-          cancelled_at?: string | null
           cancel_reason?: string | null
+          cancelled_at?: string | null
           cancelled_by?: string | null
           category?: Database["public"]["Enums"]["payable_category"]
           commission_goal_id?: string | null
@@ -3378,16 +3478,13 @@ export type Database = {
           created_by?: string | null
           description?: string
           due_date?: string
+          edited_at?: string | null
           id?: string
           is_fixed?: boolean
           late_reason?: string | null
           notes?: string | null
           original_amount?: number | null
           paid_at?: string | null
-          settle_key?: string | null
-          version?: number
-          updated_by?: string | null
-          edited_at?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3414,9 +3511,33 @@ export type Database = {
           scheduled_at?: string | null
           scheduled_by?: string | null
           scheduled_for?: string | null
+          settle_key?: string | null
           updated_at?: string
+          updated_by?: string | null
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "payables_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_commission_goal_id_fkey"
+            columns: ["commission_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_commission_goal_id_fkey"
+            columns: ["commission_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payables_company_id_fkey"
             columns: ["company_id"]
@@ -3476,6 +3597,13 @@ export type Database = {
           {
             foreignKeyName: "payables_scheduled_by_fkey"
             columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -4112,7 +4240,6 @@ export type Database = {
       }
       projects: {
         Row: {
-          hidden_by_client_deletion: boolean
           briefing: string | null
           closed_at: string | null
           closure_id: string | null
@@ -4129,6 +4256,7 @@ export type Database = {
           end_date: string | null
           finalized_at: string | null
           finalized_by: string | null
+          hidden_by_client_deletion: boolean
           id: string
           included_revision_rounds: number | null
           is_internal: boolean
@@ -4136,10 +4264,10 @@ export type Database = {
           location_notes: string | null
           margin_alert_at: string | null
           model: Database["public"]["Enums"]["project_model"]
-          paused_closure_id: string | null
-          paused_from_stage: Database["public"]["Enums"]["project_stage"] | null
           name: string
           owner_id: string
+          paused_closure_id: string | null
+          paused_from_stage: Database["public"]["Enums"]["project_stage"] | null
           payment_check_notified_at: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           production_notes: string | null
@@ -4151,7 +4279,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          hidden_by_client_deletion?: boolean
           briefing?: string | null
           closed_at?: string | null
           closure_id?: string | null
@@ -4168,6 +4295,7 @@ export type Database = {
           end_date?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
+          hidden_by_client_deletion?: boolean
           id?: string
           included_revision_rounds?: number | null
           is_internal?: boolean
@@ -4175,10 +4303,12 @@ export type Database = {
           location_notes?: string | null
           margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
-          paused_closure_id?: string | null
-          paused_from_stage?: Database["public"]["Enums"]["project_stage"] | null
           name: string
           owner_id: string
+          paused_closure_id?: string | null
+          paused_from_stage?:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           payment_check_notified_at?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           production_notes?: string | null
@@ -4190,7 +4320,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          hidden_by_client_deletion?: boolean
           briefing?: string | null
           closed_at?: string | null
           closure_id?: string | null
@@ -4207,6 +4336,7 @@ export type Database = {
           end_date?: string | null
           finalized_at?: string | null
           finalized_by?: string | null
+          hidden_by_client_deletion?: boolean
           id?: string
           included_revision_rounds?: number | null
           is_internal?: boolean
@@ -4214,10 +4344,12 @@ export type Database = {
           location_notes?: string | null
           margin_alert_at?: string | null
           model?: Database["public"]["Enums"]["project_model"]
-          paused_closure_id?: string | null
-          paused_from_stage?: Database["public"]["Enums"]["project_stage"] | null
           name?: string
           owner_id?: string
+          paused_closure_id?: string | null
+          paused_from_stage?:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           payment_check_notified_at?: string | null
           priority?: Database["public"]["Enums"]["project_priority"]
           production_notes?: string | null
@@ -4304,6 +4436,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_paused_closure_id_fkey"
+            columns: ["paused_closure_id"]
+            isOneToOne: false
+            referencedRelation: "client_closures"
             referencedColumns: ["id"]
           },
           {
@@ -5154,8 +5293,8 @@ export type Database = {
       receivables: {
         Row: {
           amount: number
-          cancelled_at: string | null
           cancel_reason: string | null
+          cancelled_at: string | null
           cancelled_by: string | null
           company_id: string
           competence_month: string | null
@@ -5164,6 +5303,7 @@ export type Database = {
           deal_id: string | null
           description: string
           due_date: string
+          edited_at: string | null
           id: string
           installment_number: number | null
           installment_total: number | null
@@ -5175,18 +5315,17 @@ export type Database = {
           received_amount: number | null
           received_at: string | null
           requires_invoice: boolean
-          settle_key: string | null
-          version: number
-          updated_by: string | null
-          edited_at: string | null
           service_description: string | null
+          settle_key: string | null
           task_id: string | null
           updated_at: string
+          updated_by: string | null
+          version: number
         }
         Insert: {
           amount: number
-          cancelled_at?: string | null
           cancel_reason?: string | null
+          cancelled_at?: string | null
           cancelled_by?: string | null
           company_id: string
           competence_month?: string | null
@@ -5195,6 +5334,7 @@ export type Database = {
           deal_id?: string | null
           description: string
           due_date: string
+          edited_at?: string | null
           id?: string
           installment_number?: number | null
           installment_total?: number | null
@@ -5206,18 +5346,17 @@ export type Database = {
           received_amount?: number | null
           received_at?: string | null
           requires_invoice?: boolean
-          settle_key?: string | null
-          version?: number
-          updated_by?: string | null
-          edited_at?: string | null
           service_description?: string | null
+          settle_key?: string | null
           task_id?: string | null
           updated_at?: string
+          updated_by?: string | null
+          version?: number
         }
         Update: {
           amount?: number
-          cancelled_at?: string | null
           cancel_reason?: string | null
+          cancelled_at?: string | null
           cancelled_by?: string | null
           company_id?: string
           competence_month?: string | null
@@ -5226,6 +5365,7 @@ export type Database = {
           deal_id?: string | null
           description?: string
           due_date?: string
+          edited_at?: string | null
           id?: string
           installment_number?: number | null
           installment_total?: number | null
@@ -5237,15 +5377,21 @@ export type Database = {
           received_amount?: number | null
           received_at?: string | null
           requires_invoice?: boolean
-          settle_key?: string | null
-          version?: number
-          updated_by?: string | null
-          edited_at?: string | null
           service_description?: string | null
+          settle_key?: string | null
           task_id?: string | null
           updated_at?: string
+          updated_by?: string | null
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "receivables_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "receivables_company_id_fkey"
             columns: ["company_id"]
@@ -5307,6 +5453,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -5762,7 +5915,6 @@ export type Database = {
       }
       goals_with_progress: {
         Row: {
-          outcome: string | null
           approved_at: string | null
           approved_by: string | null
           approved_value: number | null
@@ -5789,6 +5941,7 @@ export type Database = {
           metric: Database["public"]["Enums"]["goal_metric"] | null
           milestones_notified: number[] | null
           min_achievement_pct: number | null
+          outcome: string | null
           owner_avatar_url: string | null
           owner_id: string | null
           owner_name: string | null
@@ -6028,22 +6181,19 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
-          commission_goal_id: string | null
-          cancel_reason: string | null
-          cancelled_by: string | null
-          settle_key: string | null
-          version: number | null
-          updated_by: string | null
-          edited_at: string | null
           amount: number | null
+          cancel_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           category: Database["public"]["Enums"]["payable_category"] | null
+          commission_goal_id: string | null
           company_id: string | null
           cost_scope: Database["public"]["Enums"]["cost_scope"] | null
           created_at: string | null
           created_by: string | null
           description: string | null
           due_date: string | null
+          edited_at: string | null
           id: string | null
           is_fixed: boolean | null
           late_reason: string | null
@@ -6076,10 +6226,34 @@ export type Database = {
           scheduled_at: string | null
           scheduled_by: string | null
           scheduled_for: string | null
+          settle_key: string | null
           status: string | null
           updated_at: string | null
+          updated_by: string | null
+          version: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payables_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_commission_goal_id_fkey"
+            columns: ["commission_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_commission_goal_id_fkey"
+            columns: ["commission_goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals_with_progress"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payables_company_id_fkey"
             columns: ["company_id"]
@@ -6143,6 +6317,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payables_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       project_profitability: {
@@ -6182,11 +6363,9 @@ export type Database = {
       }
       receivables_with_status: {
         Row: {
+          cancel_reason: string | null
+          cancelled_by: string | null
           requires_invoice: boolean | null
-          settle_key: string | null
-          version: number | null
-          updated_by: string | null
-          edited_at: string | null
           amount: number | null
           cancelled_at: string | null
           company_id: string | null
@@ -6197,6 +6376,7 @@ export type Database = {
           deal_id: string | null
           description: string | null
           due_date: string | null
+          edited_at: string | null
           id: string | null
           installment_number: number | null
           installment_total: number | null
@@ -6209,9 +6389,12 @@ export type Database = {
           received_amount: number | null
           received_at: string | null
           service_description: string | null
+          settle_key: string | null
           status: string | null
           task_id: string | null
           updated_at: string | null
+          updated_by: string | null
+          version: number | null
         }
         Relationships: [
           {
@@ -6275,6 +6458,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6445,6 +6635,7 @@ export type Database = {
       can_view_deal_notes: { Args: { p_deal_id: string }; Returns: boolean }
       can_view_goal: { Args: { p_goal_id: string }; Returns: boolean }
       can_view_pauta: { Args: { p_pauta_id: string }; Returns: boolean }
+      ceo_id: { Args: never; Returns: string }
       check_project_payment: {
         Args: { p_project_id: string }
         Returns: undefined
@@ -6453,35 +6644,9 @@ export type Database = {
         Args: { p_company_id: string; p_confirm: string }
         Returns: undefined
       }
-      client_delete: {
-        Args: {
-          p_cancel_commitment_ids?: string[]
-          p_company_id: string
-          p_confirm_name: string
-          p_reason?: string
-        }
-        Returns: Json
-      }
-      client_deletion_flags: { Args: { p_counts: Json }; Returns: Json }
-      client_deletion_summary: { Args: { p_company_id: string }; Returns: Json }
-      client_is_deleted: { Args: { p_company_id: string }; Returns: boolean }
-      client_name_matches: {
-        Args: { p_name: string; p_typed: string }
-        Returns: boolean
-      }
-      client_purge: {
-        Args: { p_company_id: string; p_confirm_name: string }
-        Returns: undefined
-      }
-      client_restore: { Args: { p_company_id: string }; Returns: undefined }
-      client_trash_list: { Args: never; Returns: Json }
-      client_closure_preview: {
-        Args: {
-          p_closed_at?: string
-          p_company_id: string
-          p_project_id?: string
-        }
-        Returns: Json
+      client_cancel_house_reentry: {
+        Args: { p_company_id: string }
+        Returns: number
       }
       client_close: {
         Args: {
@@ -6498,13 +6663,118 @@ export type Database = {
         }
         Returns: string
       }
-      client_pause: {
-        Args: { p_closed_at: string; p_company_id: string; p_description: string; p_notes?: string }
+      client_closure_preview: {
+        Args: {
+          p_closed_at?: string
+          p_company_id: string
+          p_project_id?: string
+        }
+        Returns: Json
+      }
+      client_delete: {
+        Args: {
+          p_cancel_commitment_ids?: string[]
+          p_company_id: string
+          p_confirm_name: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      client_deletion_counts: { Args: { p_company_id: string }; Returns: Json }
+      client_deletion_flags: { Args: { p_counts: Json }; Returns: Json }
+      client_deletion_summary: { Args: { p_company_id: string }; Returns: Json }
+      client_inactive_status: {
+        Args: { p_reason: Database["public"]["Enums"]["closure_reason"] }
         Returns: string
+      }
+      client_is_deleted: { Args: { p_company_id: string }; Returns: boolean }
+      client_is_inactive: { Args: { p_company_id: string }; Returns: boolean }
+      client_name_matches: {
+        Args: { p_name: string; p_typed: string }
+        Returns: boolean
+      }
+      client_open_closure: {
+        Args: { p_company_id: string }
+        Returns: {
+          closed_at: string
+          closed_by: string | null
+          company_id: string
+          created_at: string
+          description: string
+          future_prospect_potential: Database["public"]["Enums"]["prospect_potential"]
+          has_pending_payables: boolean
+          has_pending_receivables: boolean
+          id: string
+          notes: string | null
+          pending_payables_note: string | null
+          pending_receivables_note: string | null
+          project_id: string | null
+          reason: Database["public"]["Enums"]["closure_reason"]
+          reopened_at: string | null
+          reopened_by: string | null
+          summary: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "client_closures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      client_pause: {
+        Args: {
+          p_closed_at: string
+          p_company_id: string
+          p_description: string
+          p_notes?: string
+        }
+        Returns: string
+      }
+      client_purge: {
+        Args: { p_company_id: string; p_confirm_name: string }
+        Returns: undefined
       }
       client_reactivate: {
         Args: { p_company_id: string; p_restore_paused: boolean }
         Returns: undefined
+      }
+      client_require_master: { Args: never; Returns: undefined }
+      client_restore: { Args: { p_company_id: string }; Returns: undefined }
+      client_trash_list: { Args: never; Returns: Json }
+      client_trashed: {
+        Args: { p_company_id: string }
+        Returns: {
+          anonymized_at: string | null
+          became_client_at: string | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          document: string | null
+          health: Database["public"]["Enums"]["client_health"]
+          health_note: string | null
+          health_updated_at: string | null
+          health_updated_by: string | null
+          id: string
+          instagram: string | null
+          lifecycle: Database["public"]["Enums"]["company_lifecycle"]
+          logo_url: string | null
+          name: string
+          segment: string | null
+          source: Database["public"]["Enums"]["company_source"] | null
+          source_detail: string | null
+          tier: Database["public"]["Enums"]["client_tier"] | null
+          updated_at: string
+          website: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "companies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       close_client: {
         Args: {
@@ -6553,6 +6823,7 @@ export type Database = {
           end_date: string | null
           finalized_at: string | null
           finalized_by: string | null
+          hidden_by_client_deletion: boolean
           id: string
           included_revision_rounds: number | null
           is_internal: boolean
@@ -6562,6 +6833,8 @@ export type Database = {
           model: Database["public"]["Enums"]["project_model"]
           name: string
           owner_id: string
+          paused_closure_id: string | null
+          paused_from_stage: Database["public"]["Enums"]["project_stage"] | null
           payment_check_notified_at: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           production_notes: string | null
@@ -6595,6 +6868,10 @@ export type Database = {
         Args: { p_company_id: string; p_project_id: string }
         Returns: string[]
       }
+      commission_celebration_seen: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       company_closed_since: { Args: { p_company_id: string }; Returns: string }
       company_contract_ranking: {
         Args: never
@@ -6616,6 +6893,17 @@ export type Database = {
         }[]
       }
       create_reactivation_pautas: { Args: never; Returns: undefined }
+      crm_ball_for_stage: {
+        Args: {
+          p_attendee: string
+          p_ceo: string
+          p_current: string
+          p_fast_track: boolean
+          p_owner: string
+          p_stage: Database["public"]["Enums"]["deal_stage"]
+        }
+        Returns: string
+      }
       crm_client_responded: { Args: { p_deal_id: string }; Returns: boolean }
       crm_commission_percent: { Args: { p_reheated: boolean }; Returns: number }
       crm_create_deal: {
@@ -6648,11 +6936,45 @@ export type Database = {
         Args: { p_task: Database["public"]["Enums"]["direction_task"] }
         Returns: string
       }
+      crm_effective_time: { Args: { p_at: string }; Returns: string }
       crm_goal_label: {
         Args: { p_goal: Database["public"]["Enums"]["prospection_goal"] }
         Returns: string
       }
       crm_head_id: { Args: never; Returns: string }
+      crm_is_ceo: { Args: never; Returns: boolean }
+      crm_lock_interaction: {
+        Args: { p_interaction_id: string }
+        Returns: {
+          approach: string | null
+          author_id: string | null
+          body: string
+          channel:
+            | Database["public"]["Enums"]["deal_interaction_channel"]
+            | null
+          consumed_at: string | null
+          created_at: string
+          deal_id: string
+          deleted_at: string | null
+          edited_at: string | null
+          edited_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["deal_interaction_kind"]
+          next_step: string | null
+          occurred_at: string
+          responded: boolean | null
+          responded_to_interaction_id: string | null
+          stage: Database["public"]["Enums"]["deal_stage"]
+          stage_to: Database["public"]["Enums"]["deal_stage"] | null
+          summary: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deal_interactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       crm_pauta_column: {
         Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
         Returns: Database["public"]["Enums"]["pauta_column"]
@@ -6711,6 +7033,20 @@ export type Database = {
         Returns: undefined
       }
       deal_discard_reheat: { Args: { p_deal_id: string }; Returns: undefined }
+      deal_interaction_delete: {
+        Args: { p_interaction_id: string; p_reason: string }
+        Returns: undefined
+      }
+      deal_interaction_update: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["deal_interaction_channel"]
+          p_interaction_id: string
+          p_occurred_at: string
+          p_reason?: string
+          p_summary: string
+        }
+        Returns: undefined
+      }
       deal_log_interaction: {
         Args: {
           p_approach: string
@@ -6727,20 +7063,6 @@ export type Database = {
           p_summary?: string
         }
         Returns: string
-      }
-      deal_interaction_delete: {
-        Args: { p_interaction_id: string; p_reason: string }
-        Returns: undefined
-      }
-      deal_interaction_update: {
-        Args: {
-          p_channel: Database["public"]["Enums"]["deal_interaction_channel"]
-          p_interaction_id: string
-          p_occurred_at: string
-          p_reason?: string
-          p_summary: string
-        }
-        Returns: undefined
       }
       deal_mark_lost: {
         Args: {
@@ -6899,6 +7221,15 @@ export type Database = {
           version: number
         }[]
       }
+      finance_commission_goals: {
+        Args: never
+        Returns: {
+          id: string
+          outcome: string
+          owner_id: string
+          title: string
+        }[]
+      }
       finance_deals_in_negotiation: {
         Args: never
         Returns: {
@@ -6917,7 +7248,10 @@ export type Database = {
           weighted_amount: number
         }[]
       }
-      finance_executor_id: { Args: never; Returns: string }
+      finance_diff: {
+        Args: { p_after: Json; p_before: Json; p_fields: string[] }
+        Returns: Json
+      }
       finance_edit_settled: {
         Args: {
           p_entry_id: string
@@ -6928,32 +7262,8 @@ export type Database = {
         }
         Returns: number
       }
-      goal_commission_payments: {
-        Args: { p_goal_id: string }
-        Returns: { amount: number; due_date: string; paid_at: string | null; scheduled_for: string | null }[]
-      }
-      goal_finalize: {
-        Args: { p_commission?: number; p_goal_id: string; p_reached: boolean }
-        Returns: undefined
-      }
-      commission_celebration_seen: {
-        Args: { p_id: string }
-        Returns: undefined
-      }
-      finance_commission_goals: {
-        Args: never
-        Returns: { id: string; outcome: string | null; owner_id: string; title: string }[]
-      }
+      finance_executor_id: { Args: never; Returns: string }
       finance_generate_auto_pautas: { Args: never; Returns: number }
-      finance_reverse_settlement: {
-        Args: {
-          p_entry_id: string
-          p_entry_type: string
-          p_expected_version: number
-          p_reason: string
-        }
-        Returns: number
-      }
       finance_late_payments: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -6971,6 +7281,14 @@ export type Database = {
         }[]
       }
       finance_lead_id: { Args: never; Returns: string }
+      finance_lock_settled: {
+        Args: {
+          p_entry_id: string
+          p_entry_type: string
+          p_expected_version: number
+        }
+        Returns: Json
+      }
       finance_margin_below_target: {
         Args: never
         Returns: {
@@ -6987,6 +7305,27 @@ export type Database = {
         Returns: string
       }
       finance_payment_lead_id: { Args: never; Returns: string }
+      finance_reason_fields: {
+        Args: { p_entry_type: string }
+        Returns: string[]
+      }
+      finance_reverse_settlement: {
+        Args: {
+          p_entry_id: string
+          p_entry_type: string
+          p_expected_version: number
+          p_reason: string
+        }
+        Returns: number
+      }
+      finance_settled_fields: {
+        Args: { p_entry_type: string }
+        Returns: string[]
+      }
+      finance_sync_commission: {
+        Args: { p_changes: Json; p_payable_id: string; p_reversed: boolean }
+        Returns: undefined
+      }
       fmt_brl: { Args: { p_value: number }; Returns: string }
       fmt_qty: { Args: { p_value: number }; Returns: string }
       generate_installments: {
@@ -7002,7 +7341,9 @@ export type Database = {
         }
         Returns: {
           amount: number
+          cancel_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           company_id: string
           competence_month: string | null
           created_at: string
@@ -7010,6 +7351,7 @@ export type Database = {
           deal_id: string | null
           description: string
           due_date: string
+          edited_at: string | null
           id: string
           installment_number: number | null
           installment_total: number | null
@@ -7020,9 +7362,13 @@ export type Database = {
           project_id: string | null
           received_amount: number | null
           received_at: string | null
+          requires_invoice: boolean
           service_description: string | null
+          settle_key: string | null
           task_id: string | null
           updated_at: string
+          updated_by: string | null
+          version: number
         }[]
         SetofOptions: {
           from: "*"
@@ -7035,14 +7381,18 @@ export type Database = {
         Args: { p_payable_id: string }
         Returns: {
           amount: number
+          cancel_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           category: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id: string | null
           company_id: string | null
           cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
           created_by: string | null
           description: string
           due_date: string
+          edited_at: string | null
           id: string
           is_fixed: boolean
           late_reason: string | null
@@ -7073,7 +7423,10 @@ export type Database = {
           scheduled_at: string | null
           scheduled_by: string | null
           scheduled_for: string | null
+          settle_key: string | null
           updated_at: string
+          updated_by: string | null
+          version: number
         }[]
         SetofOptions: {
           from: "*"
@@ -7111,6 +7464,15 @@ export type Database = {
         }
         Returns: number
       }
+      goal_commission_payments: {
+        Args: { p_goal_id: string }
+        Returns: {
+          amount: number
+          due_date: string
+          paid_at: string
+          scheduled_for: string
+        }[]
+      }
       goal_contract_rate: {
         Args: {
           p_achieved: number
@@ -7133,6 +7495,10 @@ export type Database = {
         }[]
       }
       goal_deal_value: { Args: { p_deal_id: string }; Returns: number }
+      goal_finalize: {
+        Args: { p_commission?: number; p_goal_id: string; p_reached: boolean }
+        Returns: undefined
+      }
       goal_fmt: {
         Args: { p_is_money: boolean; p_value: number }
         Returns: string
@@ -7220,7 +7586,26 @@ export type Database = {
           last_sync_at: string
         }[]
       }
+      notification_allowed: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_recipient: string
+          p_type: string
+        }
+        Returns: boolean
+      }
       notification_category: { Args: { p_type: string }; Returns: string }
+      notification_rule: {
+        Args: {
+          p_holds_ball: boolean
+          p_pauta_is_crm: boolean
+          p_pauta_squad: Database["public"]["Enums"]["squad"]
+          p_recipient_is_ceo: boolean
+          p_type: string
+        }
+        Returns: boolean
+      }
       notified_today: {
         Args: { p_entity: string; p_recipient: string; p_type: string }
         Returns: boolean
@@ -7322,11 +7707,13 @@ export type Database = {
           equipment_notes: string | null
           format: string | null
           freelancer_id: string | null
+          hidden_by_client_deletion: boolean
           id: string
           is_critical: boolean
           is_standalone: boolean
           lead_id: string
           location_address: string | null
+          paused_closure_id: string | null
           previous_assignee_id: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           project_id: string | null
@@ -7383,11 +7770,13 @@ export type Database = {
           equipment_notes: string | null
           format: string | null
           freelancer_id: string | null
+          hidden_by_client_deletion: boolean
           id: string
           is_critical: boolean
           is_standalone: boolean
           lead_id: string
           location_address: string | null
+          paused_closure_id: string | null
           previous_assignee_id: string | null
           priority: Database["public"]["Enums"]["project_priority"]
           project_id: string | null
@@ -8100,7 +8489,12 @@ export const Constants = {
         "descartar",
       ],
       finance_history_action: ["EDIT", "REVERSE_WRITE_OFF"],
-      goal_commission_mode: ["percentual", "por_unidade", "contratos_fechados", "valor_fixo"],
+      goal_commission_mode: [
+        "percentual",
+        "por_unidade",
+        "contratos_fechados",
+        "valor_fixo",
+      ],
       goal_entry_source: ["manual", "crm"],
       goal_entry_status: ["pendente", "aprovado", "recusado"],
       goal_metric: [

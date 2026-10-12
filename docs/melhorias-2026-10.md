@@ -437,3 +437,21 @@ nome exato; aviso na cor de erro do HQ, não no vermelho da marca).
 
 **Telas afetadas**: Clientes (aba Lixeira, menu ⋯ na página do cliente, aviso de excluído), Projetos, Pautas, CRM,
 Agenda, Orçamentos, Financeiro (nome marcado e listas de escolha).
+
+## Bloco 9 — Publicação (em andamento)
+
+1. **Testes finais — PASSOU** (12/10/2026): 295 testes do código; checagem de tipos e lint sem erros; as 10 migrações
+   pendentes em sequência no banco de produção dentro de `begin … rollback`; cenários refeitos por cima delas: 3B 21/21,
+   4 6/6, notificações 65/65, bola 14/14 (o caso "Em análise" só no código), 6 23/23, 7 18/18, 8C 54/54. Auditoria de
+   baixas refeita pelo Anderson: nenhuma duplicada (21 pagamentos e 5 recebimentos com baixa).
+2. **Cópia de segurança**: `~/Documents/backup-alem-hq/2026-10-12/hq.dump` (pg_dump do Postgres.app, schemas public,
+   auth e storage; 1,2 MB, 105 tabelas com dados). Como restaurar: `docs/backup-e-restauracao.md`. A senha do banco não
+   é usada por nada do projeto (Vercel, .env.local, CLI e scripts usam só as chaves do Supabase).
+3. **Variáveis de ambiente**: nenhuma nova. `NEXT_PUBLIC_SITE_URL` = https://hq.alemfilmes.com.br (domínio oficial).
+4. **Migrações aplicadas** pelo Anderson (`npx supabase db push`): as 10, conferidas no banco (`migration list` sem
+   pendências; "Em análise" e "Valor fixo" existem; contagens iguais às de antes: 19 recebimentos, 170 pagamentos,
+   5 metas, 21 negócios, 51 pautas). Tipos regenerados do banco real (`npm run db:types` + ajustes manuais).
+   - **Correção achada ao regenerar os tipos**: a view `receivables_with_status` não trazia "Nota fiscal: Sim/Não"
+     (foi recriada no Bloco 3B, antes da coluna do Bloco 5). Sem a correção, a marca "Sem nota fiscal" não aparecia e
+     editar um recebimento "Não" voltaria para "Sim". Migração `20261023090000_receivables_view_invoice_flag.sql`
+     (recria a view com o mesmo corpo; validada em rollback: mesmas 19 linhas e mesma soma).
