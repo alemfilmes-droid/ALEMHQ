@@ -6363,11 +6363,10 @@ export type Database = {
       }
       receivables_with_status: {
         Row: {
-          cancel_reason: string | null
-          cancelled_by: string | null
-          requires_invoice: boolean | null
           amount: number | null
+          cancel_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           company_id: string | null
           company_name: string | null
           competence_month: string | null
@@ -6388,6 +6387,7 @@ export type Database = {
           project_name: string | null
           received_amount: number | null
           received_at: string | null
+          requires_invoice: boolean | null
           service_description: string | null
           settle_key: string | null
           status: string | null
@@ -6397,6 +6397,13 @@ export type Database = {
           version: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "receivables_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "receivables_company_id_fkey"
             columns: ["company_id"]
