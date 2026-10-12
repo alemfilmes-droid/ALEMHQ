@@ -298,3 +298,44 @@ retorno que ainda não começou é descartado.
 **Testes**: `lib/clients/lifecycle.test.ts` (status, plano do financeiro Sim/Não, lançamento manual, último projeto) +
 cenário completo no banco em `begin … rollback` (23 passos: encerrar com marcado/não marcado/vencido/pago, manuais,
 bloqueio de projeto e pauta novos, reativar, pausar e reativar com tudo, churn cancelando cliente da casa, recusas).
+
+## Bloco 7 — Metas, comissões e comemoração (pedido do Anderson)
+
+**Tipo de comissão**: "Percentual (%)" ou **"Valor fixo (R$)"** (novo, migração `20261021090000`), além dos modos que já
+existiam (por unidade, contratos fechados). Valor fixo paga o próprio valor a partir do gatilho da meta.
+
+**Início**: quem tem meta ativa vê o card grande da meta no topo (já existia, com barra, números e prazo). O CEO vê o card
+"Metas da equipe", agora com **cada pessoa, a meta, a % e a barra e o prazo** (antes eram só contagens).
+
+**"Finalizar meta"** (CEO/admin, `goal_finalize`) — substitui o "Aprovar meta" (exceto metas por contratos fechados, que
+seguem a aprovação com pagamento por contrato):
+- **Meta batida**: percentual → o CEO informa o valor final em R$ (obrigatório); valor fixo → o valor aparece para confirmar;
+  por unidade → calculado. Fica em "Encerradas" como **Meta batida** (verde) com a comissão. A pessoa é avisada; o CEO e o
+  squad financeiro recebem **"Agendar pagamento da comissão de [nome] — [meta] — R$ X"**. **O pagamento não é criado
+  sozinho** (antes a aprovação lançava o pagamento automaticamente).
+- **Meta não alcançada**: em "Encerradas" no vermelho de erro do HQ (`--status-danger`, não o da marca), com "faltaram X%".
+
+**Pagamento "Referente a: Comissão"** (categoria Comissão no Financeiro): beneficiário obrigatório (pessoa da equipe) e meta
+ligada opcional (`payables.commission_goal_id`). Ao lançar, o beneficiário recebe "Sua comissão de R$ X será paga em DD/MM"
+(de novo se a data agendada mudar); depois da baixa, "Comissão paga". A página da meta mostra "Comissão agendada" →
+"Comissão paga" (`goal_commission_payments`: o dono e a diretoria veem; o financeiro vê todos os pagamentos).
+
+**Comemoração**: popup "Parabéns, [primeiro nome]!" / "Você ganhou R$ X de comissão" (+ a meta), com confete em canvas
+(sem biblioteca; sem confete com "reduzir movimento"), uma vez por comissão, na próxima tela aberta
+(`commission_celebrations` + "visto"). Nasce na meta batida com comissão e em todo pagamento de comissão que não seja de
+meta já comemorada (comissões avulsas também). Editar o valor depois não repete.
+
+**Notificações de metas para o CEO** (regra única do Bloco 5): meta para finalizar, lançamento para revisar e "agendar
+pagamento da comissão"; os demais avisos de meta (marcos, ritmo) não chegam a ele. Casos: 65.
+
+**Migrações**: `20261021090000_goal_fixed_commission_enum.sql`, `20261021090100_goals_finalize_commissions.sql` (coluna
+`goals.outcome`, `payables.commission_goal_id`, tabela `commission_celebrations`, funções; views `goals_with_progress` e
+`payables_with_status` recriadas com o mesmo corpo).
+
+**Telas afetadas**: Início (cards de meta), Metas (lista, Encerradas, página da meta: Finalizar, resultado e comissão),
+formulário de meta, Financeiro (pagamento de comissão), popup em qualquer tela.
+
+**Testes**: `lib/goals/finalize.test.ts` (fixo × percentual, batida × não, % que faltou), `lib/goals/celebration.test.ts`,
+`lib/notifications/routing.test.ts`; cenário no banco em `begin … rollback` (18 passos: valor final obrigatório, sem
+pagamento automático, comemoração única, avisos, não alcançada com 18%, pagamento ligado e avulso, paga, editar sem repetir).
+O modo "valor fixo" não roda no banco antes de existir de fato (valor novo de enum); está coberto pelos testes do código.

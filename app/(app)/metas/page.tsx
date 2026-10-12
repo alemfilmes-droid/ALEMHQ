@@ -36,7 +36,7 @@ export default async function GoalsPage({ searchParams }: { searchParams: Search
         title="Metas."
         description={
           isManager
-            ? "Metas com comissão: você define, a pessoa alimenta, você revisa e aprova. A comissão aprovada vira pagamento no financeiro."
+            ? "Metas com comissão: você define, a pessoa alimenta e você finaliza (batida ou não). O financeiro agenda o pagamento da comissão."
             : "Suas metas, o quanto já foi confirmado e quanto você recebe de comissão."
         }
         actions={isManager ? <NewGoalButton owners={owners} /> : undefined}

@@ -14,7 +14,9 @@ import { GoalProgressBar } from "@/features/goals/components/goal-progress-bar";
 import { formatCommissionRule, formatGoalValue, goalPace, percentOf } from "@/features/goals/progress";
 import { getGoal, getPaymentDetails, listGoalEntries, listGoalOwnerOptions } from "@/features/goals/queries";
 import { GOAL_METRIC_LABELS } from "@/features/goals/types";
-import { hasCapability } from "@/lib/auth/permissions";
+import { goalCommissionPaymentsAction } from "@/features/goals/actions";
+import { CommissionHistory, GoalOutcomeBadge } from "@/features/goals/components/goal-outcome";
+import { hasCapability, isDirectorOrAdmin } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { todayInAppZone } from "@/lib/calendar";
 import { formatDate } from "@/lib/format";
@@ -34,10 +36,11 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
   const goal = await getGoal(id);
   if (!goal) notFound();
 
-  const [entries, owners, payee] = await Promise.all([
+  const [entries, owners, payee, commissionPayments] = await Promise.all([
     listGoalEntries(id),
     isManager ? listGoalOwnerOptions() : Promise.resolve([]),
     isManager && canSeeFinance ? getPaymentDetails(goal.ownerId) : Promise.resolve(undefined),
+    goal.outcome ? goalCommissionPaymentsAction(id) : Promise.resolve([]),
   ]);
 
   const today = todayInAppZone();
@@ -82,10 +85,21 @@ export default async function GoalPage({ params }: { params: Promise<{ id: strin
             </span>
           </span>
         }
-        actions={<GoalActions goal={goal} isManager={isManager} owners={owners} payeeHasDetails={payee === undefined ? null : payee !== null} />}
+        actions={
+          <GoalActions goal={goal} isManager={isManager} owners={owners} payeeHasDetails={payee === undefined ? null : payee !== null} canFinalize={isDirectorOrAdmin(profile)} />
+        }
       />
 
       <div className="space-y-8">
+        {goal.outcome ? (
+          <Card variant="static">
+            <CardHeading icon={Coins} tone="success" title="Resultado e comissão" />
+            <CardContent className="space-y-4">
+              <GoalOutcomeBadge goal={goal} />
+              <CommissionHistory payments={commissionPayments} />
+            </CardContent>
+          </Card>
+        ) : null}
         <Card variant="static">
           <CardContent className="space-y-6 pt-6">
             <div className="flex flex-wrap items-end justify-between gap-4">

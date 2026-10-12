@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { formatCents } from "@/features/finance/money";
 import { approveGoalAction, deleteGoalAction, setGoalStatusAction, syncGoalAction } from "@/features/goals/actions";
+import { FinalizeGoalDialog } from "@/features/goals/components/finalize-goal-dialog";
 import { GoalFormDialog } from "@/features/goals/components/goal-form-dialog";
 import { contractRate, formatGoalValue, percentOf } from "@/features/goals/progress";
 import type { GoalItem } from "@/features/goals/types";
@@ -25,6 +26,8 @@ interface GoalActionsProps {
   owners: { id: string; name: string }[];
   /** O responsável já cadastrou os dados de pagamento (só a diretoria com financeiro sabe). */
   payeeHasDetails: boolean | null;
+  /** CEO/admin: "Finalizar meta". */
+  canFinalize: boolean;
 }
 
 const pct = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
@@ -120,10 +123,13 @@ function ApproveDialog({ goal, payeeHasDetails, onOpenChange }: { goal: GoalItem
 }
 
 /** Ações do cabeçalho da meta: diretoria (editar, encerrar, aprovar, cancelar) e responsável (sincronizar). */
-export function GoalActions({ goal, isManager, owners, payeeHasDetails }: GoalActionsProps) {
+export function GoalActions({ goal, isManager, owners, payeeHasDetails, canFinalize }: GoalActionsProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+  // Contratos fechados seguem a aprovação (pagamento por contrato); os demais modos são finalizados.
+  const contracts = goal.commissionMode === "contratos_fechados";
   const [pending, startTransition] = useTransition();
   const open = goal.status === "ativa" || goal.status === "em_revisao";
 
@@ -146,10 +152,16 @@ export function GoalActions({ goal, isManager, owners, payeeHasDetails }: GoalAc
         </Button>
       ) : null}
 
-      {isManager && open ? (
+      {isManager && open && contracts ? (
         <Button size="sm" onClick={() => setApproving(true)}>
           <CheckCircle2 aria-hidden />
           Aprovar meta
+        </Button>
+      ) : null}
+      {canFinalize && open && !contracts ? (
+        <Button size="sm" className="min-h-11 sm:min-h-0" onClick={() => setFinalizing(true)}>
+          <CheckCircle2 aria-hidden />
+          Finalizar meta
         </Button>
       ) : null}
 
@@ -200,6 +212,7 @@ export function GoalActions({ goal, isManager, owners, payeeHasDetails }: GoalAc
       ) : null}
 
       {editing ? <GoalFormDialog goal={goal} owners={owners} onOpenChange={setEditing} /> : null}
+      {finalizing ? <FinalizeGoalDialog goal={goal} onOpenChange={setFinalizing} /> : null}
       {approving ? <ApproveDialog goal={goal} payeeHasDetails={payeeHasDetails} onOpenChange={setApproving} /> : null}
     </div>
   );

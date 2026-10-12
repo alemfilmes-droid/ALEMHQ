@@ -59,10 +59,16 @@ export const GOAL_STATUS_TONE: Record<GoalStatus, StatusTone> = {
 };
 
 export const COMMISSION_MODE_LABELS: Record<GoalCommissionMode, string> = {
-  percentual: "% sobre o valor atingido",
+  percentual: "Percentual (%)",
+  valor_fixo: "Valor fixo (R$)",
   por_unidade: "R$ por unidade atingida",
   contratos_fechados: "% sobre contratos fechados",
 };
+
+/** Modos em que a taxa é dinheiro (centavos na tela): fixo e por unidade. */
+export function isMoneyRate(mode: GoalCommissionMode): boolean {
+  return mode === "valor_fixo" || mode === "por_unidade";
+}
 
 export const ENTRY_STATUS_LABELS: Record<GoalEntryStatus, string> = {
   pendente: "A confirmar",
@@ -118,7 +124,7 @@ export interface GoalItem {
   startsOn: string;
   endsOn: string;
   commissionMode: GoalCommissionMode;
-  /** percentual/contratos_fechados: 0–100. por_unidade: centavos por unidade. */
+  /** percentual/contratos_fechados: 0–100. por_unidade: centavos por unidade. valor_fixo: centavos. */
   commissionRate: number;
   /** contratos_fechados: % pago abaixo do mínimo (a comissão fixa padrão). */
   fallbackRate: number;
@@ -141,6 +147,8 @@ export interface GoalItem {
   finalAchieved: number | null;
   finalCommission: number | null;
   payableId: string | null;
+  /** Finalizada: "batida" ou "nao_batida" (nulo nas abertas e nas aprovadas antes do Bloco 7). */
+  outcome: "batida" | "nao_batida" | null;
 }
 
 export interface GoalEntryItem {

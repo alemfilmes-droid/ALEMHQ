@@ -11,7 +11,7 @@
 -- 3. Notificações: UMA regra (notification_rule) aplicada a toda notificação inserida (gatilho em
 --    notifications — cobre notify() e as inserções diretas). Prazo/tarefa de negócio só para quem está com a
 --    bola; para o CEO: audiovisual igual, comercial só nos 3 casos, financeiro só recebimento e
---    pagamento vencidos (só atrasos), metas/comissões como estão (o Bloco 7 define os lembretes).
+--    pagamento vencidos (só atrasos), metas: finalizar, revisar lançamento e agendar comissão.
 --
 -- Só substitui funções (mesmas assinaturas) e cria funções/gatilho. Nenhum dado muda.
 
@@ -376,8 +376,11 @@ as $$
     -- CEO · comercial: só resposta a direcionamento dele, negócio enviado para a revisão dele e bola com ele.
     when p_type in ('deal_responsible', 'deal_qualification_review', 'deal_request', 'deal_request_reply', 'deal_request_resolved') then true
     when p_type like 'deal\_%' or p_type like 'crm\_%' or p_type like 'prospect\_%' then false
-    -- CEO · metas e comissões: como estão (o Bloco 7 define os lembretes).
-    when p_type like 'goal\_%' or p_type in ('finance_commission', 'finance_commission_updated') then true
+    -- CEO · metas e comissões (Bloco 7): meta para finalizar, lançamento para revisar e "agendar pagamento de
+    -- comissão"; comissões dele mesmo. Os demais avisos de meta (marcos, ritmo diário) não chegam.
+    when p_type in ('goal_review', 'goal_entry_pending', 'goal_commission_to_schedule') then true
+    when p_type like 'goal\_%' then false
+    when p_type in ('finance_commission', 'finance_commission_updated') then true
     -- CEO · financeiro: só alertas de atraso (recebimento e pagamento vencidos). Nada de "tarefa a fazer".
     when p_type in ('finance_overdue_receivable', 'finance_overdue_payable') then true
     when p_type like 'finance\_%' then false

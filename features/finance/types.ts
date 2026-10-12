@@ -72,6 +72,8 @@ export interface PayableItem {
   version: number;
   /** Última edição/estorno feito depois da baixa (mostra a etiqueta "Editado"). */
   editedAt: string | null;
+  /** "Referente a: Comissão": meta ligada. */
+  commissionGoalId: string | null;
 }
 
 /** Uma linha do "Histórico de alterações" de um lançamento. */
@@ -142,6 +144,8 @@ export interface FinanceOptions {
   members: { id: string; full_name: string }[];
   /** Diretoria e squad financeiro: editar e estornar lançamentos já baixados (o banco repete a regra). */
   canEditSettled: boolean;
+  /** Metas para o campo "Meta" do pagamento de comissão. */
+  commissionGoals: { id: string; title: string; ownerId: string }[];
 }
 
 export interface MonthlySummaryItem {

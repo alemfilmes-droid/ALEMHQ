@@ -47,6 +47,7 @@ export function payableValuesFrom(item: PayableItem): PayableValues {
     payeeBankAgency: item.payee.agency ?? "",
     payeeBankAccount: item.payee.account ?? "",
     payeeAccountType: item.payee.accountType ?? "",
+    commissionGoalId: item.commissionGoalId ?? "",
   };
 }
 
@@ -70,6 +71,8 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
     formState: { errors },
   } = form;
   const payeeProfileId = watch("payeeProfileId");
+  const commission = watch("category") === "comissao";
+  const goalsOfPayee = options.commissionGoals.filter((goal) => goal.ownerId === payeeProfileId);
   const costType = watch("costType");
   const isRecurring = watch("recurrence") !== "none";
 
@@ -170,7 +173,7 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
           />
         </FormField>
 
-        <FormField id="pay-payee" label="Favorecido">
+        <FormField id="pay-payee" label={commission ? "Beneficiário da comissão" : "Favorecido"} error={errors.payeeProfileId?.message}>
           <Controller
             control={control}
             name="payeeProfileId"
@@ -198,6 +201,27 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
           />
         </FormField>
       </div>
+
+      {commission ? (
+        <div className="space-y-3 rounded-md border border-border-strong p-3">
+          <p className="text-[13px] text-muted-foreground">
+            Referente a: <strong className="text-foreground">Comissão</strong>. Ao salvar, a pessoa é avisada da data do pagamento (“Sua comissão de R$ X
+            será paga em DD/MM”) e, depois da baixa, a meta mostra “Comissão paga”.
+          </p>
+          {payeeProfileId ? (
+            <FormField id="pay-commission-goal" label="Meta (opcional)" hint="Liga o pagamento à meta batida. Sem meta, é uma comissão avulsa.">
+              <NativeSelect id="pay-commission-goal" {...register("commissionGoalId")}>
+                <option value="">Sem meta (comissão avulsa)</option>
+                {goalsOfPayee.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.title}
+                  </option>
+                ))}
+              </NativeSelect>
+            </FormField>
+          ) : null}
+        </div>
+      ) : null}
 
       {payeeProfileId ? (
         <div className="space-y-1.5">

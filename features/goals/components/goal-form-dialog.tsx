@@ -17,7 +17,7 @@ import { centsToInput, formatCents } from "@/features/finance/money";
 import { saveGoalAction } from "@/features/goals/actions";
 import { goalCommission } from "@/features/goals/progress";
 import { goalSchema, parseHundredths, type GoalValues } from "@/features/goals/schemas";
-import { COMMISSION_MODE_LABELS, CRM_METRICS, DEAL_METRICS, GOAL_METRICS, GOAL_METRIC_LABELS, type GoalItem } from "@/features/goals/types";
+import { COMMISSION_MODE_LABELS, CRM_METRICS, DEAL_METRICS, GOAL_METRICS, GOAL_METRIC_LABELS, isMoneyRate, type GoalItem } from "@/features/goals/types";
 import { addDays, addMonths, startOfMonth, todayInAppZone } from "@/lib/calendar";
 
 interface GoalFormDialogProps {
@@ -41,7 +41,7 @@ function defaults(goal?: GoalItem): GoalValues {
       startsOn: goal.startsOn,
       endsOn: goal.endsOn,
       commissionMode: goal.commissionMode,
-      commissionRate: goal.commissionMode === "por_unidade" ? centsToInput(goal.commissionRate) : decimal.format(goal.commissionRate),
+      commissionRate: isMoneyRate(goal.commissionMode) ? centsToInput(goal.commissionRate) : decimal.format(goal.commissionRate),
       fallbackRate: decimal.format(goal.fallbackRate),
       minAchievementPct: decimal.format(goal.minAchievementPct),
       autoFromCrm: goal.autoFromCrm,
@@ -92,9 +92,10 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
   const targetH = parseHundredths(target || "") ?? 0;
   const rateH = parseHundredths(rate || "") ?? 0;
   const minH = parseHundredths(minPct || "") ?? 0;
-  const rateForCalc = mode === "por_unidade" ? rateH : rateH / 100;
-  const atMin = goalCommission(rateForCalc, minH / 100, targetH, Math.ceil((targetH * minH) / 10000));
-  const atFull = goalCommission(rateForCalc, minH / 100, targetH, targetH);
+  const fixed = mode === "valor_fixo";
+  const rateForCalc = isMoneyRate(mode) ? rateH : rateH / 100;
+  const atMin = goalCommission(rateForCalc, minH / 100, targetH, Math.ceil((targetH * minH) / 10000), fixed);
+  const atFull = goalCommission(rateForCalc, minH / 100, targetH, targetH, fixed);
 
   const onSubmit = handleSubmit((values) => {
     startTransition(async () => {
@@ -206,6 +207,7 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
                   <option value="percentual" disabled={!money}>
                     {COMMISSION_MODE_LABELS.percentual}
                   </option>
+                  <option value="valor_fixo">{COMMISSION_MODE_LABELS.valor_fixo}</option>
                   <option value="por_unidade">{COMMISSION_MODE_LABELS.por_unidade}</option>
                   <option value="contratos_fechados" disabled={!dealMetric}>
                     {COMMISSION_MODE_LABELS.contratos_fechados}
@@ -214,10 +216,10 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
               </FormField>
               <FormField
                 id="meta-taxa"
-                label={contracts ? "Bateu o mínimo (%)" : mode === "percentual" ? "Percentual (%)" : "Valor por unidade (R$)"}
+                label={contracts ? "Bateu o mínimo (%)" : mode === "percentual" ? "Percentual (%)" : fixed ? "Valor fixo (R$)" : "Valor por unidade (R$)"}
                 error={errors.commissionRate?.message}
               >
-                <Input id="meta-taxa" inputMode="decimal" placeholder={mode === "por_unidade" ? "30,00" : "5"} aria-invalid={!!errors.commissionRate} {...register("commissionRate")} />
+                <Input id="meta-taxa" inputMode="decimal" placeholder={isMoneyRate(mode) ? "30,00" : "5"} aria-invalid={!!errors.commissionRate} {...register("commissionRate")} />
               </FormField>
               <FormField id="meta-gatilho" label="Paga a partir de (%)" error={errors.minAchievementPct?.message}>
                 <Input id="meta-gatilho" inputMode="decimal" aria-invalid={!!errors.minAchievementPct} {...register("minAchievementPct")} />
@@ -237,8 +239,15 @@ export function GoalFormDialog({ goal, owners, onOpenChange }: GoalFormDialogPro
               </p>
             ) : (
             <p className="text-[13px] text-muted-foreground">
-              Abaixo de {decimal.format(minH / 100)}% da meta não há comissão. A partir daí, paga proporcional ao atingido
-              {targetH > 0 && rateH > 0 ? (
+              Abaixo de {decimal.format(minH / 100)}% da meta não há comissão.{" "}
+              {fixed ? (
+                <>
+                  A partir daí, paga o valor fixo de <strong className="text-foreground">{formatCents(rateH)}</strong>.
+                </>
+              ) : (
+                <>A partir daí, paga proporcional ao atingido</>
+              )}
+              {fixed ? null : targetH > 0 && rateH > 0 ? (
                 <>
                   : <strong className="text-foreground">{formatCents(atMin)}</strong> em {decimal.format(minH / 100)}% e{" "}
                   <strong className="text-foreground">{formatCents(atFull)}</strong> em 100%.

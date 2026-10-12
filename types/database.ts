@@ -744,6 +744,39 @@ export type Database = {
           },
         ]
       }
+      commission_celebrations: {
+        Row: {
+          amount: number
+          created_at: string
+          goal_id: string | null
+          goal_title: string | null
+          id: string
+          payable_id: string | null
+          profile_id: string
+          seen_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          goal_id?: string | null
+          goal_title?: string | null
+          id?: string
+          payable_id?: string | null
+          profile_id: string
+          seen_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          goal_id?: string | null
+          goal_title?: string | null
+          id?: string
+          payable_id?: string | null
+          profile_id?: string
+          seen_at?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           became_client_at: string | null
@@ -2287,6 +2320,7 @@ export type Database = {
           metric: Database["public"]["Enums"]["goal_metric"]
           milestones_notified: number[]
           min_achievement_pct: number
+          outcome: string | null
           owner_id: string
           payable_id: string | null
           starts_on: string
@@ -2315,6 +2349,7 @@ export type Database = {
           metric: Database["public"]["Enums"]["goal_metric"]
           milestones_notified?: number[]
           min_achievement_pct?: number
+          outcome?: string | null
           owner_id: string
           payable_id?: string | null
           starts_on: string
@@ -2343,6 +2378,7 @@ export type Database = {
           metric?: Database["public"]["Enums"]["goal_metric"]
           milestones_notified?: number[]
           min_achievement_pct?: number
+          outcome?: string | null
           owner_id?: string
           payable_id?: string | null
           starts_on?: string
@@ -3190,6 +3226,7 @@ export type Database = {
           cancel_reason: string | null
           cancelled_by: string | null
           category: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id: string | null
           company_id: string | null
           cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
@@ -3238,6 +3275,7 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_by?: string | null
           category: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id?: string | null
           company_id?: string | null
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
@@ -3288,6 +3326,7 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_by?: string | null
           category?: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id?: string | null
           company_id?: string | null
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
@@ -5675,6 +5714,7 @@ export type Database = {
       }
       goals_with_progress: {
         Row: {
+          outcome: string | null
           approved_at: string | null
           approved_by: string | null
           approved_value: number | null
@@ -5940,6 +5980,9 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
+          commission_goal_id: string | null
+          cancel_reason: string | null
+          cancelled_by: string | null
           settle_key: string | null
           version: number | null
           updated_by: string | null
@@ -6811,6 +6854,22 @@ export type Database = {
         }
         Returns: number
       }
+      goal_commission_payments: {
+        Args: { p_goal_id: string }
+        Returns: { amount: number; due_date: string; paid_at: string | null; scheduled_for: string | null }[]
+      }
+      goal_finalize: {
+        Args: { p_commission?: number; p_goal_id: string; p_reached: boolean }
+        Returns: undefined
+      }
+      commission_celebration_seen: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      finance_commission_goals: {
+        Args: never
+        Returns: { id: string; outcome: string | null; owner_id: string; title: string }[]
+      }
       finance_generate_auto_pautas: { Args: never; Returns: number }
       finance_reverse_settlement: {
         Args: {
@@ -7553,7 +7612,11 @@ export type Database = {
         | "aguardar_retorno"
         | "descartar"
       finance_history_action: "EDIT" | "REVERSE_WRITE_OFF"
-      goal_commission_mode: "percentual" | "por_unidade" | "contratos_fechados"
+      goal_commission_mode:
+        | "percentual"
+        | "por_unidade"
+        | "contratos_fechados"
+        | "valor_fixo"
       goal_entry_source: "manual" | "crm"
       goal_entry_status: "pendente" | "aprovado" | "recusado"
       goal_metric:
@@ -7963,7 +8026,7 @@ export const Constants = {
         "descartar",
       ],
       finance_history_action: ["EDIT", "REVERSE_WRITE_OFF"],
-      goal_commission_mode: ["percentual", "por_unidade", "contratos_fechados"],
+      goal_commission_mode: ["percentual", "por_unidade", "contratos_fechados", "valor_fixo"],
       goal_entry_source: ["manual", "crm"],
       goal_entry_status: ["pendente", "aprovado", "recusado"],
       goal_metric: [

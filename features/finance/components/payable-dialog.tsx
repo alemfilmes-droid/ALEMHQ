@@ -61,6 +61,7 @@ function initialValues(props: PayableDialogProps): PayableValues {
     payeeBankAgency: "",
     payeeBankAccount: "",
     payeeAccountType: "",
+    commissionGoalId: "",
   };
 }
 

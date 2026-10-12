@@ -76,6 +76,8 @@ const payableObject = z.object({
   payeeBankAgency: z.string().trim().max(20),
   payeeBankAccount: z.string().trim().max(30),
   payeeAccountType: z.enum(["corrente", "poupanca", "pagamento"]).or(z.literal("")),
+  /** "Referente a: Comissão": a meta ligada (opcional). */
+  commissionGoalId: optionalUuid,
 });
 
 /** Regras de criação/edição do pagamento — as mesmas valem na edição de um lançamento já baixado. */
@@ -88,6 +90,9 @@ function payableRules(data: z.infer<typeof payableObject>, ctx: z.RefinementCtx)
   }
   if (data.costType === "projeto" && data.projectId === "") {
     ctx.addIssue({ code: "custom", path: ["projectId"], message: "Selecione o projeto." });
+  }
+  if (data.category === "comissao" && !data.payeeProfileId) {
+    ctx.addIssue({ code: "custom", path: ["payeeProfileId"], message: "Comissão: escolha a pessoa da equipe que recebe." });
   }
 }
 

@@ -22,6 +22,8 @@ const CRM_ALERTS = new Set(["crm_action_overdue", "crm_stale_prospection", "crm_
 const CEO_COMMERCIAL = new Set(["deal_responsible", "deal_qualification_review", "deal_request", "deal_request_reply", "deal_request_resolved"]);
 const CEO_FINANCE = new Set(["finance_overdue_receivable", "finance_overdue_payable"]);
 const COMMISSIONS = new Set(["finance_commission", "finance_commission_updated"]);
+/** CEO · metas (Bloco 7): finalizar, revisar lançamento e agendar o pagamento da comissão. */
+const CEO_GOALS = new Set(["goal_review", "goal_entry_pending", "goal_commission_to_schedule"]);
 
 export function notificationAllowed(facts: NotificationFacts): boolean {
   const { recipientIsCeo, type, pautaSquad, pautaIsCrm, holdsBall } = facts;
@@ -30,7 +32,9 @@ export function notificationAllowed(facts: NotificationFacts): boolean {
   if (!recipientIsCeo) return true;
   if (CEO_COMMERCIAL.has(type)) return true;
   if (type.startsWith("deal_") || type.startsWith("crm_") || type.startsWith("prospect_")) return false;
-  if (type.startsWith("goal_") || COMMISSIONS.has(type)) return true;
+  if (CEO_GOALS.has(type)) return true;
+  if (type.startsWith("goal_")) return false;
+  if (COMMISSIONS.has(type)) return true;
   if (CEO_FINANCE.has(type)) return true;
   if (type.startsWith("finance_")) return false;
   if (type.startsWith("pauta_")) return !pautaIsCrm && !["comercial", "financeiro"].includes(pautaSquad ?? "audiovisual");

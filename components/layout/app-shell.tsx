@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { CommissionCelebration } from "@/components/layout/commission-celebration";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { ResumePlace } from "@/components/layout/resume-place";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -85,6 +86,7 @@ export function AppShell({ profile, notifications, squadDirectory, badges = {}, 
               <Suspense fallback={null}>
                 <ResumePlace />
               </Suspense>
+              <CommissionCelebration />
             </main>
           </div>
         </div>

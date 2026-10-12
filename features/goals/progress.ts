@@ -5,8 +5,10 @@ import { GOAL_METRIC_UNITS, type GoalItem } from "@/features/goals/types";
  * Contas da meta, em centésimos inteiros. A comissão espelha goal_commission() no banco: abaixo do
  * gatilho (min_achievement_pct) é zero; a partir dele, proporcional ao atingido.
  */
-export function goalCommission(rate: number, minPct: number, target: number, achieved: number): number {
+export function goalCommission(rate: number, minPct: number, target: number, achieved: number, fixed = false): number {
   if (target <= 0 || achieved <= 0 || (achieved * 100) / target < minPct) return 0;
+  // Valor fixo: o próprio valor (centavos), a partir do gatilho.
+  if (fixed) return rate;
   // A mesma conta nos dois modos: percentual (rate em %, achieved em centavos) e por_unidade (rate
   // em centavos por unidade, achieved em centésimos de unidade) dão centavos.
   return Math.round((achieved * rate) / 100);
@@ -67,7 +69,7 @@ export function goalPace(goal: GoalItem, today: string): GoalPace {
     projectedCommission:
       goal.commissionMode === "contratos_fechados"
         ? Math.round((goal.closedValuePotential * contractRate(goal, projected)) / 100)
-        : goalCommission(goal.commissionRate, goal.minAchievementPct, goal.target, projected),
+        : goalCommission(goal.commissionRate, goal.minAchievementPct, goal.target, projected, goal.commissionMode === "valor_fixo"),
   };
 }
 
@@ -86,6 +88,10 @@ export function formatCommissionRule(goal: Pick<GoalItem, "commissionMode" | "co
     return `${qty.format(goal.commissionRate)}% sobre os contratos fechados das contas da meta se bater ${qty.format(goal.minAchievementPct)}%; abaixo disso, só a comissão fixa de ${qty.format(goal.fallbackRate)}%`;
   }
   const rate =
-    goal.commissionMode === "percentual" ? `${qty.format(goal.commissionRate)}% sobre o atingido` : `${formatCents(goal.commissionRate)} por unidade`;
+    goal.commissionMode === "percentual"
+      ? `${qty.format(goal.commissionRate)}% sobre o atingido`
+      : goal.commissionMode === "valor_fixo"
+        ? `${formatCents(goal.commissionRate)} fixos`
+        : `${formatCents(goal.commissionRate)} por unidade`;
   return `${rate}, a partir de ${qty.format(goal.minAchievementPct)}% da meta`;
 }

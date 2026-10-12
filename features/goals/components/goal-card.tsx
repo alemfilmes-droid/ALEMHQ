@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CARD_LINK_CLASS, CardIcon } from "@/components/ui/card";
 import { Money } from "@/components/ui/money";
 import { StatusDot } from "@/components/ui/status-dot";
+import { GoalOutcomeBadge } from "@/features/goals/components/goal-outcome";
 import { GoalProgressBar } from "@/features/goals/components/goal-progress-bar";
 import { contractRate, formatGoalValue, goalPace, percentOf } from "@/features/goals/progress";
 import { GOAL_METRIC_LABELS, GOAL_STATUS_LABELS, GOAL_STATUS_TONE, type GoalItem } from "@/features/goals/types";
@@ -81,7 +82,9 @@ export function GoalCard({ goal, showOwner = false, highlight = false, className
             Automática
           </Badge>
         ) : null}
-        {goal.status !== "ativa" || goal.pendingCount > 0 ? (
+        {goal.outcome ? (
+          <GoalOutcomeBadge goal={goal} />
+        ) : goal.status !== "ativa" || goal.pendingCount > 0 ? (
           goal.status === "ativa" ? (
             <Badge variant="outline" className="shrink-0">
               <StatusDot tone="warning" />

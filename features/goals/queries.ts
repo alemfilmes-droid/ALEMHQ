@@ -1,6 +1,6 @@
 import "server-only";
 import { toCents } from "@/features/finance/money";
-import type { GoalEntryItem, GoalItem, GoalTab, PaymentDetailsItem } from "@/features/goals/types";
+import { isMoneyRate, type GoalEntryItem, type GoalItem, type GoalTab, type PaymentDetailsItem } from "@/features/goals/types";
 import { createClient } from "@/lib/supabase/server";
 import type { GoalWithProgress, PaymentDetails } from "@/types";
 
@@ -23,7 +23,7 @@ function toGoalItem(row: GoalWithProgress): GoalItem {
     startsOn: row.starts_on ?? "",
     endsOn: row.ends_on ?? "",
     commissionMode: mode,
-    commissionRate: mode === "por_unidade" ? toCents(row.commission_rate) : Number(row.commission_rate ?? 0),
+    commissionRate: isMoneyRate(mode) ? toCents(row.commission_rate) : Number(row.commission_rate ?? 0),
     fallbackRate: Number(row.fallback_rate ?? 0),
     lockedRate: row.locked_rate == null ? null : Number(row.locked_rate),
     minAchievementPct: Number(row.min_achievement_pct ?? 0),
@@ -41,6 +41,7 @@ function toGoalItem(row: GoalWithProgress): GoalItem {
     finalAchieved: row.final_achieved == null ? null : toCents(row.final_achieved),
     finalCommission: row.final_commission == null ? null : toCents(row.final_commission),
     payableId: row.payable_id,
+    outcome: row.outcome === "batida" || row.outcome === "nao_batida" ? row.outcome : null,
   };
 }
 

@@ -35,7 +35,7 @@ export const goalSchema = z
     target: positiveNumber("Informe o alvo."),
     startsOn: isoDate,
     endsOn: isoDate,
-    commissionMode: z.enum(["percentual", "por_unidade", "contratos_fechados"]),
+    commissionMode: z.enum(["percentual", "valor_fixo", "por_unidade", "contratos_fechados"]),
     commissionRate: nonNegativeNumber,
     /** contratos_fechados: % pago abaixo do mínimo (comissão fixa). */
     fallbackRate: nonNegativeNumber,
@@ -62,7 +62,7 @@ export const goalSchema = z
     path: ["autoFromCrm"],
   })
   .refine((values) => (parseHundredths(values.fallbackRate || "0") ?? 0) <= 10000, { message: "Use de 0 a 100%.", path: ["fallbackRate"] })
-  .refine((values) => values.commissionMode === "por_unidade" || (parseHundredths(values.commissionRate || "0") ?? 0) <= 10000, {
+  .refine((values) => values.commissionMode === "por_unidade" || values.commissionMode === "valor_fixo" || (parseHundredths(values.commissionRate || "0") ?? 0) <= 10000, {
     message: "Use de 0 a 100%.",
     path: ["commissionRate"],
   })

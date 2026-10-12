@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { centsToNumber } from "@/features/finance/money";
+import { centsToNumber, parseMoneyToCents, toCents } from "@/features/finance/money";
 import { getPaymentDetails } from "@/features/goals/queries";
 import {
   entrySchema,
@@ -14,7 +14,7 @@ import {
   type PaymentDetailsValues,
 } from "@/features/goals/schemas";
 import type { PaymentDetailsItem } from "@/features/goals/types";
-import { hasCapability } from "@/lib/auth/permissions";
+import { hasCapability, isDirectorOrAdmin } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult, GoalEntryStatus, Tables } from "@/types";
@@ -241,4 +241,34 @@ export async function getPayeePaymentDetailsAction(profileId: string): Promise<{
   if (!uuid.safeParse(profileId).success) return INVALID;
   if (profileId !== profile.id && !hasCapability(profile, "finance")) return { ok: false, error: "Sem acesso ao financeiro." };
   return { ok: true, details: await getPaymentDetails(profileId) };
+}
+
+/**
+ * "Finalizar meta" (CEO/admin): Meta batida (percentual → valor final informado; fixo → o valor da meta) ou
+ * Meta não alcançada. Não cria pagamento: o CEO e o financeiro são avisados para agendar (goal_finalize).
+ */
+export async function finalizeGoalAction(id: string, reached: boolean, commission: string): Promise<ActionResult> {
+  const profile = await getCurrentProfile();
+  if (!profile || !isDirectorOrAdmin(profile)) return { ok: false, error: "Só o CEO ou um admin finaliza metas." };
+  if (!uuid.safeParse(id).success) return INVALID;
+  const cents = commission.trim() ? parseMoneyToCents(commission) : null;
+  if (commission.trim() && (cents === null || cents <= 0)) return { ok: false, error: "Informe um valor maior que zero." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("goal_finalize", {
+    p_goal_id: id,
+    p_reached: reached,
+    ...(cents ? { p_commission: centsToNumber(cents) } : {}),
+  });
+  if (error) return { ok: false, error: dbError(error, "Não foi possível finalizar a meta.") };
+  refresh(id);
+  return { ok: true, message: reached ? "Meta batida! O financeiro foi avisado para agendar a comissão." : "Meta finalizada como não alcançada." };
+}
+
+/** Histórico da comissão da meta: agendada / paga (o dono e a diretoria veem). */
+export async function goalCommissionPaymentsAction(id: string): Promise<{ amount: number; dueDate: string; scheduledFor: string | null; paidAt: string | null }[]> {
+  if (!uuid.safeParse(id).success) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("goal_commission_payments", { p_goal_id: id });
+  return (data ?? []).map((row) => ({ amount: toCents(row.amount), dueDate: row.due_date, scheduledFor: row.scheduled_for, paidAt: row.paid_at }));
 }

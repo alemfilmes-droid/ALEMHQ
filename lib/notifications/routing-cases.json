@@ -297,60 +297,6 @@
   "expected": false
  },
  {
-  "name": "CEO · metas/comissões · goal_review",
-  "ceo": true,
-  "type": "goal_review",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
-  "name": "CEO · metas/comissões · goal_entry_pending",
-  "ceo": true,
-  "type": "goal_entry_pending",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
-  "name": "CEO · metas/comissões · goal_milestone",
-  "ceo": true,
-  "type": "goal_milestone",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
-  "name": "CEO · metas/comissões · goal_period_ended",
-  "ceo": true,
-  "type": "goal_period_ended",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
-  "name": "CEO · metas/comissões · finance_commission",
-  "ceo": true,
-  "type": "finance_commission",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
-  "name": "CEO · metas/comissões · finance_commission_updated",
-  "ceo": true,
-  "type": "finance_commission_updated",
-  "squad": null,
-  "crm": null,
-  "holds": null,
-  "expected": true
- },
- {
   "name": "CEO · outros · announcement_published",
   "ceo": true,
   "type": "announcement_published",
@@ -510,6 +456,132 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": false,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_review",
+  "ceo": true,
+  "type": "goal_review",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_entry_pending",
+  "ceo": true,
+  "type": "goal_entry_pending",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_commission_to_schedule",
+  "ceo": true,
+  "type": "goal_commission_to_schedule",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · goal_milestone",
+  "ceo": true,
+  "type": "goal_milestone",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · metas/comissões · goal_period_ended",
+  "ceo": true,
+  "type": "goal_period_ended",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · metas/comissões · goal_daily",
+  "ceo": true,
+  "type": "goal_daily",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · metas/comissões · finance_commission",
+  "ceo": true,
+  "type": "finance_commission",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · finance_commission_updated",
+  "ceo": true,
+  "type": "finance_commission_updated",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · metas/comissões · commission_scheduled",
+  "ceo": true,
+  "type": "commission_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · goal_reached",
+  "ceo": false,
+  "type": "goal_reached",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · goal_not_reached",
+  "ceo": false,
+  "type": "goal_not_reached",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · commission_scheduled",
+  "ceo": false,
+  "type": "commission_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · commission_paid",
+  "ceo": false,
+  "type": "commission_paid",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Equipe · goal_milestone",
+  "ceo": false,
+  "type": "goal_milestone",
+  "squad": null,
+  "crm": null,
+  "holds": null,
   "expected": true
  }
 ]

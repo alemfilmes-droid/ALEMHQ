@@ -141,6 +141,7 @@ function mapPayable(row: PayableRow): PayableItem | null {
     },
     version: row.version ?? 1,
     editedAt: row.edited_at,
+    commissionGoalId: row.commission_goal_id ?? null,
   };
 }
 
@@ -451,10 +452,11 @@ export async function getHomeFinanceCard() {
 /** Opções dos formulários e filtros. Tabelas não financeiras (RLS própria de cada uma). */
 export async function getFinanceOptions(): Promise<FinanceOptions> {
   const supabase = await financeClient();
-  const [companies, projects, members] = await Promise.all([
+  const [companies, projects, members, commissionGoals] = await Promise.all([
     supabase.from("companies").select("id, name").order("name"),
     supabase.from("projects").select("id, name, company_id").eq("is_internal", false).order("name"),
     supabase.from("profiles").select("id, full_name").eq("is_active", true).neq("full_name", "").order("full_name"),
+    supabase.rpc("finance_commission_goals"),
   ]);
   const profile = await getCurrentProfile();
   return {
@@ -462,6 +464,7 @@ export async function getFinanceOptions(): Promise<FinanceOptions> {
     projects: projects.data ?? [],
     members: members.data ?? [],
     canEditSettled: profile ? canEditSettled(profile.squads) : false,
+    commissionGoals: (commissionGoals.data ?? []).map((row) => ({ id: row.id, title: row.title, ownerId: row.owner_id })),
   };
 }
 
