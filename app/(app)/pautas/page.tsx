@@ -47,7 +47,7 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
   const [allSquads, options, companies] = await Promise.all([
     listPautas({ ...filters, squads: [] }, { deliveredSince }),
     getPautaFormOptions(),
-    supabase.from("companies").select("id, name").order("name"),
+    supabase.from("companies").select("id, name").is("deleted_at", null).order("name"),
   ]);
   const pautas = squads.length ? allSquads.filter((pauta) => pauta.squad && squads.includes(pauta.squad)) : allSquads;
   const squadCounts = countBySquad(allSquads);

@@ -129,8 +129,8 @@ export async function getAgendaFormOptions(): Promise<AgendaFormOptions> {
   const supabase = await createClient();
   const [members, companies, projects, deals, pautas] = await Promise.all([
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).order("full_name"),
-    supabase.from("companies").select("id, name, logo_url").order("name"),
-    supabase.from("projects").select("id, name, company_id").not("stage", "in", "(entregue,cancelado)").order("name"),
+    supabase.from("companies").select("id, name, logo_url").is("deleted_at", null).order("name"),
+    supabase.from("projects").select("id, name, company_id").not("stage", "in", "(entregue,cancelado)").eq("hidden_by_client_deletion", false).order("name"),
     supabase.from("deals_with_details").select("id, title, company_id, company_name").not("stage", "in", "(ganho,perdido)").order("title").limit(300),
     supabase
       .from("pautas_with_details")

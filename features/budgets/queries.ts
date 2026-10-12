@@ -145,7 +145,7 @@ export async function getClientLinks(companyId: string | null) {
   if (!companyId) return { projects: [], deals: [] };
   const supabase = await createClient();
   const [projects, deals] = await Promise.all([
-    supabase.from("projects").select("id, name").eq("company_id", companyId).order("created_at", { ascending: false }),
+    supabase.from("projects").select("id, name").eq("company_id", companyId).eq("hidden_by_client_deletion", false).order("created_at", { ascending: false }),
     supabase.from("deals").select("id, title, stage").eq("company_id", companyId).not("stage", "in", "(ganho,perdido)").order("created_at", { ascending: false }),
   ]);
   return { projects: projects.data ?? [], deals: deals.data ?? [] };

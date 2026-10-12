@@ -23,7 +23,8 @@ import { getClientOverview, getClientTimeline } from "@/features/clients/queries
 import { CompanyDealsTab } from "@/features/crm/components/company-deals-tab";
 import { CompanyFinanceTab } from "@/features/finance/components/company-finance-tab";
 import { getClientFinanceSummary } from "@/features/finance/queries";
-import { canCloseClients, canManageCompanyLogos, hasCapability } from "@/lib/auth/permissions";
+import { ClientMoreMenu } from "@/features/clients/components/deletion/client-more-menu";
+import { canCloseClients, canDeleteClients, canManageCompanyLogos, hasCapability } from "@/lib/auth/permissions";
 import { CLOSURE_SELECT, toClosureInfo } from "@/features/clients/closures";
 import { ClosureCard } from "@/features/clients/components/closure-card";
 import { ClosureNotice } from "@/features/clients/components/closure-notice";
@@ -51,8 +52,8 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
   const canSeeCrm = hasCapability(profile, "crm");
   const financeTab = canSeeFinance && aba === "financeiro";
   const commercialTab = canSeeCrm && aba === "comercial";
-  const canManage = hasCapability(profile, "manageCompanies");
-  const canManageLogo = canManageCompanyLogos(profile);
+  const canManageCompany = hasCapability(profile, "manageCompanies");
+  const canManageCompanyLogo = canManageCompanyLogos(profile);
   const timelineLimit = Math.min(Math.max(Number(eventos) || TIMELINE_PAGE, TIMELINE_PAGE), 200);
 
   const supabase = await createClient();
@@ -62,6 +63,10 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
     .eq("id", id)
     .maybeSingle();
   if (!company) notFound();
+  // Cliente excluído (Lixeira): só leitura, sem ações.
+  const deleted = company.deleted_at !== null;
+  const canManage = canManageCompany && !deleted;
+  const canManageLogo = canManageCompanyLogo && !deleted;
 
   const [contactsResult, projectsResult, closureResult] = await Promise.all([
     supabase.from("contacts").select("*").eq("company_id", id).order("full_name"),
@@ -73,7 +78,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
     supabase.from("client_closures").select(CLOSURE_SELECT).eq("company_id", id).is("project_id", null).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const closure = closureResult.data ? toClosureInfo(closureResult.data) : null;
-  const canClose = canCloseClients(profile);
+  const canClose = canCloseClients(profile) && !deleted;
   const overviewTab = !financeTab && !commercialTab;
   const [overview, financeSummary, timeline] = overviewTab
     ? await Promise.all([
@@ -114,6 +119,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
             {canClose && (company.lifecycle === "client" || company.lifecycle === "former_client") ? (
               <ClientLifecycleActions companyId={company.id} companyName={company.name} inactive={inactiveStatus} />
             ) : null}
+            {canDeleteClients(profile) && !deleted ? <ClientMoreMenu companyId={company.id} companyName={company.name} /> : null}
             {canManage ? (
               <CompanyFormDialog
                 mode="edit"
@@ -130,6 +136,16 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
           </div>
         }
       />
+
+      {deleted ? (
+        <div role="status" className="mb-6 rounded-lg border-2 border-[var(--status-danger)] p-4 text-sm">
+          <p className="font-semibold">Este cliente foi excluído em {formatDate(company.deleted_at ?? "")}.</p>
+          <p className="mt-1 text-muted-foreground">
+            Ele não aparece mais nas listas. Os lançamentos financeiros continuam nos relatórios.
+            {canDeleteClients(profile) ? " Para restaurar, use Clientes → Lixeira." : ""}
+          </p>
+        </div>
+      ) : null}
 
       {canSeeFinance || canSeeCrm ? (
         <div className="mb-8">

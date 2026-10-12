@@ -76,7 +76,7 @@ export async function listDeals(filters: DealFilters): Promise<DealWithDetails[]
 export async function getDealFormOptions(): Promise<DealFormOptions> {
   const supabase = await createClient();
   const [companies, contacts, members, comercial, prospect, ceo] = await Promise.all([
-    supabase.from("companies").select("id, name, lifecycle").order("name"),
+    supabase.from("companies").select("id, name, lifecycle").is("deleted_at", null).order("name"),
     supabase.from("contacts").select("id, company_id, full_name").order("full_name"),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
     supabase

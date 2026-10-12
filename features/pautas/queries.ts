@@ -51,8 +51,8 @@ export async function listPautas(filters: PautaFilters, options: { deliveredSinc
 export async function getPautaFormOptions(): Promise<PautaFormOptions> {
   const supabase = await createClient();
   const [companies, projects, members, contacts, freelancers] = await Promise.all([
-    supabase.from("companies").select("id, name, logo_url").order("name"),
-    supabase.from("projects").select("id, name, company_id, is_internal").order("name"),
+    supabase.from("companies").select("id, name, logo_url").is("deleted_at", null).order("name"),
+    supabase.from("projects").select("id, name, company_id, is_internal").eq("hidden_by_client_deletion", false).order("name"),
     supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name"),
     supabase.from("contacts").select("id, company_id, full_name").order("full_name"),
     supabase.from("freelancers").select("id, full_name, functions").eq("is_active", true).order("full_name"),

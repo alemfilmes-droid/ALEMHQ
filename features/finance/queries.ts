@@ -28,6 +28,7 @@ import {
 import type { Database } from "@/types/database";
 import { getCompanySettings } from "@/features/settings/queries";
 import { canEditSettled } from "@/lib/finance/settled-edit";
+import { deletedClientLabel } from "@/lib/clients/deletion";
 import { marginStatusFor } from "@/lib/margin";
 import type { MarginStatus, PayableCategory, PaymentMethod } from "@/types";
 
@@ -52,18 +53,25 @@ async function financeClient() {
   return createClient();
 }
 
-/** Logo de cada cliente das linhas (uma consulta só) — as views do financeiro não trazem o logo. */
-async function withCompanyLogos<T extends { companyId: string | null }>(
+/**
+ * Logo de cada cliente das linhas (uma consulta só) — as views do financeiro não trazem o logo. Cliente
+ * excluído (Lixeira) continua nos relatórios, com o nome marcado "(cliente excluído)"; os valores não mudam.
+ */
+async function withCompanyLogos<T extends { companyId: string | null; companyName?: string | null }>(
   supabase: Awaited<ReturnType<typeof createClient>>,
   rows: T[],
 ): Promise<(T & { companyLogoUrl: string | null })[]> {
   const ids = [...new Set(rows.map((row) => row.companyId).filter((id): id is string => Boolean(id)))];
-  const logos = new Map<string, string | null>();
+  const companies = new Map<string, { logo: string | null; deletedAt: string | null }>();
   if (ids.length > 0) {
-    const { data } = await supabase.from("companies").select("id, logo_url").in("id", ids);
-    for (const company of data ?? []) logos.set(company.id, company.logo_url);
+    const { data } = await supabase.from("companies").select("id, logo_url, deleted_at").in("id", ids);
+    for (const company of data ?? []) companies.set(company.id, { logo: company.logo_url, deletedAt: company.deleted_at });
   }
-  return rows.map((row) => ({ ...row, companyLogoUrl: row.companyId ? (logos.get(row.companyId) ?? null) : null }));
+  return rows.map((row) => {
+    const company = row.companyId ? companies.get(row.companyId) : undefined;
+    const named = row.companyName && company?.deletedAt ? { companyName: deletedClientLabel(row.companyName, company.deletedAt) } : {};
+    return { ...row, ...named, companyLogoUrl: company?.logo ?? null };
+  });
 }
 
 function asStatus<T extends string>(value: string | null, allowed: readonly T[]): T | null {
@@ -368,7 +376,7 @@ export async function listUpcoming(days = 30): Promise<UpcomingItem[]> {
   ]);
   if (receivables.error || payables.error) throw new Error("Falha ao carregar os próximos vencimentos.");
 
-  const incoming: UpcomingItem[] = compact((receivables.data ?? []).map(mapReceivable)).map((item) => ({
+  const incoming: UpcomingItem[] = (await withCompanyLogos(supabase, compact((receivables.data ?? []).map(mapReceivable)))).map((item) => ({
     id: item.id,
     direction: "in",
     dueDate: item.dueDate,
@@ -453,8 +461,8 @@ export async function getHomeFinanceCard() {
 export async function getFinanceOptions(): Promise<FinanceOptions> {
   const supabase = await financeClient();
   const [companies, projects, members, commissionGoals] = await Promise.all([
-    supabase.from("companies").select("id, name").order("name"),
-    supabase.from("projects").select("id, name, company_id").eq("is_internal", false).order("name"),
+    supabase.from("companies").select("id, name").is("deleted_at", null).order("name"),
+    supabase.from("projects").select("id, name, company_id").eq("is_internal", false).eq("hidden_by_client_deletion", false).order("name"),
     supabase.from("profiles").select("id, full_name").eq("is_active", true).neq("full_name", "").order("full_name"),
     supabase.rpc("finance_commission_goals"),
   ]);

@@ -1,0 +1,14 @@
+[
+  { "name": "sem nada ligado (só contatos): apaga de vez", "counts": { "contacts": 3 }, "has_dependencies": false, "can_purge": true },
+  { "name": "um projeto: vai para a Lixeira", "counts": { "projects_total": 1 }, "has_dependencies": true, "can_purge": true },
+  { "name": "pauta aberta direta", "counts": { "pautas_open": 1 }, "has_dependencies": true, "can_purge": true },
+  { "name": "negócio no CRM", "counts": { "deals_total": 1, "deals_open": 1, "cadences_active": 1 }, "has_dependencies": true, "can_purge": true },
+  { "name": "reunião passada", "counts": { "meetings_past": 1 }, "has_dependencies": true, "can_purge": true },
+  { "name": "reunião futura", "counts": { "meetings_future": 2 }, "has_dependencies": true, "can_purge": true },
+  { "name": "orçamento", "counts": { "budgets": 1 }, "has_dependencies": true, "can_purge": true },
+  { "name": "conta em metas: não apaga definitivamente", "counts": { "deals_total": 1, "goal_contributions": 1 }, "has_dependencies": true, "can_purge": false },
+  { "name": "recebimento em aberto", "counts": { "receivables_open": 1 }, "has_dependencies": true, "can_purge": false },
+  { "name": "recebimento cancelado também trava", "counts": { "receivables_cancelled": 1 }, "has_dependencies": true, "can_purge": false },
+  { "name": "pagamento pago", "counts": { "payables_paid": 1 }, "has_dependencies": true, "can_purge": false },
+  { "name": "pagamento cancelado", "counts": { "payables_cancelled": 1 }, "has_dependencies": true, "can_purge": false }
+]

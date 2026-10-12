@@ -132,7 +132,7 @@ export async function findSimilarCompaniesAction(input: {
   const clauses: string[] = [];
   if (name.length >= 3) clauses.push(`name.ilike.%${name.replace(/[%,()]/g, " ")}%`);
   if (document.length >= 5) clauses.push(`document.eq.${document.replace(/[,()]/g, "")}`);
-  const { data } = await supabase.from("companies").select("id, name, document, lifecycle").or(clauses.join(",")).limit(5);
+  const { data } = await supabase.from("companies").select("id, name, document, lifecycle").is("deleted_at", null).or(clauses.join(",")).limit(5);
   return data ?? [];
 }
 

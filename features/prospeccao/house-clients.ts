@@ -52,7 +52,7 @@ type Entry = { project_id: string; company_id: string; project_name: string; del
 async function createHouseLead(admin: Admin, entry: Entry, delayDays: number): Promise<string | null> {
   const [origin, company, contacts, playbooks, suggestions, sdr] = await Promise.all([
     originOf(admin, entry.origin_deal_id),
-    admin.from("companies").select("name, segment").eq("id", entry.company_id).maybeSingle(),
+    admin.from("companies").select("name, segment").eq("id", entry.company_id).is("deleted_at", null).maybeSingle(),
     admin
       .from("contacts")
       .select("id, full_name, job_title, phone")

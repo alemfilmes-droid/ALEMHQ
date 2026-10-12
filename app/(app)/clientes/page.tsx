@@ -7,7 +7,9 @@ import { CompanyFilters } from "@/components/companies/company-filters";
 import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { LinkTabs } from "@/components/ui/link-tabs";
-import { hasCapability } from "@/lib/auth/permissions";
+import { TrashList } from "@/features/clients/components/deletion/trash-list";
+import { listTrash } from "@/features/clients/deletion-queries";
+import { canDeleteClients, hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { inactiveStatusOf, type InactiveStatus } from "@/lib/clients/lifecycle";
 import { CLIENT_HEALTHS } from "@/lib/validations/health";
@@ -31,6 +33,36 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : "client";
   const isClientTab = lifecycle === "client";
   const canManage = hasCapability(profile, "manageCompanies");
+  // Lixeira (clientes excluídos): só a conta master.
+  const canSeeTrash = canDeleteClients(profile);
+  const trashTab = canSeeTrash && aba === "lixeira";
+  const tabs = (
+    <div className="mb-6">
+      <LinkTabs
+        label="Situação"
+        tabs={[
+          { href: "/clientes", label: "Clientes", active: isClientTab && !trashTab },
+          { href: "/clientes?aba=prospects", label: "Prospects", active: lifecycle === "prospect" },
+          ...(canSeeTrash ? [{ href: "/clientes?aba=lixeira", label: "Lixeira", active: trashTab }] : []),
+        ]}
+      />
+    </div>
+  );
+
+  if (trashTab) {
+    return (
+      <>
+        <PageHeader
+          panel="/clientes"
+          eyebrow="Operação"
+          title="Clientes."
+          description="Lixeira: clientes excluídos que tinham histórico. Restaure, exclua definitivamente (só sem lançamentos financeiros) ou anonimize os dados pessoais."
+        />
+        {tabs}
+        <TrashList items={await listTrash()} />
+      </>
+    );
+  }
 
   const health = CLIENT_HEALTHS.find((item): item is ClientHealth => item === saude);
   const search = busca?.trim();
@@ -40,6 +72,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
     .from("companies")
     .select("*")
     .in("lifecycle", isClientTab ? ["client", "former_client"] : [lifecycle])
+    .is("deleted_at", null)
     .order("name");
   if (health) query = query.eq("health", health);
   if (cidade) query = query.ilike("city", `%${escapeLike(cidade)}%`);
@@ -118,15 +151,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
         actions={canManage ? <CompanyFormDialog key={lifecycle} mode="create" defaultLifecycle={lifecycle} /> : null}
       />
 
-      <div className="mb-6">
-        <LinkTabs
-          label="Situação"
-          tabs={[
-            { href: "/clientes", label: "Clientes", active: isClientTab },
-            { href: "/clientes?aba=prospects", label: "Prospects", active: lifecycle === "prospect" },
-          ]}
-        />
-      </div>
+      {tabs}
 
       <div className="mb-6">
         <Suspense>

@@ -22,7 +22,7 @@ export default async function BudgetsPage({ searchParams }: { searchParams: Sear
     listBudgets(showArchived),
     listCatalog(),
     getProposalProfile(),
-    supabase.from("companies").select("id, name").order("name"),
+    supabase.from("companies").select("id, name").is("deleted_at", null).order("name"),
   ]);
 
   return (

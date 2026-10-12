@@ -49,6 +49,8 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
   let query = supabase
     .from("projects")
     .select("id, name, stage, model, due_date, start_date, end_date, is_internal, owner_id, company:companies(id, name, logo_url)")
+    // Projetos de cliente excluído (Lixeira) saem da lista.
+    .eq("hidden_by_client_deletion", false)
     .order("created_at", { ascending: false });
   if (model) query = query.eq("model", model);
   if (params.cliente) query = query.eq("company_id", params.cliente);
@@ -62,7 +64,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
 
   const [projectsResult, companiesResult, contactsResult, membersResult] = await Promise.all([
     query,
-    supabase.from("companies").select("id, name").order("name"),
+    supabase.from("companies").select("id, name").is("deleted_at", null).order("name"),
     canManage ? supabase.from("contacts").select("id, company_id, full_name").order("full_name") : Promise.resolve({ data: [] }),
     canManage
       ? supabase.from("profiles").select("id, full_name, avatar_url").eq("is_active", true).neq("full_name", "").order("full_name")

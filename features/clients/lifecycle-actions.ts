@@ -167,12 +167,12 @@ export async function reopenProspectionAction(values: z.input<typeof prospection
 
   const supabase = await createClient();
   const [{ data: company }, { data: contact }, { data: lastDeal }, { data: playbook }] = await Promise.all([
-    supabase.from("companies").select("id, name, lifecycle").eq("id", d.companyId).maybeSingle(),
+    supabase.from("companies").select("id, name, lifecycle, deleted_at").eq("id", d.companyId).maybeSingle(),
     supabase.from("contacts").select("id").eq("company_id", d.companyId).order("created_at").limit(1).maybeSingle(),
     supabase.from("deals").select("id").eq("company_id", d.companyId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("prospect_playbooks").select("id, audience").eq("id", d.playbookId).maybeSingle(),
   ]);
-  if (!company || company.lifecycle !== "former_client") return { ok: false, error: "Só um cliente inativo reabre a prospecção." };
+  if (!company || company.deleted_at || company.lifecycle !== "former_client") return { ok: false, error: "Só um cliente inativo reabre a prospecção." };
   if (!playbook) return { ok: false, error: "Escolha um playbook." };
 
   const { data: dealId, error } = await supabase.rpc("crm_create_deal", {

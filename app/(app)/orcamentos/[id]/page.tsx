@@ -15,7 +15,7 @@ export default async function BudgetPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
 
   const supabase = await createClient();
-  const [budget, catalog, companies] = await Promise.all([getBudget(id), listCatalog(), supabase.from("companies").select("id, name, logo_url").order("name")]);
+  const [budget, catalog, companies] = await Promise.all([getBudget(id), listCatalog(), supabase.from("companies").select("id, name, logo_url").is("deleted_at", null).order("name")]);
   if (!budget) notFound();
 
   return (

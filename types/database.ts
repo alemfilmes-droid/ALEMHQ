@@ -434,6 +434,33 @@ export type Database = {
           },
         ]
       }
+      client_deletion_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          summary: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          summary: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          summary?: Json
+        }
+        Relationships: []
+      }
       client_closures: {
         Row: {
           closed_at: string
@@ -779,6 +806,10 @@ export type Database = {
       }
       companies: {
         Row: {
+          anonymized_at: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           became_client_at: string | null
           city: string | null
           created_at: string
@@ -801,6 +832,10 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          anonymized_at?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           became_client_at?: string | null
           city?: string | null
           created_at?: string
@@ -823,6 +858,10 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          anonymized_at?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           became_client_at?: string | null
           city?: string | null
           created_at?: string
@@ -1717,6 +1756,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          hidden_by_client_deletion: boolean
           archived_at: string | null
           code: string | null
           company_id: string
@@ -1771,6 +1811,7 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
+          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           code?: string | null
           company_id: string
@@ -1825,6 +1866,7 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
+          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           code?: string | null
           company_id?: string
@@ -2955,6 +2997,7 @@ export type Database = {
       }
       pautas: {
         Row: {
+          hidden_by_client_deletion: boolean
           archived_at: string | null
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing: string | null
@@ -3005,6 +3048,7 @@ export type Database = {
           waiting_on_contact_id: string | null
         }
         Insert: {
+          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           board_column: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
@@ -3055,6 +3099,7 @@ export type Database = {
           waiting_on_contact_id?: string | null
         }
         Update: {
+          hidden_by_client_deletion?: boolean
           archived_at?: string | null
           board_column?: Database["public"]["Enums"]["pauta_column"]
           briefing?: string | null
@@ -4067,6 +4112,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          hidden_by_client_deletion: boolean
           briefing: string | null
           closed_at: string | null
           closure_id: string | null
@@ -4105,6 +4151,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          hidden_by_client_deletion?: boolean
           briefing?: string | null
           closed_at?: string | null
           closure_id?: string | null
@@ -4143,6 +4190,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          hidden_by_client_deletion?: boolean
           briefing?: string | null
           closed_at?: string | null
           closure_id?: string | null
@@ -6401,6 +6449,32 @@ export type Database = {
         Args: { p_project_id: string }
         Returns: undefined
       }
+      client_anonymize: {
+        Args: { p_company_id: string; p_confirm: string }
+        Returns: undefined
+      }
+      client_delete: {
+        Args: {
+          p_cancel_commitment_ids?: string[]
+          p_company_id: string
+          p_confirm_name: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
+      client_deletion_flags: { Args: { p_counts: Json }; Returns: Json }
+      client_deletion_summary: { Args: { p_company_id: string }; Returns: Json }
+      client_is_deleted: { Args: { p_company_id: string }; Returns: boolean }
+      client_name_matches: {
+        Args: { p_name: string; p_typed: string }
+        Returns: boolean
+      }
+      client_purge: {
+        Args: { p_company_id: string; p_confirm_name: string }
+        Returns: undefined
+      }
+      client_restore: { Args: { p_company_id: string }; Returns: undefined }
+      client_trash_list: { Args: never; Returns: Json }
       client_closure_preview: {
         Args: {
           p_closed_at?: string

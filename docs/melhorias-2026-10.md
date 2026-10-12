@@ -365,3 +365,75 @@ Celular (375×812): sem rolagem para os lados, encaixe por coluna mantido, altur
 (menos de ~860 px de altura) o quadro mantém 420 px de altura mínima e a página rola um pouco, de propósito.
 
 **Sem migração.** Telas afetadas: todas no computador; CRM (quadro e abas); abas de todas as telas.
+
+## Bloco 8C — Excluir clientes (pedido do Anderson)
+
+(O pedido citava um "Bloco 8B", que não existe; este bloco entra logo depois do Bloco 8 e antes da publicação.)
+
+**Quem pode**: só a conta master (decisão do Anderson) — `canDeleteClients()` na tela e nas ações; `is_master()` dentro de
+cada função do banco, que é quem decide de verdade. Outros papéis recebem "Só a conta master exclui, restaura ou anonimiza
+clientes." mesmo chamando o servidor direto.
+
+**Por que não dá para simplesmente apagar**: o banco protege o histórico (recebimentos, projetos e negócios impedem apagar
+o cliente; contatos e encerramentos somem junto; pagamentos, agenda, orçamentos e pautas avulsas perdem a ligação). Por
+isso:
+
+- **Resumo antes de tudo** (`client_deletion_summary`): projetos (total e ativos), pautas abertas, negócios e cadências
+  ativas, reuniões futuras e passadas, orçamentos, lançamentos em metas, recebimentos e pagamentos (em aberto, pagos,
+  cancelados) e contatos. A janela mostra em português simples (`dependencyLines`).
+- **Sem nenhum histórico** (só contatos): "Excluir permanentemente" digitando o nome exato → o cliente e os contatos são
+  apagados de verdade.
+- **Com histórico → Lixeira** (`client_delete`): nada é apagado. O cliente ganha `deleted_at`, `deleted_by` e o motivo
+  (opcional). Na mesma transação: negócios arquivados (somem do CRM e do "Chamar hoje"; a cadência para; a pauta do
+  negócio acompanha); projetos em aberto → encerrados; pautas abertas → finalizadas com "Encerrado — cliente excluído" (os
+  responsáveis são avisados); todos os projetos e pautas do cliente saem das listas; faturamento automático dos projetos
+  desligado; "cliente da casa" pendente cancelado; reuniões futuras marcadas na janela → canceladas (a sincronização tira
+  do Google de quem conectou a conta). **O financeiro não muda**: os lançamentos continuam contando e aparecem como
+  "Nome (cliente excluído)". Metas e histórico de comissão ficam como estão.
+- **O que a exclusão escondeu leva uma marca** (`hidden_by_client_deletion` em negócios, projetos e pautas), para a
+  restauração desfazer exatamente isso.
+- **Onde o cliente some**: Clientes (todas as abas e colunas), CRM, "Chamar hoje", Projetos (lista e quadro), Pautas,
+  listas de escolha (Financeiro, CRM — inclusive a busca de duplicados ao criar negócio —, Pautas, Agenda, Orçamentos,
+  projetos do cliente), "cliente da casa" e "Reabrir prospecção". A busca global do topo ainda é só um campo sem função
+  (nada a esconder ali). Cliente excluído também não ganha projeto, negócio nem pauta nova (gatilho no banco).
+- **Página de um cliente excluído** (link antigo, ou o Financeiro → cliente): aviso "Este cliente foi excluído em …",
+  sem botões de ação.
+
+**Lixeira** (Clientes → Lixeira, só a conta master; `client_trash_list`): data, quem excluiu, motivo e o resumo. Ações:
+- **Restaurar** (`client_restore`): o cliente e os negócios voltam; projetos e pautas continuam finalizados (reativar à
+  mão — a tela avisa).
+- **Excluir definitivamente** (`client_purge`, digitando o nome exato): só sem lançamentos financeiros. Com lançamentos,
+  o botão fica desligado com "Este cliente tem lançamentos financeiros e não pode ser apagado definitivamente." Também
+  fica desligado quando o cliente **conta em metas** ("Este cliente conta em metas da equipe…"): apagar os negócios
+  apagaria junto os pagamentos de comissão por contrato das metas.
+- **Anonimizar (LGPD)** (`client_anonymize`, digitando ANONIMIZAR): "Removido" no nome, documento, site, Instagram,
+  observações; contatos (nome, telefone, e-mail, cargo); no CRM, título, gancho, decisor e WhatsApp do decisor, mensagens,
+  notas e registros de contato (inclusive o histórico de edição); reuniões; orçamentos (nome do cliente e observações);
+  observações dos lançamentos (e do histórico de edição deles). Valores, datas e categorias ficam. Sem volta; cliente
+  anonimizado não pode ser restaurado. Títulos de pautas e descrições de lançamentos ficam (são a descrição do serviço).
+
+**Registro imutável** (`client_deletion_log`): quem, quando, a ação (enviado para a Lixeira, excluído permanentemente,
+restaurado, excluído definitivamente, anonimizado) e o resumo do que estava ligado — sem o nome do cliente, para a
+anonimização valer de fato. Ninguém altera nem apaga (gatilho); só a conta master lê.
+
+**Históricos imutáveis**: os gatilhos de abordagens, toques e edições financeiras continuam recusando qualquer mudança,
+com uma única exceção ligada só dentro de "Excluir definitivamente" e "Anonimizar" (`alem.client_erasure`).
+
+**Sem rotina automática**: nada é apagado sozinho com o tempo.
+
+**Migração**: `20261022090000_client_deletion.sql` (colunas novas em `companies`, marca em `deals`/`projects`/`pautas`,
+tabela `client_deletion_log`, funções e gatilhos; as três funções de histórico imutável recriadas com a exceção).
+
+**Testes**: `lib/clients/deletion.test.ts` (18: Lixeira × apagar de vez, trava do definitivo, confirmação por nome,
+rótulo "(cliente excluído)", resumo em português); os mesmos 12 casos conferidos no banco (`client_deletion_flags`).
+Cenário no banco em `begin … rollback` (54 passos, todos como esperado): sem histórico apaga cliente e contatos; nome
+errado recusado; não-master recusado (42501) ao excluir e ao ver a Lixeira; Lixeira esconde negócio (fora da view do CRM),
+cadência ativa vai a 0, projeto encerrado e escondido, pautas finalizadas e arquivadas, só a reunião marcada cancelada;
+recebimentos e pagamentos idênticos antes e depois; projeto e negócio novos recusados; definitivo recusado com financeiro;
+restaurar; anonimizar (palavra errada recusada; dados pessoais "Removido"/vazios; valores e datas iguais; restaurar
+anonimizado recusado); definitivo de um prospect com histórico de abordagem editado; registro imutável. Página de teste da
+Lixeira no navegador (computador e celular 375 px: sem rolagem para os lados, botões de 44 px; confirmação só liga com o
+nome exato; aviso na cor de erro do HQ, não no vermelho da marca).
+
+**Telas afetadas**: Clientes (aba Lixeira, menu ⋯ na página do cliente, aviso de excluído), Projetos, Pautas, CRM,
+Agenda, Orçamentos, Financeiro (nome marcado e listas de escolha).

@@ -261,6 +261,14 @@ export function canCloseClients(subject: Pick<Profile, "org_level"> & { squads: 
 }
 
 /**
+ * Excluir, restaurar e anonimizar clientes (Lixeira): só a conta master. Espelha is_master() nas
+ * funções client_delete / client_restore / client_purge / client_anonymize, que decidem de verdade.
+ */
+export function canDeleteClients(subject: Pick<Profile, "org_level">): boolean {
+  return subject.org_level === "master";
+}
+
+/**
  * Espelha can_access_all_deals() no banco: gestão de todos os negócios do CRM (ver qualquer
  * negócio, reatribuir responsável, fechar como ganho) — diretoria, master, ou head do squad
  * comercial, ou quem lidera o squad comercial (liderança de squad, não cargo). Quem não se encaixa
