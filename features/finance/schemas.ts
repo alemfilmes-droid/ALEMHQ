@@ -50,43 +50,46 @@ export const settleReceivableSchema = z.object({
 export const PAYABLE_COST_TYPES = ["empresa", "projeto"] as const;
 export type PayableCostType = (typeof PAYABLE_COST_TYPES)[number];
 
-export const payableSchema = z
-  .object({
-    costType: z.enum(PAYABLE_COST_TYPES),
-    projectId: optionalUuid,
-    companyId: optionalUuid,
-    payeeProfileId: optionalUuid,
-    payeeName: z.string().trim().max(120, "Use até 120 caracteres."),
-    category: z.enum(PAYABLE_CATEGORIES, { message: "Selecione a categoria." }),
-    description: z.string().trim().min(2, "Informe a descrição.").max(160, "Use até 160 caracteres."),
-    amount: money,
-    dueDate: isoDate,
-    paymentMethod: method,
-    notes: z.string().trim().max(500, "Use até 500 caracteres."),
-    isFixed: z.boolean(),
-    recurrence: z.enum(PAYABLE_RECURRENCES),
-    recurrenceUntil: optionalIsoDate,
-    // Dados de pagamento do favorecido avulso (sem cadastro). Membro da equipe: vêm do perfil dele.
-    payeePixKeyType: z.enum(["cpf", "cnpj", "email", "telefone", "aleatoria"]).or(z.literal("")),
-    payeePixKey: z.string().trim().max(160),
-    payeeHolderName: z.string().trim().max(160),
-    payeeDocument: z.string().trim().max(20),
-    payeeBankName: z.string().trim().max(120),
-    payeeBankAgency: z.string().trim().max(20),
-    payeeBankAccount: z.string().trim().max(30),
-    payeeAccountType: z.enum(["corrente", "poupanca", "pagamento"]).or(z.literal("")),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.payeeProfileId && data.payeeName === "") {
-      ctx.addIssue({ code: "custom", path: ["payeeName"], message: "Informe o favorecido." });
-    }
-    if (data.recurrence !== "none" && data.recurrenceUntil && data.recurrenceUntil < data.dueDate) {
-      ctx.addIssue({ code: "custom", path: ["recurrenceUntil"], message: "Deve ser depois do vencimento." });
-    }
-    if (data.costType === "projeto" && data.projectId === "") {
-      ctx.addIssue({ code: "custom", path: ["projectId"], message: "Selecione o projeto." });
-    }
-  });
+const payableObject = z.object({
+  costType: z.enum(PAYABLE_COST_TYPES),
+  projectId: optionalUuid,
+  companyId: optionalUuid,
+  payeeProfileId: optionalUuid,
+  payeeName: z.string().trim().max(120, "Use até 120 caracteres."),
+  category: z.enum(PAYABLE_CATEGORIES, { message: "Selecione a categoria." }),
+  description: z.string().trim().min(2, "Informe a descrição.").max(160, "Use até 160 caracteres."),
+  amount: money,
+  dueDate: isoDate,
+  paymentMethod: method,
+  notes: z.string().trim().max(500, "Use até 500 caracteres."),
+  isFixed: z.boolean(),
+  recurrence: z.enum(PAYABLE_RECURRENCES),
+  recurrenceUntil: optionalIsoDate,
+  // Dados de pagamento do favorecido avulso (sem cadastro). Membro da equipe: vêm do perfil dele.
+  payeePixKeyType: z.enum(["cpf", "cnpj", "email", "telefone", "aleatoria"]).or(z.literal("")),
+  payeePixKey: z.string().trim().max(160),
+  payeeHolderName: z.string().trim().max(160),
+  payeeDocument: z.string().trim().max(20),
+  payeeBankName: z.string().trim().max(120),
+  payeeBankAgency: z.string().trim().max(20),
+  payeeBankAccount: z.string().trim().max(30),
+  payeeAccountType: z.enum(["corrente", "poupanca", "pagamento"]).or(z.literal("")),
+});
+
+/** Regras de criação/edição do pagamento — as mesmas valem na edição de um lançamento já baixado. */
+function payableRules(data: z.infer<typeof payableObject>, ctx: z.RefinementCtx) {
+  if (!data.payeeProfileId && data.payeeName === "") {
+    ctx.addIssue({ code: "custom", path: ["payeeName"], message: "Informe o favorecido." });
+  }
+  if (data.recurrence !== "none" && data.recurrenceUntil && data.recurrenceUntil < data.dueDate) {
+    ctx.addIssue({ code: "custom", path: ["recurrenceUntil"], message: "Deve ser depois do vencimento." });
+  }
+  if (data.costType === "projeto" && data.projectId === "") {
+    ctx.addIssue({ code: "custom", path: ["projectId"], message: "Selecione o projeto." });
+  }
+}
+
+export const payableSchema = payableObject.superRefine(payableRules);
 
 /**
  * Baixa do pagamento. Depois do vencimento: motivo obrigatório; multa/juros opcional (com motivo).
@@ -124,8 +127,56 @@ export const projectInstallmentsSchema = z.object({
   paymentMethod: method,
 });
 
+// ---------------------------------------------------------------------------
+// Edição de lançamento já baixado: os mesmos campos e regras da criação, mais os dados da baixa e o
+// motivo (obrigatório quando valor ou data de pagamento mudam — a tela e o banco conferem).
+// ---------------------------------------------------------------------------
+
+const changeReason = z.string().trim().max(500, "Use até 500 caracteres.");
+const requiredMethod = z.enum(PAYMENT_METHODS, { message: "Selecione a forma de pagamento." });
+const receiptUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => value === "" || /^https?:\/\//i.test(value), "Use um link começando com http(s)://.");
+
+export const settledPayableSchema = payableObject
+  .extend({
+    paymentMethod: requiredMethod,
+    paidAt: isoDate,
+    receiptUrl,
+    lateReason: z.string().trim().max(500, "Use até 500 caracteres."),
+    penaltyAmount: z.string().trim(),
+    penaltyReason: z.string().trim().max(500, "Use até 500 caracteres."),
+    reason: changeReason,
+  })
+  .superRefine((data, ctx) => {
+    payableRules(data, ctx);
+    if (data.paidAt > data.dueDate && data.lateReason.length < 3) {
+      ctx.addIssue({ code: "custom", path: ["lateReason"], message: "Pagamento depois do vencimento: informe o motivo." });
+    }
+    if (data.penaltyAmount !== "") {
+      const cents = parseMoneyToCents(data.penaltyAmount);
+      if (cents === null || cents <= 0) ctx.addIssue({ code: "custom", path: ["penaltyAmount"], message: "Informe um valor maior que zero." });
+      if (data.penaltyReason.length < 3) ctx.addIssue({ code: "custom", path: ["penaltyReason"], message: "Informe o motivo da multa/juros." });
+    }
+  });
+
+export const settledReceivableSchema = receivableSchema.omit({ installments: true, intervalDays: true }).extend({
+  paymentMethod: requiredMethod,
+  receivedAt: isoDate,
+  receivedAmount: money,
+  reason: changeReason,
+});
+
+export const reverseSettlementSchema = z.object({
+  reason: z.string().trim().min(3, "Informe o motivo do estorno.").max(500, "Use até 500 caracteres."),
+});
+
 export type ReceivableValues = z.infer<typeof receivableSchema>;
 export type SettleReceivableValues = z.infer<typeof settleReceivableSchema>;
 export type PayableValues = z.infer<typeof payableSchema>;
 export type SettlePayableValues = z.infer<typeof settlePayableSchema>;
 export type ProjectInstallmentsValues = z.infer<typeof projectInstallmentsSchema>;
+export type SettledPayableValues = z.infer<typeof settledPayableSchema>;
+export type SettledReceivableValues = z.infer<typeof settledReceivableSchema>;

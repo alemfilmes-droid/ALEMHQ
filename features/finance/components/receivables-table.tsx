@@ -4,7 +4,7 @@ import { Money } from "@/components/ui/money";
 import { useState } from "react";
 import Link from "next/link";
 import { ClientAvatar } from "@/components/companies/client-avatar";
-import { ArrowDownLeft, CheckCircle2, ExternalLink, MoreHorizontal, Paperclip, Pencil, XCircle } from "lucide-react";
+import { ArrowDownLeft, CheckCircle2, ExternalLink, MoreHorizontal, Paperclip, Pencil, XCircle, Undo2 } from "lucide-react";
 import { attachReceivableInvoiceAction, cancelReceivableAction } from "@/features/finance/actions";
 import { CancelDialog } from "@/features/finance/components/cancel-dialog";
 import { CsvExportButton } from "@/features/finance/components/csv-export-button";
@@ -12,6 +12,8 @@ import { AttachInvoiceDialog, InvoiceFileButton } from "@/features/finance/compo
 import { ReceivableDialog } from "@/features/finance/components/receivable-dialog";
 import { SettleReceivableDialog } from "@/features/finance/components/settle-dialogs";
 import { DirectionIcon, StatusBadge } from "@/features/finance/components/status-badge";
+import { EditedTag } from "@/features/finance/components/entry-history";
+import { useSettledEntryDialogs } from "@/features/finance/components/settled-row-actions";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
 import { PAYMENT_METHOD_LABELS, STATUS_LABELS } from "@/features/finance/labels";
 import { centsToInput, formatCents } from "@/features/finance/money";
@@ -37,7 +39,9 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const settled = useSettledEntryDialogs({ kind: "receivable", item }, options);
   if (item.status === "cancelado") return null;
+  const canEditSettled = item.status === "recebido" && options.canEditSettled;
   // Nota fiscal vale antes e depois do recebimento; receber/editar/cancelar só em aberto.
   const open = item.status === "pendente" || item.status === "atrasado";
 
@@ -66,6 +70,18 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
             <Paperclip aria-hidden />
             {item.invoiceFilePath || item.invoiceNumber ? "Trocar nota fiscal" : "Anexar nota fiscal"}
           </DropdownMenuItem>
+          {canEditSettled ? (
+            <>
+              <DropdownMenuItem onSelect={settled.openEdit}>
+                <Pencil aria-hidden />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={settled.openReverse}>
+                <Undo2 aria-hidden />
+                Estornar baixa
+              </DropdownMenuItem>
+            </>
+          ) : null}
           {open ? (
             <>
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
@@ -93,6 +109,7 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
           onOpenChange={setInvoiceOpen}
         />
       ) : null}
+      {settled.dialogs}
       {settleOpen ? <SettleReceivableDialog receivable={item} open onOpenChange={setSettleOpen} today={today} /> : null}
       {editOpen ? <ReceivableDialog mode="edit" receivable={item} options={options} today={today} open onOpenChange={setEditOpen} /> : null}
       <CancelDialog
@@ -185,6 +202,7 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
               )}
               <td className="px-4 py-3">
                 <span className={item.status === "cancelado" ? "line-through" : "font-semibold"}>{item.description}</span>
+                {item.editedAt ? <EditedTag type="receivable" id={item.id} label={`${item.companyName} · ${item.description}`} options={options} /> : null}
                 {compact && showProject && item.projectName ? (
                   <span className="block text-[13px] text-muted-foreground">{item.projectName}</span>
                 ) : null}

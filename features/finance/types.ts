@@ -29,6 +29,10 @@ export interface ReceivableItem {
   invoiceFilePath: string | null;
   notes: string | null;
   status: ReceivableStatus;
+  /** Versão para a edição concorrente (sobe a cada alteração). */
+  version: number;
+  /** Última edição/estorno feito depois da baixa (mostra a etiqueta "Editado"). */
+  editedAt: string | null;
 }
 
 export interface PayableItem {
@@ -62,6 +66,20 @@ export interface PayableItem {
   receiptUrl: string | null;
   /** Dados de pagamento de favorecido avulso (sem cadastro na equipe). */
   payee: PayeeBankData;
+  /** Versão para a edição concorrente (sobe a cada alteração). */
+  version: number;
+  /** Última edição/estorno feito depois da baixa (mostra a etiqueta "Editado"). */
+  editedAt: string | null;
+}
+
+/** Uma linha do "Histórico de alterações" de um lançamento. */
+export interface FinanceHistoryEntry {
+  id: string;
+  action: "EDIT" | "REVERSE_WRITE_OFF";
+  changedAt: string;
+  changedByName: string;
+  reason: string | null;
+  changes: Record<string, { before: unknown; after: unknown }>;
 }
 
 export interface PayeeBankData {
@@ -120,6 +138,8 @@ export interface FinanceOptions {
   companies: { id: string; name: string }[];
   projects: { id: string; name: string; company_id: string | null }[];
   members: { id: string; full_name: string }[];
+  /** Diretoria e squad financeiro: editar e estornar lançamentos já baixados (o banco repete a regra). */
+  canEditSettled: boolean;
 }
 
 export interface MonthlySummaryItem {

@@ -6,6 +6,8 @@ import { ArrowUpRight, CheckCircle2, Landmark, MoreHorizontal, Pencil, XCircle }
 import { cancelPayableAction } from "@/features/finance/actions";
 import { CancelDialog } from "@/features/finance/components/cancel-dialog";
 import { CsvExportButton } from "@/features/finance/components/csv-export-button";
+import { EditedTag } from "@/features/finance/components/entry-history";
+import { SettledRowActions } from "@/features/finance/components/settled-row-actions";
 import { PayableDialog } from "@/features/finance/components/payable-dialog";
 import { SettlePayableDialog } from "@/features/finance/components/settle-dialogs";
 import { PayeePaymentDetailsDialog } from "@/features/goals/components/payee-payment-details";
@@ -37,6 +39,7 @@ function RowActions({ item, options, today }: { item: PayableItem; options: Fina
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  if (item.status === "pago") return <SettledRowActions entry={{ kind: "payable", item }} options={options} />;
   if (item.status !== "pendente" && item.status !== "atrasado") return null;
 
   return (
@@ -151,6 +154,7 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
                   <Badge variant="muted">{PAYABLE_CATEGORY_LABELS[item.category]}</Badge>
                   <Badge variant="outline">{item.isFixed ? FIXED_VARIABLE_LABELS.fixed : FIXED_VARIABLE_LABELS.variable}</Badge>
                   {item.recurrence !== "none" || item.recurrenceParentId ? <Badge variant="outline">Recorrente</Badge> : null}
+                  {item.editedAt ? <EditedTag type="payable" id={item.id} label={`${item.payeeLabel} · ${item.description}`} options={options} /> : null}
                 </span>
               </td>
               {compact ? null : (

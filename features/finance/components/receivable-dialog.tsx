@@ -2,12 +2,13 @@
 
 import { Money } from "@/components/ui/money";
 import { useState, useTransition, type ReactNode } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createReceivableAction, updateReceivableAction } from "@/features/finance/actions";
 import { MethodSelect } from "@/features/finance/components/method-select";
+import { ReceivableIdentityFields, type ReceivableIdentityValues } from "@/features/finance/components/receivable-identity-fields";
 import { centsToInput, formatCents, parseMoneyToCents, splitInstallments } from "@/features/finance/money";
 import { receivableSchema, type ReceivableValues } from "@/features/finance/schemas";
 import type { FinanceOptions, ReceivableItem } from "@/features/finance/types";
@@ -25,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 type ReceivableDialogProps = {
@@ -38,8 +38,6 @@ type ReceivableDialogProps = {
   /** Pré-preenchimento (ex.: aba Financeiro do projeto ou da empresa). */
   defaults?: { companyId?: string; projectId?: string };
 } & ({ mode: "create" } | { mode: "edit"; receivable: ReceivableItem });
-
-const NO_PROJECT = "none";
 
 function initialValues(props: ReceivableDialogProps): ReceivableValues {
   if (props.mode === "edit") {
@@ -83,20 +81,18 @@ export function ReceivableDialog(props: ReceivableDialogProps) {
   const setOpen = (next: boolean) => (controlled ? props.onOpenChange?.(next) : setInternalOpen(next));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const form = useForm<ReceivableValues>({ resolver: zodResolver(receivableSchema), defaultValues: initialValues(props) });
   const {
     register,
     control,
     handleSubmit,
     reset,
     watch,
-    setValue,
     formState: { errors },
-  } = useForm<ReceivableValues>({ resolver: zodResolver(receivableSchema), defaultValues: initialValues(props) });
+  } = form;
 
-  const companyId = watch("companyId");
   const installments = Number(watch("installments")) || 1;
   const amountCents = parseMoneyToCents(watch("amount"));
-  const projectOptions = props.options.projects.filter((project) => project.company_id === companyId);
   const parcelled = !isEdit && installments > 1;
   const preview = parcelled && amountCents && amountCents > 0 ? splitInstallments(amountCents, installments) : null;
 
@@ -143,82 +139,7 @@ export function ReceivableDialog(props: ReceivableDialogProps) {
         <form onSubmit={onSubmit} noValidate className="space-y-5">
           {error ? <Alert variant="error">{error}</Alert> : null}
 
-          <FormField id="rec-company" label="Cliente" error={errors.companyId?.message}>
-            <Controller
-              control={control}
-              name="companyId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || undefined}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setValue("projectId", "");
-                  }}
-                >
-                  <SelectTrigger id="rec-company" aria-invalid={!!errors.companyId}>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {props.options.companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </FormField>
-
-          <FormField id="rec-project" label="Projeto" hint="Opcional. Sem projeto, é um trabalho avulso.">
-            <Controller
-              control={control}
-              name="projectId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || NO_PROJECT}
-                  onValueChange={(value) => field.onChange(value === NO_PROJECT ? "" : value)}
-                  disabled={!companyId}
-                >
-                  <SelectTrigger id="rec-project">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_PROJECT}>Sem projeto</SelectItem>
-                    {projectOptions.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </FormField>
-
-          <FormField id="rec-description" label="Descrição" error={errors.description?.message}>
-            <Input id="rec-description" aria-invalid={!!errors.description} aria-describedby={errors.description ? "rec-description-message" : undefined} {...register("description")} />
-          </FormField>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField id="rec-service" label="Descrição do serviço" hint="Opcional." error={errors.serviceDescription?.message}>
-              <Input id="rec-service" {...register("serviceDescription")} />
-            </FormField>
-            <FormField id="rec-competence" label="Mês de competência" hint="Para clientes recorrentes.">
-              <Controller
-                control={control}
-                name="competenceMonth"
-                render={({ field }) => (
-                  <Input
-                    id="rec-competence"
-                    type="month"
-                    value={field.value ? field.value.slice(0, 7) : ""}
-                    onChange={(event) => field.onChange(event.target.value ? `${event.target.value}-01` : "")}
-                  />
-                )}
-              />
-            </FormField>
-          </div>
+          <ReceivableIdentityFields form={form as unknown as UseFormReturn<ReceivableIdentityValues>} options={props.options} />
 
           <div className="grid gap-5 sm:grid-cols-2">
             {isEdit ? null : (

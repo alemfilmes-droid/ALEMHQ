@@ -5,7 +5,8 @@ import { z } from "zod";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { centsToNumber, formatCents, parseMoneyToCents, toCents } from "@/features/finance/money";
+import { centsToNumber, formatCents, toCents } from "@/features/finance/money";
+import { amountToNumber, orNull, toPayableRow, toReceivableRow } from "@/features/finance/rows";
 import { isSettleKey, resolveSettleConflict, settleDbErrorMessage } from "@/lib/finance/settlement";
 import {
   payableSchema,
@@ -38,8 +39,6 @@ function refresh() {
   revalidatePath("/clientes", "layout");
 }
 
-const orNull = (value: string) => (value === "" ? null : value);
-const amountToNumber = (input: string) => centsToNumber(parseMoneyToCents(input) ?? 0);
 
 // ---------------------------------------------------------------------------
 // Recebimentos
@@ -71,18 +70,7 @@ export async function createReceivableAction(values: ReceivableValues): Promise<
     return { ok: true, message: `${count} parcelas geradas.` };
   }
 
-  const { error } = await supabase.from("receivables").insert({
-    company_id: data.companyId,
-    project_id: orNull(data.projectId),
-    description: data.description,
-    service_description: orNull(data.serviceDescription),
-    competence_month: orNull(data.competenceMonth),
-    amount: amountToNumber(data.amount),
-    due_date: data.dueDate,
-    payment_method: data.paymentMethod === "" ? null : data.paymentMethod,
-    invoice_number: orNull(data.invoiceNumber),
-    notes: orNull(data.notes),
-  });
+  const { error } = await supabase.from("receivables").insert(toReceivableRow(data));
   if (error) return { ok: false, error: friendlyError(error.message, "Não foi possível criar o recebimento.") };
   refresh();
   return { ok: true, message: "Recebimento criado." };
@@ -97,18 +85,7 @@ export async function updateReceivableAction(id: string, values: ReceivableValue
   const supabase = await createClient();
   const { data: updated, error } = await supabase
     .from("receivables")
-    .update({
-      company_id: data.companyId,
-      project_id: orNull(data.projectId),
-      description: data.description,
-      service_description: orNull(data.serviceDescription),
-      competence_month: orNull(data.competenceMonth),
-      amount: amountToNumber(data.amount),
-      due_date: data.dueDate,
-      payment_method: data.paymentMethod === "" ? null : data.paymentMethod,
-      invoice_number: orNull(data.invoiceNumber),
-      notes: orNull(data.notes),
-    })
+    .update(toReceivableRow(data))
     .eq("id", id)
     .is("received_at", null)
     .is("cancelled_at", null)
@@ -205,35 +182,6 @@ export async function generateProjectInstallmentsAction(
 // Pagamentos
 // ---------------------------------------------------------------------------
 
-function toPayableRow(data: PayableValues) {
-  return {
-    // "Custo da empresa" nunca carrega projeto, mesmo que o campo tenha ficado com um valor
-    // de uma seleção anterior — o tipo de custo escolhido é que manda, não o campo em si.
-    project_id: data.costType === "empresa" ? null : orNull(data.projectId),
-    company_id: orNull(data.companyId),
-    payee_profile_id: orNull(data.payeeProfileId),
-    // Favorecido membro da equipe: o nome vem do profile.
-    payee_name: data.payeeProfileId ? null : orNull(data.payeeName),
-    category: data.category,
-    description: data.description,
-    amount: amountToNumber(data.amount),
-    due_date: data.dueDate,
-    payment_method: data.paymentMethod === "" ? null : data.paymentMethod,
-    notes: orNull(data.notes),
-    is_fixed: data.isFixed,
-    recurrence: data.recurrence,
-    recurrence_until: orNull(data.recurrenceUntil),
-    // Favorecido da equipe: os dados vêm do perfil (payment_details) — nada duplicado aqui.
-    payee_pix_key_type: data.payeeProfileId || data.payeePixKeyType === "" ? null : data.payeePixKeyType,
-    payee_pix_key: data.payeeProfileId ? null : orNull(data.payeePixKey),
-    payee_holder_name: data.payeeProfileId ? null : orNull(data.payeeHolderName),
-    payee_document: data.payeeProfileId ? null : orNull(data.payeeDocument),
-    payee_bank_name: data.payeeProfileId ? null : orNull(data.payeeBankName),
-    payee_bank_agency: data.payeeProfileId ? null : orNull(data.payeeBankAgency),
-    payee_bank_account: data.payeeProfileId ? null : orNull(data.payeeBankAccount),
-    payee_account_type: data.payeeProfileId || data.payeeAccountType === "" ? null : data.payeeAccountType,
-  };
-}
 
 export async function createPayableAction(values: PayableValues): Promise<ActionResult> {
   if (!(await requireFinance())) return FORBIDDEN;

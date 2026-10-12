@@ -117,3 +117,47 @@ login; abertura do app no iPhone.
 
 **Sem migração.** **Testes**: `lib/images/thumbnail.test.ts`, `lib/images/downscale.test.ts`,
 `lib/resume/place.test.ts`.
+
+## Bloco 3B — Editar lançamento já baixado e "Estornar baixa" (pedido do Anderson)
+
+**Antes**: pagamentos e recebimentos baixados não podiam ser corrigidos (só os em aberto); o único registro era
+"criado / baixado / cancelado", sem o que mudou.
+
+**Quem pode**: diretoria e squad financeiro (`can_see_money()`). Quem tem só a marca manual "acesso ao
+financeiro" vê, mas não edita nem estorna. A regra vale no banco; a tela só esconde os botões.
+
+**O que mudou**
+- Migração `20261017100000_finance_entry_history.sql` (só adiciona):
+  - tabela `financial_entry_history` (lançamento, quem, quando, ação EDIT | REVERSE_WRITE_OFF, campo a campo
+    antes → depois, motivo) — imutável (trigger recusa alterar/apagar), leitura para quem vê o financeiro;
+  - colunas `version`, `updated_by`, `edited_at` em `payables` e `receivables` (versão sobe a cada alteração);
+  - `finance_edit_settled()` e `finance_reverse_settlement()`: conferem permissão, cancelado (somente leitura),
+    baixado, versão (conflito → "Este lançamento foi alterado por [nome] agora há pouco…"), motivo obrigatório
+    quando valor/data de pagamento mudam e no estorno, as mesmas regras da criação (valor > 0, datas, atraso com
+    motivo) e gravam o histórico do que ficou salvo;
+  - estorno limpa a baixa (data, comprovante, chave da tentativa; atraso e multa voltam pelo gatilho existente):
+    a próxima baixa funciona e continua sem duplicar;
+  - comissão de meta (`goals.payable_id`, `goal_contract_payouts.payable_id`): valor editado acompanha e o
+    beneficiário é avisado da mudança ou do estorno (popup do Bloco 7 será marcado por comissão: edição não
+    repete a comemoração);
+  - nota fiscal anexada/trocada em recebimento já recebido também entra no histórico;
+  - views `payables_with_status` / `receivables_with_status` recriadas com o mesmo corpo (expõem as colunas).
+- Relatórios, totais, categorias e dashboards: todos são views/consultas calculadas na hora (nenhum total
+  guardado) — refletem a edição assim que a tela atualiza.
+- `lib/finance/settled-edit.ts`: espelho das regras (campos, motivo, permissão, mensagens) e texto do histórico.
+- `features/finance/settled-actions.ts`: editar baixado, estornar e ler o histórico (servidor).
+- `features/finance/rows.ts` (novo, extraído de `actions.ts`): formulário → colunas, compartilhado.
+- `features/finance/schemas.ts`: mesmas regras da criação + dados da baixa + motivo.
+- Tela: `payable-fields.tsx` e `receivable-identity-fields.tsx` (campos extraídos dos formulários existentes,
+  sem mudança visual), `settled-payable-dialog.tsx`, `settled-receivable-dialog.tsx`,
+  `reverse-settlement-dialog.tsx`, `entry-history.tsx` (lista + etiqueta "Editado"), `settled-row-actions.tsx`,
+  `change-reason-field.tsx`, `use-settled-submit.ts`; menus ⋯ das listas e janela do pagamento.
+- Recorrência e agendamento não são editados num lançamento já pago (são da série/da fila).
+
+**Telas afetadas**: Financeiro → Pagamentos e Recebimentos (menu ⋯, etiqueta "Editado"), janela do pagamento,
+abas Financeiro do projeto e do cliente.
+
+**Testes**: `lib/finance/settled-edit.test.ts` (todos os tipos de campo, motivo, permissão, conflito, histórico) +
+validação da migração no banco em `begin … rollback` (21 passos: motivo, conflito, estorno, nova baixa sem
+duplicar, cancelado, histórico imutável, permissão negada, recebimento). A sincronização da comissão não foi
+executada no banco (exigiria criar meta para um usuário real); foi revisada no código.

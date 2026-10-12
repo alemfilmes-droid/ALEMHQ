@@ -1922,6 +1922,47 @@ export type Database = {
           },
         ]
       }
+      financial_entry_history: {
+        Row: {
+          action: Database["public"]["Enums"]["finance_history_action"]
+          changed_at: string
+          changed_by: string | null
+          changes: Json
+          entry_id: string
+          entry_type: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["finance_history_action"]
+          changed_at?: string
+          changed_by?: string | null
+          changes: Json
+          entry_id: string
+          entry_type: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["finance_history_action"]
+          changed_at?: string
+          changed_by?: string | null
+          changes?: Json
+          entry_id?: string
+          entry_type?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entry_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       freelancers: {
         Row: {
           city: string | null
@@ -3107,6 +3148,9 @@ export type Database = {
           original_amount: number | null
           paid_at: string | null
           settle_key: string | null
+          version: number
+          updated_by: string | null
+          edited_at: string | null
           paid_late: boolean
           payee_account_type:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3150,6 +3194,9 @@ export type Database = {
           original_amount?: number | null
           paid_at?: string | null
           settle_key?: string | null
+          version?: number
+          updated_by?: string | null
+          edited_at?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -3195,6 +3242,9 @@ export type Database = {
           original_amount?: number | null
           paid_at?: string | null
           settle_key?: string | null
+          version?: number
+          updated_by?: string | null
+          edited_at?: string | null
           paid_late?: boolean
           payee_account_type?:
             | Database["public"]["Enums"]["bank_account_type"]
@@ -4965,6 +5015,9 @@ export type Database = {
           received_amount: number | null
           received_at: string | null
           settle_key: string | null
+          version: number
+          updated_by: string | null
+          edited_at: string | null
           service_description: string | null
           task_id: string | null
           updated_at: string
@@ -4990,6 +5043,9 @@ export type Database = {
           received_amount?: number | null
           received_at?: string | null
           settle_key?: string | null
+          version?: number
+          updated_by?: string | null
+          edited_at?: string | null
           service_description?: string | null
           task_id?: string | null
           updated_at?: string
@@ -5015,6 +5071,9 @@ export type Database = {
           received_amount?: number | null
           received_at?: string | null
           settle_key?: string | null
+          version?: number
+          updated_by?: string | null
+          edited_at?: string | null
           service_description?: string | null
           task_id?: string | null
           updated_at?: string
@@ -5801,6 +5860,10 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
+          settle_key: string | null
+          version: number | null
+          updated_by: string | null
+          edited_at: string | null
           amount: number | null
           cancelled_at: string | null
           category: Database["public"]["Enums"]["payable_category"] | null
@@ -5948,6 +6011,10 @@ export type Database = {
       }
       receivables_with_status: {
         Row: {
+          settle_key: string | null
+          version: number | null
+          updated_by: string | null
+          edited_at: string | null
           amount: number | null
           cancelled_at: string | null
           company_id: string | null
@@ -6615,7 +6682,26 @@ export type Database = {
         }[]
       }
       finance_executor_id: { Args: never; Returns: string }
+      finance_edit_settled: {
+        Args: {
+          p_entry_id: string
+          p_entry_type: string
+          p_expected_version: number
+          p_patch: Json
+          p_reason?: string
+        }
+        Returns: number
+      }
       finance_generate_auto_pautas: { Args: never; Returns: number }
+      finance_reverse_settlement: {
+        Args: {
+          p_entry_id: string
+          p_entry_type: string
+          p_expected_version: number
+          p_reason: string
+        }
+        Returns: number
+      }
       finance_late_payments: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -7345,6 +7431,7 @@ export type Database = {
         | "enviar_material"
         | "aguardar_retorno"
         | "descartar"
+      finance_history_action: "EDIT" | "REVERSE_WRITE_OFF"
       goal_commission_mode: "percentual" | "por_unidade" | "contratos_fechados"
       goal_entry_source: "manual" | "crm"
       goal_entry_status: "pendente" | "aprovado" | "recusado"
@@ -7753,6 +7840,7 @@ export const Constants = {
         "aguardar_retorno",
         "descartar",
       ],
+      finance_history_action: ["EDIT", "REVERSE_WRITE_OFF"],
       goal_commission_mode: ["percentual", "por_unidade", "contratos_fechados"],
       goal_entry_source: ["manual", "crm"],
       goal_entry_status: ["pendente", "aprovado", "recusado"],

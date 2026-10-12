@@ -27,6 +27,7 @@ import {
 } from "@/features/finance/types";
 import type { Database } from "@/types/database";
 import { getCompanySettings } from "@/features/settings/queries";
+import { canEditSettled } from "@/lib/finance/settled-edit";
 import { marginStatusFor } from "@/lib/margin";
 import type { MarginStatus, PayableCategory, PaymentMethod } from "@/types";
 
@@ -92,6 +93,8 @@ function mapReceivable(row: ReceivableRow): ReceivableItem | null {
     invoiceFilePath: row.invoice_file_path,
     notes: row.notes,
     status,
+    version: row.version ?? 1,
+    editedAt: row.edited_at,
   };
 }
 
@@ -135,6 +138,8 @@ function mapPayable(row: PayableRow): PayableItem | null {
       account: row.payee_bank_account,
       accountType: row.payee_account_type,
     },
+    version: row.version ?? 1,
+    editedAt: row.edited_at,
   };
 }
 
@@ -450,10 +455,12 @@ export async function getFinanceOptions(): Promise<FinanceOptions> {
     supabase.from("projects").select("id, name, company_id").eq("is_internal", false).order("name"),
     supabase.from("profiles").select("id, full_name").eq("is_active", true).neq("full_name", "").order("full_name"),
   ]);
+  const profile = await getCurrentProfile();
   return {
     companies: companies.data ?? [],
     projects: projects.data ?? [],
     members: members.data ?? [],
+    canEditSettled: profile ? canEditSettled(profile.squads) : false,
   };
 }
 

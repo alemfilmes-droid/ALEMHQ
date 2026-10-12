@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, ExternalLink, Landmark, Pencil, TriangleAlert } from "lucide-react";
+import { CalendarClock, CheckCircle2, ExternalLink, History, Landmark, Pencil, TriangleAlert, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import { Input } from "@/components/ui/input";
 import { MetricValue } from "@/components/ui/metric-value";
 import { RichText } from "@/components/ui/rich-text";
 import { schedulePayableAction } from "@/features/finance/actions";
+import { EntryHistoryList } from "@/features/finance/components/entry-history";
 import { PayableDialog } from "@/features/finance/components/payable-dialog";
+import { ReverseSettlementDialog } from "@/features/finance/components/reverse-settlement-dialog";
+import { SettledPayableDialog } from "@/features/finance/components/settled-payable-dialog";
 import { SettlePayableDialog } from "@/features/finance/components/settle-dialogs";
 import { StatusBadge } from "@/features/finance/components/status-badge";
 import { PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from "@/features/finance/labels";
@@ -112,11 +115,14 @@ export function PaymentModal({ item, options, today, onOpenChange }: { item: Pay
   const [settling, setSettling] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [settledAction, setSettledAction] = useState<"edit" | "reverse" | null>(null);
   const open = item.status === "pendente" || item.status === "atrasado";
+  const paid = item.status === "pago";
+  const canEditSettled = paid && options.canEditSettled;
 
   return (
     <>
-      <Dialog open={!settling && !scheduling && !editing} onOpenChange={(next) => !next && onOpenChange(false)}>
+      <Dialog open={!settling && !scheduling && !editing && !settledAction} onOpenChange={(next) => !next && onOpenChange(false)}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
@@ -159,7 +165,7 @@ export function PaymentModal({ item, options, today, onOpenChange }: { item: Pay
               <Landmark className="size-3.5" aria-hidden />
               Dados para pagamento
             </p>
-            <PayeeData item={item} onEdit={() => setEditing(true)} />
+            <PayeeData item={item} onEdit={() => (paid ? setSettledAction("edit") : setEditing(true))} />
           </section>
 
           <section className="space-y-1 text-sm">
@@ -190,8 +196,31 @@ export function PaymentModal({ item, options, today, onOpenChange }: { item: Pay
             </div>
           ) : null}
 
+          {item.editedAt ? (
+            <details className="rounded-md border border-border p-3 text-sm">
+              <summary className="flex min-h-11 cursor-pointer items-center gap-1.5 font-semibold sm:min-h-0">
+                <History className="size-4" aria-hidden />
+                Histórico de alterações
+              </summary>
+              <div className="mt-3">
+                <EntryHistoryList type="payable" id={item.id} options={options} />
+              </div>
+            </details>
+          ) : null}
+
           <DialogFooter className="flex-wrap gap-2">
-            {open ? (
+            {canEditSettled ? (
+              <>
+                <Button type="button" variant="secondary" size="lg" onClick={() => setSettledAction("reverse")}>
+                  <Undo2 aria-hidden />
+                  Estornar baixa
+                </Button>
+                <Button type="button" size="lg" onClick={() => setSettledAction("edit")}>
+                  <Pencil aria-hidden />
+                  Editar
+                </Button>
+              </>
+            ) : open ? (
               <>
                 <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
                   <Pencil aria-hidden />
@@ -224,6 +253,17 @@ export function PaymentModal({ item, options, today, onOpenChange }: { item: Pay
             setSettling(next);
             if (!next) onOpenChange(false);
           }}
+        />
+      ) : null}
+      {settledAction === "edit" ? <SettledPayableDialog payable={item} options={options} open onOpenChange={(next) => !next && setSettledAction(null)} /> : null}
+      {settledAction === "reverse" ? (
+        <ReverseSettlementDialog
+          type="payable"
+          id={item.id}
+          version={item.version}
+          label={`${item.payeeLabel} · ${item.description} · ${formatCents(item.amount)}`}
+          open
+          onOpenChange={(next) => !next && setSettledAction(null)}
         />
       ) : null}
       {scheduling ? <ScheduleDialog item={item} today={today} onOpenChange={(next) => (next ? null : setScheduling(false))} /> : null}
