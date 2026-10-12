@@ -455,3 +455,33 @@ Agenda, Orçamentos, Financeiro (nome marcado e listas de escolha).
      (foi recriada no Bloco 3B, antes da coluna do Bloco 5). Sem a correção, a marca "Sem nota fiscal" não aparecia e
      editar um recebimento "Não" voltaria para "Sim". Migração `20261023090000_receivables_view_invoice_flag.sql`
      (recria a view com o mesmo corpo; validada em rollback: mesmas 19 linhas e mesma soma).
+   - Correção aplicada pelo Anderson (`db push` da 11ª migração); conferida no banco: a view traz "Nota fiscal",
+     mesmas 19 linhas e soma R$ 71.300,00; nenhuma migração pendente. Tipos regenerados de novo.
+5. **Publicação** (12/10/2026, 19:57): `main` avançado de `ed14a5e` (versão anterior) para `1940174`; a Vercel publicou
+   sozinha.
+6. **Verificação depois de publicar** (só leitura, sem login), em https://hq.alemfilmes.com.br: login, esqueci a senha,
+   privacidade, termos e manifesto respondem 200; Início, Clientes, Lixeira, CRM, Financeiro, Metas, Projetos, Pautas,
+   Minhas pautas e Agenda pedem login (307 → /login com o retorno certo); metas do iPhone (tela cheia) presentes; build
+   novo no ar (arquivos novos); alemhq.vercel.app também responde. As telas logadas ficam para o Anderson conferir com
+   o checklist de cada bloco.
+
+### Plano de volta
+
+- **Se uma tela quebrar** (o mais provável e o mais simples): voltar o código para a versão anterior. Na Vercel:
+  Deployments → a publicação anterior (commit `ed14a5e`, "Prospecção por WhatsApp no CRM") → ⋯ → **Promote to
+  Production** (ou **Instant Rollback**). Leva segundos. O código antigo funciona com o banco novo: as migrações só
+  adicionaram colunas, tabelas e funções. Depois, o Claude corrige e publica de novo.
+- **Banco**: não há "desfazer" automático das migrações, e não é preciso — nenhuma apagou ou renomeou dado. Se uma regra
+  nova do banco atrapalhar o trabalho, a correção é uma migração nova (não voltar a cópia).
+- **Cópia de segurança** (`~/Documents/backup-alem-hq/2026-10-12/hq.dump`): só se dados forem perdidos ou estragados;
+  ver `docs/backup-e-restauracao.md`. Restaurar apaga o que foi lançado depois da cópia — fazer junto com o Claude.
+
+### Decisões em aberto
+
+- **Metas "contratos fechados"**: continuam com o fluxo antigo ("Aprovar meta", pagamento automático por contrato);
+  Finalizar meta (batida/não alcançada) vale para os outros tipos. Mudar para o fluxo novo é um pedido à parte.
+- **Exclusão definitiva de cliente que conta em metas**: bloqueada (apagaria os pagamentos de comissão por contrato);
+  para esses, usar Anonimizar (LGPD).
+- **Anonimização**: títulos de pautas e descrições de lançamentos ficam (são a descrição do serviço); trocar também, se
+  o Anderson pedir.
+- **Busca global do topo**: continua sendo só um campo sem função (fora do escopo deste lote).
