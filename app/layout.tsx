@@ -29,6 +29,8 @@ export const metadata: Metadata = {
   },
   appleWebApp: { capable: true, title: "Além HQ", statusBarStyle: "black" },
   robots: { index: false, follow: false },
+  // iOS antigos só abrem em tela cheia (sem a barra do Safari) com a meta da Apple explícita.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {

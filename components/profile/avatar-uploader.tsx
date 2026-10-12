@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { updateAvatarAction } from "@/app/(app)/perfil/actions";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { downscaleImage } from "@/lib/images/downscale";
 import { createClient } from "@/lib/supabase/client";
 import { IMAGE_ACCEPT, IMAGE_MAX_LABEL, IMAGE_TYPES, describeUploadError, validateImage } from "@/lib/uploads";
 
@@ -29,7 +30,9 @@ export function AvatarUploader({ userId, name, avatarUrl }: AvatarUploaderProps)
     if (stale.length > 0) await supabase.storage.from("avatars").remove(stale);
   }
 
-  async function handleFile(file: File) {
+  async function handleFile(original: File) {
+    // Reduz no aparelho (512 px): foto de 12 MP pesava na memória do iPhone em toda tela com avatares.
+    const file = await downscaleImage(original);
     const invalid = validateImage(file);
     if (invalid) {
       toast.error(invalid);

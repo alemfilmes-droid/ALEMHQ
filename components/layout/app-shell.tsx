@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { ResumePlace } from "@/components/layout/resume-place";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { PrivacyProvider } from "@/components/privacy/privacy-mode";
@@ -81,6 +82,9 @@ export function AppShell({ profile, notifications, squadDirectory, badges = {}, 
               </div>
               <PushRegistrar unreadCount={notifications.unreadCount} />
               <ProjectFinalizeWatcher />
+              <Suspense fallback={null}>
+                <ResumePlace />
+              </Suspense>
             </main>
           </div>
         </div>

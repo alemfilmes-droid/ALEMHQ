@@ -16,7 +16,11 @@ import type {
  * avulsas (is_standalone) nunca aparecem aqui — são pessoais, só existem no quadro pessoal
  * (/minhas-pautas), mesmo para quem as criou.
  */
-export async function listPautas(filters: PautaFilters): Promise<PautaWithDetails[]> {
+/**
+ * `deliveredSince` (yyyy-mm-dd): entregues só a partir dessa data — o quadro geral não carrega todo o
+ * histórico de entregues (pesava no iPhone); "Ver todas" tira o limite.
+ */
+export async function listPautas(filters: PautaFilters, options: { deliveredSince?: string } = {}): Promise<PautaWithDetails[]> {
   const supabase = await createClient();
   let query = supabase
     .from("pautas_with_details")
@@ -31,6 +35,7 @@ export async function listPautas(filters: PautaFilters): Promise<PautaWithDetail
   if (filters.priorities?.length) query = query.in("priority", filters.priorities);
   if (filters.statuses?.length) query = query.in("status", filters.statuses);
   if (filters.squads?.length) query = query.in("squad", filters.squads);
+  if (options.deliveredSince) query = query.or(`board_column.neq.entregue,updated_at.gte.${options.deliveredSince}`);
   if (filters.search?.trim()) query = query.ilike("title", `%${filters.search.trim().replace(/[%_\\]/g, (char) => `\\${char}`)}%`);
 
   const { data, error } = await query;

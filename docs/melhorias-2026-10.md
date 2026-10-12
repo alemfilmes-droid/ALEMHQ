@@ -70,3 +70,46 @@ Minhas Pautas).
 
 **Sem migração.** **Testes**: `lib/my-pautas.test.ts`, `lib/pautas.test.ts` (espelho do mapa etapa → quadro
 lido do banco de produção).
+
+## Bloco 3 — App do iPhone fechando nas Pautas (Anna, item 1)
+
+**Causas encontradas**
+- **Fotos e logos no tamanho original.** Avatares e logos (até 2 MB cada, ex.: foto de 12 MP do iPhone) eram
+  carregados inteiros e só encolhidos na tela. Decodificada, cada foto ocupa ~48 MB de memória — em quadros
+  com vários responsáveis e clientes, o iOS mata o app da tela de início.
+- **Pautas carregava todo o histórico** de entregues e montava todos os cards de todas as colunas de uma vez.
+- **Reabertura perdia o lugar**: o iOS reabre o app no Início; e quem desmarcou "Lembrar deste dispositivo"
+  perdia o login a cada fechamento.
+- Sem vazamentos: os temporizadores e "ouvintes" existentes já se desligam ao sair da tela.
+
+**O que mudou**
+- `lib/images/thumbnail.ts` + `next.config.ts` (`images.remotePatterns`, cache de 31 dias): avatar e logo do
+  Storage passam pelo otimizador de imagens do Next/Vercel (já incluso) em 96 px (256 px em tela retina),
+  com carregamento preguiçoso. Sem a otimização disponível, aparecem as iniciais (nunca quebra).
+- `components/ui/avatar.tsx`, `components/companies/client-avatar.tsx`: usam a versão reduzida.
+- `lib/images/downscale.ts`: fotos e logos novas são reduzidas no aparelho para 512 px antes do envio
+  (`avatar-uploader.tsx`, `company-logo-uploader.tsx`).
+- `app/(app)/pautas/page.tsx` + `features/pautas/queries.ts`: Entregues só dos últimos 30 dias, com
+  "ver todas" (`?entregues=todas`). O contador "Concluídas" acompanha esse recorte.
+- `components/kanban/kanban-lane.tsx`: 20 cards por coluna, "Mostrar mais (N)" para o resto (Pautas, aba do
+  projeto e Minhas Pautas → Quadro).
+- `lib/resume/*` + `components/layout/resume-place.tsx` (no AppShell): guarda a última tela (com filtros,
+  que já ficam na URL) e a rolagem; ao reabrir o app da tela de início no Início em até 12 h, volta para lá.
+  Links de notificação continuam abrindo o próprio destino.
+- `components/kanban/use-remembered-scroll.ts`: cada coluna do quadro lembra a rolagem.
+- `components/auth/login-form.tsx`: no app da tela de início o login fica sempre lembrado.
+- `app/layout.tsx`: meta `apple-mobile-web-app-capable` explícita (iOS antigos). Manifesto conferido:
+  `display: standalone`, `start_url: /inicio`, ícones 192/512/maskable e apple-touch-icon — ok.
+
+**Medição antes/depois** (estimativa técnica; a contagem real sai de `docs/medicao-pautas.sql`, só leitura):
+- Memória por foto/logo exibida: ~48 MB (12 MP decodificada) → ~0,26 MB (256 × 256).
+- Cards montados no quadro de Pautas: todos → no máximo 20 por coluna (80 na tela).
+- Pautas carregadas: todas as já entregues → só as entregues dos últimos 30 dias.
+- Não foi possível rodar a simulação de iPhone (WebKit) logado: exigiria entrar com senha de usuário real
+  na produção. O teste no iPhone fica para o Bloco 9 (checklist).
+
+**Telas afetadas**: todas que mostram avatar/logo; Pautas; aba Pautas do projeto; Minhas Pautas → Quadro;
+login; abertura do app no iPhone.
+
+**Sem migração.** **Testes**: `lib/images/thumbnail.test.ts`, `lib/images/downscale.test.ts`,
+`lib/resume/place.test.ts`.

@@ -2,6 +2,8 @@
 
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { getInitials } from "@/lib/format";
+import { publicEnv } from "@/lib/env";
+import { thumbnailSource } from "@/lib/images/thumbnail";
 import { cn } from "@/lib/utils";
 
 export type ClientAvatarSize = "sm" | "md" | "lg";
@@ -46,7 +48,7 @@ export function ClientAvatar({ name, logoUrl, size = "md", className }: ClientAv
     <AvatarPrimitive.Root
       className={cn("relative flex shrink-0 overflow-hidden border border-border-strong bg-surface-hover", SIZE_CLASS[size], className)}
     >
-      {logoUrl ? <AvatarPrimitive.Image src={logoUrl} alt="" className="size-full object-cover" /> : null}
+      {logoUrl ? <AvatarPrimitive.Image {...thumbnailSource(logoUrl, publicEnv.NEXT_PUBLIC_SUPABASE_URL)} alt="" loading="lazy" decoding="async" className="size-full object-cover" /> : null}
       <AvatarPrimitive.Fallback
         className="flex size-full items-center justify-center font-bold tracking-tight text-muted-foreground"
         delayMs={logoUrl ? 300 : 0}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PanelIcon } from "@/components/layout/panel-icon";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 import { PautasBoard } from "@/features/pautas/components/pautas-board";
 import { PautasCounters } from "@/features/pautas/components/pautas-counters";
 import { countBySquad, summarizePautas } from "@/features/pautas/board";
@@ -12,11 +13,14 @@ import { canCreateProjectPauta, canFullyManagePauta, hasCapability, managedSquad
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
 import { requireProfile } from "@/lib/auth/session";
+import { addDays, todayInAppZone } from "@/lib/calendar";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Pautas" };
 
 type SearchParams = Promise<Record<string, string | undefined>>;
+
+const DELIVERED_WINDOW_DAYS = 30;
 
 export default async function PautasPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
@@ -33,9 +37,15 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
   const filters = parsePautaFilters(params);
   const squads = filters.squads ?? [];
 
+  // Entregues: só os últimos 30 dias por padrão (o histórico inteiro pesava na memória do iPhone).
+  const allDelivered = params.entregues === "todas";
+  const deliveredSince = allDelivered ? undefined : addDays(todayInAppZone(), -DELIVERED_WINDOW_DAYS);
+  const deliveredToggle = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[0] !== "entregues"));
+  if (!allDelivered) deliveredToggle.set("entregues", "todas");
+
   const supabase = await createClient();
   const [allSquads, options, companies] = await Promise.all([
-    listPautas({ ...filters, squads: [] }),
+    listPautas({ ...filters, squads: [] }, { deliveredSince }),
     getPautaFormOptions(),
     supabase.from("companies").select("id, name").order("name"),
   ]);
@@ -65,6 +75,12 @@ export default async function PautasPage({ searchParams }: { searchParams: Searc
         </div>
         <div className="flex flex-col items-end gap-2">
           <PautasCounters summary={summary} />
+          <Link
+            href={`/pautas${deliveredToggle.size ? `?${deliveredToggle.toString()}` : ""}`}
+            className="inline-flex min-h-11 items-center text-[12px] text-subtle underline underline-offset-2 hover:text-foreground sm:min-h-0"
+          >
+            {allDelivered ? "Entregues: todas · mostrar só os últimos 30 dias" : `Entregues: últimos ${DELIVERED_WINDOW_DAYS} dias · ver todas`}
+          </Link>
           <Suspense>
             <PautasSquadFilter counts={squadCounts} selected={squads} />
           </Suspense>

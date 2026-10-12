@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginAction } from "@/app/(auth)/actions";
@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isStandaloneApp } from "@/lib/resume/storage";
 import { loginSchema, type LoginValues } from "@/lib/validations/auth";
 
 const NOTICES: Record<string, string> = {
@@ -21,15 +22,24 @@ const NOTICES: Record<string, string> = {
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // No app da tela de início o iOS fecha o HQ por memória: sem "lembrar", o login caía a cada reabertura.
+  const [standalone, setStandalone] = useState(false);
   const {
     register,
     control,
+    setValue,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", remember: true },
   });
+
+  useEffect(() => {
+    if (!isStandaloneApp()) return;
+    setStandalone(true);
+    setValue("remember", true);
+  }, [setValue]);
 
   const onSubmit = handleSubmit((values) => {
     setError(null);
@@ -71,22 +81,26 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
       </FormField>
 
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Controller
-            control={control}
-            name="remember"
-            render={({ field }) => (
-              <Checkbox
-                id="remember"
-                checked={field.value}
-                onCheckedChange={(checked) => field.onChange(checked === true)}
-              />
-            )}
-          />
-          <Label htmlFor="remember" className="font-normal text-muted-foreground">
-            Lembrar deste dispositivo
-          </Label>
-        </div>
+        {standalone ? (
+          <p className="text-sm text-muted-foreground">Você continua conectado neste app.</p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Controller
+              control={control}
+              name="remember"
+              render={({ field }) => (
+                <Checkbox
+                  id="remember"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
+              )}
+            />
+            <Label htmlFor="remember" className="font-normal text-muted-foreground">
+              Lembrar deste dispositivo
+            </Label>
+          </div>
+        )}
         <Link href="/esqueci-senha" className="text-sm font-semibold underline underline-offset-4 hover:text-muted-foreground">
           Esqueci a senha
         </Link>

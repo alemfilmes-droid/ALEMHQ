@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { setCompanyLogoAction } from "@/app/(app)/clientes/actions";
 import { ClientAvatar } from "@/components/companies/client-avatar";
 import { Button } from "@/components/ui/button";
+import { downscaleImage } from "@/lib/images/downscale";
 import { createClient } from "@/lib/supabase/client";
 import { IMAGE_ACCEPT, IMAGE_MAX_LABEL, IMAGE_TYPES, describeUploadError, validateImage } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,9 @@ export function CompanyLogoUploader({ companyId, companyName, logoUrl, variant =
     if (stale.length > 0) await supabase.storage.from(BUCKET).remove(stale);
   }
 
-  async function handleFile(file: File) {
+  async function handleFile(original: File) {
+    // Reduz no aparelho (512 px): foto de 12 MP pesava na memória do iPhone em toda tela com avatares.
+    const file = await downscaleImage(original);
     const invalid = validateImage(file);
     if (invalid) {
       toast.error(invalid);

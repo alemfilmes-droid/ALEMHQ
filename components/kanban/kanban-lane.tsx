@@ -1,8 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Children, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { Ban } from "lucide-react";
+import { useRememberedScroll } from "@/components/kanban/use-remembered-scroll";
+import { Button } from "@/components/ui/button";
 import { StatusBar } from "@/components/ui/status-bar";
 import { StatusDot } from "@/components/ui/status-dot";
 import type { StatusTone } from "@/lib/status";
@@ -30,8 +32,15 @@ interface KanbanLaneProps {
  * cadeia flex é o que faz isso funcionar). A cor do status aparece no ponto, na barra de 3px do topo
  * e numa borda/brilho suave da coluna (laneGlowStyle).
  */
+/** Cards montados por vez em cada coluna: o resto entra com "Mostrar mais" (memória do iPhone). */
+export const LANE_PAGE_SIZE = 20;
+
 export function KanbanLane({ id, label, tone, count, children, emptyLabel = "Nada aqui.", action, blocked = false, blockedLabel }: KanbanLaneProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
+  const scrollRef = useRememberedScroll<HTMLDivElement>(`lane:${id}`);
+  const [limit, setLimit] = useState(LANE_PAGE_SIZE);
+  const cards = Children.toArray(children);
+  const hidden = cards.length - limit;
 
   return (
     <div
@@ -51,7 +60,10 @@ export function KanbanLane({ id, label, tone, count, children, emptyLabel = "Nad
       </div>
 
       <div
-        ref={setNodeRef}
+        ref={(node) => {
+          setNodeRef(node);
+          scrollRef.current = node;
+        }}
         className={cn(
           "relative min-h-0 flex-1 space-y-3 overflow-y-auto p-3 transition-colors",
           isOver && !blocked && "bg-surface-hover",
@@ -64,7 +76,12 @@ export function KanbanLane({ id, label, tone, count, children, emptyLabel = "Nad
             {blockedLabel ?? "Não é possível soltar aqui."}
           </p>
         ) : null}
-        {count === 0 ? <p className="px-1 py-6 text-center text-[12px] text-subtle">{emptyLabel}</p> : children}
+        {count === 0 ? <p className="px-1 py-6 text-center text-[12px] text-subtle">{emptyLabel}</p> : cards.slice(0, limit)}
+        {hidden > 0 ? (
+          <Button type="button" variant="secondary" size="lg" className="w-full" onClick={() => setLimit((current) => current + LANE_PAGE_SIZE)}>
+            Mostrar mais ({hidden})
+          </Button>
+        ) : null}
       </div>
     </div>
   );

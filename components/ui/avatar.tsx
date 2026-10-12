@@ -6,6 +6,8 @@ import { useSquadDirectory } from "@/components/providers/squad-directory";
 import { SQUAD_LABELS } from "@/lib/auth/squads";
 import { getInitials } from "@/lib/format";
 import { primarySquad, squadColor } from "@/lib/theme";
+import { publicEnv } from "@/lib/env";
+import { thumbnailSource } from "@/lib/images/thumbnail";
 import { cn } from "@/lib/utils";
 import type { Squad } from "@/types";
 
@@ -40,7 +42,7 @@ function UserAvatar({ name, src, className, profileId, squads, plain = false }: 
       )}
       style={ring ? { boxShadow: `0 0 0 2px ${ring}`, borderColor: "var(--background)" } : undefined}
     >
-      {src ? <AvatarPrimitive.Image src={src} alt="" className="aspect-square size-full object-cover" /> : null}
+      {src ? <AvatarPrimitive.Image {...thumbnailSource(src, publicEnv.NEXT_PUBLIC_SUPABASE_URL)} alt="" loading="lazy" decoding="async" className="aspect-square size-full object-cover" /> : null}
       <AvatarPrimitive.Fallback
         className="flex size-full items-center justify-center text-xs font-bold text-muted-foreground"
         delayMs={src ? 300 : 0}
