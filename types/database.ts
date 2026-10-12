@@ -5067,6 +5067,7 @@ export type Database = {
           project_id: string | null
           received_amount: number | null
           received_at: string | null
+          requires_invoice: boolean
           settle_key: string | null
           version: number
           updated_by: string | null
@@ -5095,6 +5096,7 @@ export type Database = {
           project_id?: string | null
           received_amount?: number | null
           received_at?: string | null
+          requires_invoice?: boolean
           settle_key?: string | null
           version?: number
           updated_by?: string | null
@@ -5123,6 +5125,7 @@ export type Database = {
           project_id?: string | null
           received_amount?: number | null
           received_at?: string | null
+          requires_invoice?: boolean
           settle_key?: string | null
           version?: number
           updated_by?: string | null
@@ -6064,6 +6067,7 @@ export type Database = {
       }
       receivables_with_status: {
         Row: {
+          requires_invoice: boolean | null
           settle_key: string | null
           version: number | null
           updated_by: string | null

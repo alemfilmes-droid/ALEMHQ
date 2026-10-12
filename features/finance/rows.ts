@@ -51,6 +51,7 @@ export function toReceivableRow(data: Omit<ReceivableValues, "installments" | "i
     payment_method: data.paymentMethod === "" ? null : data.paymentMethod,
     invoice_number: orNull(data.invoiceNumber),
     notes: orNull(data.notes),
+    requires_invoice: data.requiresInvoice,
   };
 }
 

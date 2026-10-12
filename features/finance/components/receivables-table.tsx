@@ -206,6 +206,7 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
                 {compact && showProject && item.projectName ? (
                   <span className="block text-[13px] text-muted-foreground">{item.projectName}</span>
                 ) : null}
+                {!item.requiresInvoice ? <span className="mt-0.5 block text-[13px] text-muted-foreground">Sem nota fiscal</span> : null}
                 {item.invoiceNumber || item.invoiceFilePath ? (
                   <span className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
                     {item.invoiceNumber ? `NF ${item.invoiceNumber}` : "NF anexada"}

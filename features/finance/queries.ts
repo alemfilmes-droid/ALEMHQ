@@ -92,6 +92,7 @@ function mapReceivable(row: ReceivableRow): ReceivableItem | null {
     invoiceNumber: row.invoice_number,
     invoiceFilePath: row.invoice_file_path,
     notes: row.notes,
+    requiresInvoice: row.requires_invoice ?? true,
     status,
     version: row.version ?? 1,
     editedAt: row.edited_at,

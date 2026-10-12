@@ -53,7 +53,7 @@ export async function createReceivableAction(values: ReceivableValues): Promise<
   const supabase = await createClient();
 
   if (count > 1) {
-    const { error } = await supabase.rpc("generate_installments", {
+    const { data: installmentsRows, error } = await supabase.rpc("generate_installments", {
       // p_project_id não tem default no SQL (precisa ser enviado), mas aceita null — o tipo
       // gerado por `supabase gen types` para argumentos de função não carrega a nulidade.
       p_project_id: orNull(data.projectId) as string,
@@ -66,6 +66,9 @@ export async function createReceivableAction(values: ReceivableValues): Promise<
       p_description: data.description,
     });
     if (error) return { ok: false, error: friendlyError(error.message, "Não foi possível gerar as parcelas.") };
+    // Nota fiscal "Não": as parcelas não geram a tarefa de emissão para o financeiro.
+    const ids = (installmentsRows ?? []).map((row) => row.id);
+    if (!data.requiresInvoice && ids.length > 0) await supabase.from("receivables").update({ requires_invoice: false }).in("id", ids);
     refresh();
     return { ok: true, message: `${count} parcelas geradas.` };
   }

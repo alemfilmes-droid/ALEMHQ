@@ -38,6 +38,7 @@ function initialValues(item: ReceivableItem): SettledReceivableValues {
     paymentMethod: item.paymentMethod ?? ("" as SettledReceivableValues["paymentMethod"]),
     invoiceNumber: item.invoiceNumber ?? "",
     notes: item.notes ?? "",
+    requiresInvoice: item.requiresInvoice,
     receivedAt: item.receivedAt ?? "",
     receivedAmount: centsToInput(item.receivedAmount ?? item.amount),
     reason: "",

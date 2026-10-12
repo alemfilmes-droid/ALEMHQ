@@ -239,3 +239,15 @@ sino de notificações e push.
 
 **Testes**: `lib/crm/ball.test.ts`, `lib/notifications/routing.test.ts`, `lib/prospeccao/meeting-host.test.ts`; os
 mesmos casos de bola (12) e de notificação (57) conferidos contra o banco em `begin … rollback`.
+
+### Bloco 5 — ajustes pedidos pelo Anderson (12/10/2026)
+- **Bola depois da reunião**: continua com quem conduz — se a reunião foi com o Anderson e ele envia a proposta,
+  fica com ele na proposta e na negociação. Volta para o SDR ao requalificar (voltar para etapas de prospecção),
+  ao perder (perdido agora volta para o SDR, que decide o reaquecimento) ou pelo resultado da reunião (follow-up,
+  sem interesse, não compareceu). Venda direta: sempre o SDR. Texto "Enviar proposta" voltou ao original.
+- **Financeiro para o CEO**: só alertas de atraso — recebimento vencido e pagamento vencido.
+- **Recebimento com "Nota fiscal: Sim/Não"** (migração `20261019090100_receivable_invoice_flag.sql`): chave no
+  cadastro/edição do recebimento (padrão Sim; os recebimentos existentes continuam Sim). Com "Não", a geração das
+  pautas automáticas do financeiro não cria a tarefa de emitir nota daquele recebimento (inclusive nas parcelas);
+  a lista mostra "Sem nota fiscal".
+- Casos conferidos no código e no banco: bola 15/15, notificações 57/57.

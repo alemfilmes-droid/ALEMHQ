@@ -28,6 +28,8 @@ export interface ReceivableItem {
   /** Arquivo da nota no bucket privado "invoices" (download por link assinado). */
   invoiceFilePath: string | null;
   notes: string | null;
+  /** Nota fiscal: Sim (padrão) gera a tarefa de emissão para o financeiro; Não, não gera. */
+  requiresInvoice: boolean;
   status: ReceivableStatus;
   /** Versão para a edição concorrente (sobe a cada alteração). */
   version: number;

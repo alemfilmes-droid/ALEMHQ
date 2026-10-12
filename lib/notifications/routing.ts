@@ -20,7 +20,7 @@ export interface NotificationFacts {
 const BALL_DEADLINES = new Set(["pauta_due_today", "pauta_overdue", "pauta_client_followup"]);
 const CRM_ALERTS = new Set(["crm_action_overdue", "crm_stale_prospection", "crm_needs_update"]);
 const CEO_COMMERCIAL = new Set(["deal_responsible", "deal_qualification_review", "deal_request", "deal_request_reply", "deal_request_resolved"]);
-const CEO_FINANCE = new Set(["finance_overdue_receivable", "finance_due_today_payable"]);
+const CEO_FINANCE = new Set(["finance_overdue_receivable", "finance_overdue_payable"]);
 const COMMISSIONS = new Set(["finance_commission", "finance_commission_updated"]);
 
 export function notificationAllowed(facts: NotificationFacts): boolean {

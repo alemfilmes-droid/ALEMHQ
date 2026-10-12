@@ -37,6 +37,8 @@ export const receivableSchema = z.object({
   paymentMethod: method,
   invoiceNumber: z.string().trim().max(40, "Use até 40 caracteres."),
   notes: z.string().trim().max(500, "Use até 500 caracteres."),
+  /** Nota fiscal: Não = o financeiro não recebe a tarefa automática de emitir a nota. */
+  requiresInvoice: z.boolean(),
 });
 
 export const settleReceivableSchema = z.object({

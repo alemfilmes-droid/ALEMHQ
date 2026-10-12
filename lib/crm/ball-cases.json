@@ -4,83 +4,119 @@
   "stage": "prospeccao",
   "expected": "sdr",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "primeiro contato → SDR",
   "stage": "primeiro_contato",
   "expected": "sdr",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "tentativas → SDR",
   "stage": "tentativas_contato",
   "expected": "sdr",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "em análise → SDR",
   "stage": "em_analise",
   "expected": "sdr",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "qualificado → Anderson",
   "stage": "qualificado",
   "expected": "ceo",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "reunião com Anderson → Anderson",
   "stage": "reuniao_agendada",
   "expected": "ceo",
   "attendee": "ceo",
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "reunião com Paulo (kick-off) → Paulo",
   "stage": "reuniao_agendada",
   "expected": "sdr",
   "attendee": "sdr",
-  "current": "x"
- },
- {
-  "name": "reunião realizada → volta para o SDR",
-  "stage": "reuniao_realizada",
-  "expected": "sdr",
-  "attendee": null,
-  "current": "ceo"
- },
- {
-  "name": "proposta enviada → SDR",
-  "stage": "proposta_enviada",
-  "expected": "sdr",
-  "attendee": null,
-  "current": "ceo"
- },
- {
-  "name": "negociação → SDR",
-  "stage": "negociacao",
-  "expected": "sdr",
-  "attendee": null,
-  "current": "ceo"
- },
- {
-  "name": "perdido → ninguém",
-  "stage": "perdido",
-  "expected": null,
-  "attendee": null,
-  "current": "ceo"
+  "current": "x",
+  "fastTrack": false
  },
  {
   "name": "ganho → quem o fechamento definiu",
   "stage": "ganho",
   "expected": "x",
   "attendee": null,
-  "current": "x"
+  "current": "x",
+  "fastTrack": false
+ },
+ {
+  "name": "reunião foi com o Anderson e ele envia a proposta → continua com ele",
+  "stage": "reuniao_realizada",
+  "expected": "ceo",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": false
+ },
+ {
+  "name": "proposta enviada pelo Anderson → continua com ele",
+  "stage": "proposta_enviada",
+  "expected": "ceo",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": false
+ },
+ {
+  "name": "negociação conduzida pelo Anderson → continua com ele",
+  "stage": "negociacao",
+  "expected": "ceo",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": false
+ },
+ {
+  "name": "follow-up com o SDR (resultado da reunião) → SDR",
+  "stage": "reuniao_realizada",
+  "expected": "sdr",
+  "attendee": null,
+  "current": "sdr",
+  "fastTrack": false
+ },
+ {
+  "name": "venda direta → sempre o SDR",
+  "stage": "proposta_enviada",
+  "expected": "sdr",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": true
+ },
+ {
+  "name": "voltou para requalificar → SDR",
+  "stage": "tentativas_contato",
+  "expected": "sdr",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": false
+ },
+ {
+  "name": "perdido → volta para o SDR",
+  "stage": "perdido",
+  "expected": "sdr",
+  "attendee": null,
+  "current": "ceo",
+  "fastTrack": false
  }
 ]

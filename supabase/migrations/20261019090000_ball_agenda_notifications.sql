@@ -2,14 +2,16 @@
 --
 -- 1. Bola (deals.responsible_id é a única fonte): prospecção (inclui "Em análise") → SDR; "Qualificado" →
 --    o CEO (conta master); "Reunião agendada" → quem atende a reunião (Anderson ou o SDR, no kick-off);
---    depois disso (reunião realizada, proposta, negociação) → volta para o SDR. Direcionamento → SDR (já era).
+--    depois disso continua com quem conduz (Anderson envia a proposta se a reunião foi com ele); volta para o
+--    SDR ao requalificar, ao perder ou pelo resultado da reunião (follow-up, sem interesse, não compareceu).
+--    Direcionamento → SDR (já era).
 -- 2. Agenda e Google: item de negócio (prazo da pauta do CRM, compromisso do negócio) só aparece para quem
 --    está com a bola ou participa do compromisso. Os itens do SDR saem da agenda do Anderson (nada é apagado:
 --    as tarefas continuam no CRM; a sincronização remove do Google só as cópias que o HQ tinha criado).
 -- 3. Notificações: UMA regra (notification_rule) aplicada a toda notificação inserida (gatilho em
 --    notifications — cobre notify() e as inserções diretas). Prazo/tarefa de negócio só para quem está com a
---    bola; para o CEO: audiovisual igual, comercial só nos 3 casos, financeiro só recebimento vencido e
---    pagamento vencendo, metas/comissões como estão (o Bloco 7 define os lembretes).
+--    bola; para o CEO: audiovisual igual, comercial só nos 3 casos, financeiro só recebimento e
+--    pagamento vencidos (só atrasos), metas/comissões como estão (o Bloco 7 define os lembretes).
 --
 -- Só substitui funções (mesmas assinaturas) e cria funções/gatilho. Nenhum dado muda.
 
@@ -34,22 +36,25 @@ grant execute on function public.ceo_id() to authenticated;
 -- ---------------------------------------------------------------------------
 
 -- Regra pura de quem fica com a bola ao mudar de etapa (espelhada em lib/crm/ball.ts e testada nos dois lados).
-create function public.crm_ball_for_stage(p_stage public.deal_stage, p_owner uuid, p_ceo uuid, p_attendee uuid, p_current uuid)
+create function public.crm_ball_for_stage(p_stage public.deal_stage, p_owner uuid, p_ceo uuid, p_attendee uuid, p_current uuid, p_fast_track boolean)
 returns uuid
 language sql
 immutable
 set search_path = ''
 as $$
   select case
-    -- Prospecção (inclui "Em análise"): SDR.
+    -- Prospecção (inclui "Em análise", e voltar para requalificar): SDR.
     when p_stage in ('prospeccao', 'primeiro_contato', 'tentativas_contato', 'em_analise') then p_owner
     -- Qualificado: vai para a revisão do CEO.
     when p_stage = 'qualificado' then coalesce(p_ceo, p_owner)
     -- Reunião agendada: quem atende (Anderson, ou o SDR no kick-off).
     when p_stage = 'reuniao_agendada' then coalesce(p_attendee, p_current)
-    when p_stage = 'perdido' then null
-    -- Depois da reunião, o negócio volta para o SDR conduzir.
-    when p_stage in ('reuniao_realizada', 'proposta_enviada', 'negociacao') then p_owner
+    -- Perdido: volta para o SDR (decide reaquecimento).
+    when p_stage = 'perdido' then p_owner
+    -- Depois da reunião: continua com quem conduz (o Anderson, se a reunião foi com ele e ele envia a
+    -- proposta). O resultado da reunião já devolve ao SDR nos outros caminhos (follow-up, sem interesse,
+    -- não compareceu). Venda direta: sempre o SDR.
+    when p_stage in ('reuniao_realizada', 'proposta_enviada', 'negociacao') then case when p_fast_track then p_owner else coalesce(p_current, p_owner) end
     -- Ganho: o fechamento (close_deal_won) define o atendimento.
     else p_current
   end
@@ -80,7 +85,8 @@ begin
     new.owner_id,
     coalesce(public.ceo_id(), public.crm_head_id()),
     (select m.attendee_id from public.deal_meetings m where m.deal_id = new.id and m.result is null order by m.created_at desc limit 1),
-    new.responsible_id
+    new.responsible_id,
+    coalesce(new.fast_track, false)
   );
   return new;
 end;
@@ -372,8 +378,8 @@ as $$
     when p_type like 'deal\_%' or p_type like 'crm\_%' or p_type like 'prospect\_%' then false
     -- CEO · metas e comissões: como estão (o Bloco 7 define os lembretes).
     when p_type like 'goal\_%' or p_type in ('finance_commission', 'finance_commission_updated') then true
-    -- CEO · financeiro: só recebimento vencido e pagamento vencendo. Nada de "tarefa a fazer".
-    when p_type in ('finance_overdue_receivable', 'finance_due_today_payable') then true
+    -- CEO · financeiro: só alertas de atraso (recebimento e pagamento vencidos). Nada de "tarefa a fazer".
+    when p_type in ('finance_overdue_receivable', 'finance_overdue_payable') then true
     when p_type like 'finance\_%' then false
     -- CEO · pautas: audiovisual (e diretoria) como estão; pauta do CRM, comercial e financeiro não chegam.
     when p_type like 'pauta\_%' then not coalesce(p_pauta_is_crm, false) and coalesce(p_pauta_squad::text, 'audiovisual') not in ('comercial', 'financeiro')

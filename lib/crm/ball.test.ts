@@ -15,6 +15,7 @@ describe("com a bola agora", () => {
         ceo: IDS.ceo!,
         attendee: item.attendee ? IDS[item.attendee]! : null,
         current: IDS[item.current]!,
+        fastTrack: item.fastTrack ?? false,
       });
       assert.equal(holder, item.expected ? IDS[item.expected] : null);
     });

@@ -225,22 +225,22 @@
   "expected": true
  },
  {
-  "name": "CEO · pagamento vencendo hoje",
+  "name": "CEO · pagamento vencendo hoje (tarefa)",
   "ceo": true,
   "type": "finance_due_today_payable",
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": false
  },
  {
-  "name": "CEO · pagamento vencido (tarefa do financeiro)",
+  "name": "CEO · pagamento vencido (alerta de atraso)",
   "ceo": true,
   "type": "finance_overdue_payable",
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": true
  },
  {
   "name": "CEO · recebimento vence hoje (tarefa)",

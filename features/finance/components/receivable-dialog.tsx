@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 type ReceivableDialogProps = {
@@ -55,6 +56,7 @@ function initialValues(props: ReceivableDialogProps): ReceivableValues {
       paymentMethod: item.paymentMethod ?? "",
       invoiceNumber: item.invoiceNumber ?? "",
       notes: item.notes ?? "",
+      requiresInvoice: item.requiresInvoice,
     };
   }
   return {
@@ -70,6 +72,7 @@ function initialValues(props: ReceivableDialogProps): ReceivableValues {
     paymentMethod: "",
     invoiceNumber: "",
     notes: "",
+    requiresInvoice: true,
   };
 }
 
@@ -92,6 +95,7 @@ export function ReceivableDialog(props: ReceivableDialogProps) {
   } = form;
 
   const installments = Number(watch("installments")) || 1;
+  const requiresInvoice = watch("requiresInvoice");
   const amountCents = parseMoneyToCents(watch("amount"));
   const parcelled = !isEdit && installments > 1;
   const preview = parcelled && amountCents && amountCents > 0 ? splitInstallments(amountCents, installments) : null;
@@ -170,6 +174,25 @@ export function ReceivableDialog(props: ReceivableDialogProps) {
                 <Input id="rec-invoice" {...register("invoiceNumber")} />
               </FormField>
             )}
+          </div>
+
+          <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border-strong px-3 py-2">
+            <div>
+              <p className="text-sm font-semibold">Nota fiscal</p>
+              <p className="text-[12px] text-muted-foreground">
+                {requiresInvoice ? "Sim: o financeiro recebe a tarefa de emitir a nota." : "Não: nenhuma tarefa de nota fiscal é criada para este recebimento."}
+              </p>
+            </div>
+            <Controller
+              control={control}
+              name="requiresInvoice"
+              render={({ field }) => (
+                <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">
+                  {field.value ? "Sim" : "Não"}
+                  <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Precisa de nota fiscal" />
+                </label>
+              )}
+            />
           </div>
 
           {preview ? (
