@@ -25,9 +25,12 @@ export function parseView(value: string | null): MyPautasView {
   return MY_PAUTAS_VIEWS.find((view) => view === value) ?? "lista";
 }
 
-/** Padrão: por squad para quem está em mais de um squad; por prioridade para quem está em um só. */
-export function parseDimension(value: string | null, squadCount: number): KanbanDimension {
-  return KANBAN_DIMENSIONS.find((dimension) => dimension === value) ?? (squadCount > 1 ? "squad" : "prioridade");
+/**
+ * Padrão: por etapa (Sprint Backlog → Em andamento → Revisão → Entregue), para a pauta encaminhada
+ * mudar de coluna. Por prioridade, uma pauta enviada para revisão ficava parada na mesma coluna.
+ */
+export function parseDimension(value: string | null): KanbanDimension {
+  return KANBAN_DIMENSIONS.find((dimension) => dimension === value) ?? "status";
 }
 
 export interface KanbanLaneDef {

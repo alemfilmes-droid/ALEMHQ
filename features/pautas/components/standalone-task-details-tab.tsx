@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { updatePautaAction } from "@/features/pautas/actions";
+import { runAction } from "@/lib/actions/client-action";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ export function StandaloneTaskDetailsTab({ pauta, onChanged }: StandaloneTaskDet
 
   function setPriority(priority: ProjectPriority) {
     startTransition(async () => {
-      const result = await updatePautaAction(pauta.id!, { priority });
+      const result = await runAction(() => updatePautaAction(pauta.id!, { priority }));
       if (result.ok) {
         toast.success("Prioridade atualizada.");
         onChanged({ ...pauta, priority });
@@ -52,11 +53,11 @@ export function StandaloneTaskDetailsTab({ pauta, onChanged }: StandaloneTaskDet
 
   const onSubmit = handleSubmit((values) => {
     startTransition(async () => {
-      const result = await updatePautaAction(pauta.id!, {
+      const result = await runAction(() => updatePautaAction(pauta.id!, {
         title: values.title,
         briefing: values.description || null,
         dueDate: values.dueDate || null,
-      });
+      }));
       if (result.ok) {
         toast.success("Salvo.");
         reset(values);

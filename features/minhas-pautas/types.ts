@@ -6,12 +6,14 @@ export interface MyPautasBoard {
   hoje: PautaWithDetails[];
   estaSemana: PautaWithDetails[];
   depois: PautaWithDetails[];
-  /** Lidera, mas quem está com a bola agora é outra pessoa. */
+  /** Participa (lidera ou passou adiante), mas quem está com a bola agora é outra pessoa. */
   acompanhando: PautaWithDetails[];
   /** Passou adiante nos últimos 7 dias — só leitura. */
   devolvidas: PautaWithDetails[];
   /** Já entregues/aprovadas: fora dos grupos de prazo (nunca "atrasadas"). As mais recentes primeiro. */
   entregues: PautaWithDetails[];
+  /** Negócios com direcionamento aberto para a pessoa — para a tela reagrupar com a mesma regra. */
+  requestDealIds: string[];
 }
 
 export interface MyPautasSummary {

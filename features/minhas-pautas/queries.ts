@@ -2,18 +2,14 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { MyOpenRequest } from "@/features/crm/types";
 import type { MyPautasBoard } from "@/features/minhas-pautas/types";
-import { pautaUrgency } from "@/lib/pautas";
+import { bucketMyPautas } from "@/lib/my-pautas";
 import type { PautaWithDetails } from "@/types";
-
-function sortByDueDate(rows: PautaWithDetails[]): PautaWithDetails[] {
-  return [...rows].sort((a, b) => (a.due_date ?? "9999-99-99").localeCompare(b.due_date ?? "9999-99-99"));
-}
 
 /**
  * Quadro pessoal: pautas onde a pessoa é líder, responsável atual ou membro, mais tarefas
  * avulsas (que já entram por lead_id/current_assignee_id = ela mesma). A RLS decide quem vê o
- * quê; aqui só agrupamos por urgência/papel. "Acompanhando" (lidera, mas não está com a bola) sai
- * dos grupos de urgência para o seu próprio grupo; o resto some por prazo (due_date).
+ * quê; aqui só agrupamos (bucketMyPautas, a mesma regra que a tela usa depois de mover uma pauta):
+ * com a bola em outra pessoa a pauta vai para "Acompanhando"; o resto vai por prazo (due_date).
  */
 export async function getMyPautasBoard(profileId: string): Promise<MyPautasBoard> {
   const supabase = await createClient();
@@ -47,51 +43,9 @@ export async function getMyPautasBoard(profileId: string): Promise<MyPautasBoard
     if (row.id) byId.set(row.id, row);
   }
 
-  const board: MyPautasBoard = {
-    atrasadas: [],
-    hoje: [],
-    estaSemana: [],
-    depois: [],
-    acompanhando: [],
-    devolvidas: devolvidasResult.data ?? [],
-    entregues: [],
-  };
-
-  for (const pauta of byId.values()) {
-    // Entregue/aprovada já terminou: nunca entra em "atrasadas", "hoje" etc., só no grupo próprio.
-    if (pauta.board_column === "entregue" || pauta.status === "aprovado") {
-      board.entregues.push(pauta);
-      continue;
-    }
-    if (pauta.lead_id === profileId && pauta.current_assignee_id !== profileId) {
-      board.acompanhando.push(pauta);
-      continue;
-    }
-    switch (pautaUrgency(pauta.due_date)) {
-      case "atrasada":
-        board.atrasadas.push(pauta);
-        break;
-      case "hoje":
-        board.hoje.push(pauta);
-        break;
-      case "esta_semana":
-        board.estaSemana.push(pauta);
-        break;
-      default:
-        board.depois.push(pauta);
-    }
-  }
-
-  board.atrasadas = sortByDueDate(board.atrasadas);
-  board.hoje = sortByDueDate(board.hoje);
-  board.estaSemana = sortByDueDate(board.estaSemana);
-  board.depois = sortByDueDate(board.depois);
-  board.acompanhando = sortByDueDate(board.acompanhando);
-  // As 50 entregues mais recentes bastam para consulta rápida; o histórico completo está no projeto.
-  board.entregues = [...board.entregues].sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? "")).slice(0, 50);
-  board.devolvidas = [...board.devolvidas].sort((a, b) => (b.returned_at ?? "").localeCompare(a.returned_at ?? ""));
-
-  return board;
+  // Passou adiante mas continua na pauta: ela já aparece em "Acompanhando" — não repete em Devolvidas.
+  const devolvidas = (devolvidasResult.data ?? []).filter((pauta) => !pauta.id || !byId.has(pauta.id)).sort((a, b) => (b.returned_at ?? "").localeCompare(a.returned_at ?? ""));
+  return { ...bucketMyPautas([...byId.values()], { profileId, requestDealIds }), devolvidas, requestDealIds };
 }
 
 export interface HomePautaSummary {

@@ -29,6 +29,7 @@ import type { MyPautasBoard as MyPautasBoardData } from "@/features/minhas-pauta
 import type { PautaFormOptions } from "@/features/pautas/types";
 import { SQUADS, SQUAD_LABELS } from "@/lib/auth/squads";
 import { isDateOnly, startOfWeek, todayInAppZone } from "@/lib/calendar";
+import { bucketMyPautas, mergeOverride } from "@/lib/my-pautas";
 import { cn } from "@/lib/utils";
 import type { PautaWithDetails, Squad } from "@/types";
 
@@ -113,7 +114,7 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
 
   const multiSquad = mySquads.length > 1;
   const view = parseView(searchParams.get("visao"));
-  const dimension = parseDimension(searchParams.get("agrupar"), mySquads.length);
+  const dimension = parseDimension(searchParams.get("agrupar"));
   const activeSquad = SQUADS.find((squad) => squad === searchParams.get("squad")) ?? null;
   const weekParam = searchParams.get("semana");
   const monday = startOfWeek(isDateOnly(weekParam) ? weekParam : todayInAppZone());
@@ -132,22 +133,15 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
     setRows((current) => ({ ...current, [pauta.id!]: pauta }));
   }
 
-  // Junta as edições otimistas (modal, arrasto) aos dados do servidor, para refletir na hora em
-  // todas as visões sem esperar o próximo carregamento (revalidatePath cobre o próximo acesso).
-  function withOverrides(list: PautaWithDetails[]): PautaWithDetails[] {
-    return list
-      .filter((pauta) => !pauta.id || !removed.has(pauta.id))
-      .map((pauta) => (pauta.id && rows[pauta.id] ? { ...pauta, ...rows[pauta.id] } : pauta));
-  }
-
+  // Junta as edições da tela (modal, arrasto, passar adiante) aos dados do servidor e REAGRUPA com a
+  // mesma regra do servidor: a pauta troca de grupo na hora. Versão mais nova do servidor vence.
+  const visible = (list: PautaWithDetails[]) =>
+    list.filter((pauta) => !pauta.id || !removed.has(pauta.id)).map((pauta) => (pauta.id ? mergeOverride(pauta, rows[pauta.id]) : pauta));
+  const serverMine = [...board.atrasadas, ...board.hoje, ...board.estaSemana, ...board.depois, ...board.acompanhando, ...board.entregues];
   const all: MyPautasBoardData = {
-    atrasadas: withOverrides(board.atrasadas),
-    hoje: withOverrides(board.hoje),
-    estaSemana: withOverrides(board.estaSemana),
-    depois: withOverrides(board.depois),
-    acompanhando: withOverrides(board.acompanhando),
-    devolvidas: withOverrides(board.devolvidas),
-    entregues: withOverrides(board.entregues),
+    ...bucketMyPautas(visible(serverMine), { profileId: currentUser.id, requestDealIds: board.requestDealIds }),
+    devolvidas: visible(board.devolvidas).filter((pauta) => !serverMine.some((mine) => mine.id === pauta.id)),
+    requestDealIds: board.requestDealIds,
   };
   // Quadro e calendário mostram também as entregues (coluna "Entregue"); a lista as separa no rodapé.
   const allMine = [...all.atrasadas, ...all.hoje, ...all.estaSemana, ...all.depois, ...all.acompanhando, ...all.entregues];
@@ -162,6 +156,7 @@ export function MyPautasBoard({ board, options, canManage, canCreateProjectPauta
     acompanhando: only(all.acompanhando),
     devolvidas: only(all.devolvidas),
     entregues: only(all.entregues),
+    requestDealIds: all.requestDealIds,
   };
   const filteredMine = only(allMine);
   const hasFilters = Boolean(activeSquad || search.trim());

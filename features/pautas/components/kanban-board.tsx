@@ -43,6 +43,13 @@ export const KanbanBoard = forwardRef<KanbanBoardHandle, KanbanBoardProps>(funct
 ) {
   const router = useRouter();
   const [pautas, setPautas] = useState(initialPautas);
+  // Dados novos do servidor (revalidação depois de salvar, ou outra pessoa mudou) substituem a cópia
+  // local — antes o quadro ficava com a lista da primeira carga e a pauta não mudava de coluna.
+  const [syncedFrom, setSyncedFrom] = useState(initialPautas);
+  if (syncedFrom !== initialPautas) {
+    setSyncedFrom(initialPautas);
+    setPautas(initialPautas);
+  }
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(initialOpenId ?? null);
   const [createColumn, setCreateColumn] = useState<PautaColumn | null>(null);

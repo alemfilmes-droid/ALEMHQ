@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRightCircle, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getPautaDetailAction, handoverPautaAction } from "@/features/pautas/actions";
+import { runAction } from "@/lib/actions/client-action";
 import type { PautaOptionMember } from "@/features/pautas/types";
 import { requestProjectFinalizeCheck } from "@/features/projects/finalize-events";
 import { Alert } from "@/components/ui/alert";
@@ -55,6 +57,7 @@ function noteCopy(status: PautaStatus) {
 }
 
 export function HandoverDialog({ pauta, members, open, onOpenChange, onDone, initialStatus, canApprove }: HandoverDialogProps) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const squad = pauta.squad ?? "audiovisual";
@@ -95,13 +98,16 @@ export function HandoverDialog({ pauta, members, open, onOpenChange, onDone, ini
   const onSubmit = handleSubmit((values) => {
     setError(null);
     startTransition(async () => {
-      const result = await handoverPautaAction(values);
+      const result = await runAction(() => handoverPautaAction(values));
       if (!result.ok) return setError(result.error);
       toast.success(result.message);
       // Aprovou a última pauta de um projeto já pago: oferece finalizar o projeto.
       if (values.status === "aprovado") requestProjectFinalizeCheck(pauta.project_id);
-      const detail = await getPautaDetailAction(pauta.id!);
+      // A pauta já mudou no banco. A versão nova move o card na hora; se a leitura falhar (ex.: a pauta
+      // saiu do alcance de quem passou adiante), o refresh traz o quadro do servidor — nunca fica parada.
+      const detail = await getPautaDetailAction(pauta.id!).catch(() => null);
       if (detail) onDone(detail.pauta);
+      router.refresh();
       onOpenChange(false);
     });
   });

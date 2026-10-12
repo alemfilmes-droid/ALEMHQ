@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { ArrowRightCircle, Check, CheckCircle2, Clapperboard, ExternalLink, FileText, FolderOpen, MapPin, Package, Pencil, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { updatePautaAction } from "@/features/pautas/actions";
+import { runAction } from "@/lib/actions/client-action";
 import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
 import { PautaStatusBadge } from "@/features/pautas/components/pauta-status-badge";
 import type { PautaDetail, PautaFormOptions } from "@/features/pautas/types";
@@ -247,7 +248,7 @@ function PautaEditForm({
       captureType: values.captureType,
     };
     startTransition(async () => {
-      const result = await updatePautaAction(pauta.id!, patch);
+      const result = await runAction(() => updatePautaAction(pauta.id!, patch));
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -414,7 +415,7 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
 
   function saveQuick(patch: Parameters<typeof updatePautaAction>[1], successMessage: string, local: Partial<PautaWithDetails>) {
     startQuickTransition(async () => {
-      const result = await updatePautaAction(pauta.id!, patch);
+      const result = await runAction(() => updatePautaAction(pauta.id!, patch));
       if (result.ok) {
         toast.success(successMessage);
         onChanged({ ...pauta, ...local });
@@ -425,7 +426,7 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
   }
 
   async function saveLink(field: "scriptUrl" | "driveFolderUrl" | "deliveryUrl", column: "script_url" | "drive_folder_url" | "delivery_url", next: string | null) {
-    const result = await updatePautaAction(pauta.id!, { [field]: next });
+    const result = await runAction(() => updatePautaAction(pauta.id!, { [field]: next }));
     if (!result.ok) {
       toast.error(result.error);
       return false;

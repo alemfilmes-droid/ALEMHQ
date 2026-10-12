@@ -8,6 +8,7 @@ import { KanbanLane } from "@/components/kanban/kanban-lane";
 import { laneKeyOf, lanesFor, priorityRank, type KanbanDimension } from "@/features/minhas-pautas/board";
 import { PautaCard, type PautaCardMenu } from "@/features/pautas/components/pauta-card";
 import { movePautaColumnAction, updatePautaAction } from "@/features/pautas/actions";
+import { runAction } from "@/lib/actions/client-action";
 import { HandoverDialog } from "@/features/pautas/components/handover-dialog";
 import { isCrmPauta, notifyCrmLock } from "@/features/pautas/crm-lock";
 import type { PautaOptionMember } from "@/features/pautas/types";
@@ -102,7 +103,7 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
       }
       const previous = pauta;
       onChanged({ ...pauta, priority: target });
-      void updatePautaAction(pauta.id, { priority: target }).then((result) => {
+      void runAction(() => updatePautaAction(pauta.id!, { priority: target })).then((result) => {
         if (!result.ok) {
           onChanged(previous);
           toast.error(result.error);
@@ -122,7 +123,7 @@ export function MyPautasKanban({ pautas, dimension, mySquads, currentUserId, can
       // Tarefa avulsa é da própria pessoa: muda direto.
       if (pauta.is_standalone) {
         onChanged({ ...pauta, board_column: target, status });
-        void movePautaColumnAction({ id: pauta.id, column: target }).then((result) => {
+        void runAction(() => movePautaColumnAction({ id: pauta.id!, column: target })).then((result) => {
           if (!result.ok) {
             onChanged(previous);
             toast.error(result.error);
