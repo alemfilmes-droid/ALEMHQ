@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createCompanyAction, updateCompanyAction } from "@/app/(app)/clientes/actions";
 import { CompanyLogoUploader } from "@/components/companies/company-logo-uploader";
+import { SegmentField } from "@/components/companies/segment-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ function toDefaults(props: CompanyFormDialogProps): CompanyValues {
       sourceDetail: company.source_detail ?? "",
       document: company.document ?? "",
       city: company.city ?? "",
+      segment: company.segment ?? "",
       instagram: company.instagram ?? "",
       website: company.website ?? "",
     };
@@ -51,6 +53,7 @@ function toDefaults(props: CompanyFormDialogProps): CompanyValues {
     sourceDetail: "",
     document: "",
     city: "",
+    segment: "",
     instagram: "",
     website: "",
   };
@@ -178,6 +181,12 @@ export function CompanyFormDialog(props: CompanyFormDialogProps) {
               <Input id="company-source-detail" aria-describedby="company-source-detail-message" {...register("sourceDetail")} />
             </FormField>
           ) : null}
+
+          <Controller
+            control={control}
+            name="segment"
+            render={({ field }) => <SegmentField value={field.value} onChange={field.onChange} error={errors.segment?.message} />}
+          />
 
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="company-document" label="CNPJ" error={errors.document?.message}>

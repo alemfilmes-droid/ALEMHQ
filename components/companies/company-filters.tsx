@@ -9,16 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CLIENT_HEALTHS } from "@/lib/validations/health";
 import { CLIENT_HEALTH_LABELS } from "@/lib/status";
+import { OTHER_SEGMENT_KEY, SEGMENTS } from "@/lib/clients/segment";
 
 const ALL = "all";
-const KEYS = ["saude", "cidade", "busca"] as const;
+const KEYS = ["saude", "cidade", "busca", "segmento"] as const;
 
-/** Busca por nome, saúde e cidade — tudo na URL. A aba (Clientes/Prospects) é preservada ao limpar. */
+/** Busca por nome, saúde, segmento e cidade — tudo na URL. A aba (Clientes/Prospects) é preservada ao limpar. */
 export function CompanyFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const health = searchParams.get("saude") ?? ALL;
+  const segment = searchParams.get("segmento") ?? ALL;
   const [city, setCity] = useState(searchParams.get("cidade") ?? "");
 
   function update(key: string, value: string) {
@@ -45,6 +47,24 @@ export function CompanyFilters() {
                 {CLIENT_HEALTH_LABELS[item]}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="sm:w-52">
+        <Select value={searchParams.get("segmento") ?? ALL} onValueChange={(value) => update("segmento", value)}>
+          <SelectTrigger aria-label="Filtrar por segmento">
+            <SelectValue>
+              {segment === ALL ? "Todos os segmentos" : segment === OTHER_SEGMENT_KEY ? "Outros segmentos" : segment}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos os segmentos</SelectItem>
+            {SEGMENTS.map((item) => (
+              <SelectItem key={item} value={item}>
+                {item}
+              </SelectItem>
+            ))}
+            <SelectItem value={OTHER_SEGMENT_KEY}>Outros segmentos</SelectItem>
           </SelectContent>
         </Select>
       </div>

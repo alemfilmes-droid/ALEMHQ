@@ -55,7 +55,9 @@ export function CompanyCard({ company, activeProjects, lastActivity, canManage, 
                 </span>
                 <span className="line-clamp-2 font-bold text-foreground group-hover:underline">{company.name}</span>
               </p>
-              {company.city ? <p className="truncate text-[12px] text-muted-foreground">{company.city}</p> : null}
+              {company.city || company.segment ? (
+                <p className="truncate text-[12px] text-muted-foreground">{[company.segment, company.city].filter(Boolean).join(" · ")}</p>
+              ) : null}
             </div>
           </div>
           {isProspect ? <LifecycleBadge lifecycle={company.lifecycle} /> : null}

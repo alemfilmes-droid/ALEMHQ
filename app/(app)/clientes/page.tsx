@@ -4,6 +4,7 @@ import { AlertCircle, Building2 } from "lucide-react";
 import { ClientTierBoard, TIER_COLUMNS, TierColumn, type TierColumnKey } from "@/components/companies/client-tier-board";
 import { CompanyCard } from "@/components/companies/company-card";
 import { CompanyFilters } from "@/components/companies/company-filters";
+import { matchesSegmentFilter } from "@/lib/clients/segment";
 import { CompanyFormDialog } from "@/components/companies/company-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { LinkTabs } from "@/components/ui/link-tabs";
@@ -18,7 +19,7 @@ import type { ClientHealth, ClosureReason, Company, CompanyLifecycle } from "@/t
 
 export const metadata: Metadata = { title: "Clientes" };
 
-type SearchParams = Promise<{ aba?: string; saude?: string; cidade?: string; busca?: string }>;
+type SearchParams = Promise<{ aba?: string; saude?: string; cidade?: string; busca?: string; segmento?: string }>;
 
 type CompanyStats = { active: number; lastActivity: string | null };
 
@@ -28,7 +29,7 @@ function escapeLike(value: string) {
 
 export default async function ClientsPage({ searchParams }: { searchParams: SearchParams }) {
   const profile = await requireProfile();
-  const { aba, saude, cidade, busca } = await searchParams;
+  const { aba, saude, cidade, busca, segmento } = await searchParams;
   // "Ex-clientes" virou a coluna Inativos do quadro de clientes (links antigos caem no quadro).
   const lifecycle: CompanyLifecycle = aba === "prospects" ? "prospect" : "client";
   const isClientTab = lifecycle === "client";
@@ -78,12 +79,14 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   if (cidade) query = query.ilike("city", `%${escapeLike(cidade)}%`);
   if (search) query = query.ilike("name", `%${escapeLike(search)}%`);
 
-  const [{ data: companies, error }, ranking] = await Promise.all([
+  const [{ data: allCompanies, error }, ranking] = await Promise.all([
     query,
     // Ordem por valor de contrato (soma dos projetos): todos recebem a ORDEM; o valor só vem para
     // quem tem acesso ao financeiro (a própria função decide, igual à RLS de project_financials).
     isClientTab ? supabase.rpc("company_contract_ranking") : Promise.resolve({ data: [] as { company_id: string; rank: number; total_value: number | null }[] }),
   ]);
+  // Segmento: lista fixa + "Outro" (texto livre); comparado sem acento/maiúscula, por isso aqui e não no banco.
+  const companies = segmento ? (allCompanies ?? []).filter((company) => matchesSegmentFilter(segmento, company.segment)) : allCompanies;
   const companyIds = (companies ?? []).map((company) => company.id);
 
   const formerIds = (companies ?? []).filter((company) => company.lifecycle === "former_client").map((company) => company.id);
@@ -108,7 +111,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   }
 
   const rankById = new Map((ranking.data ?? []).map((row) => [row.company_id, row]));
-  const hasFilters = Boolean(health || cidade || search);
+  const hasFilters = Boolean(health || cidade || search || segmento);
 
   function card(company: Company, hideTier: boolean, inactiveStatus: InactiveStatus | null = null) {
     const companyStats = stats.get(company.id) ?? { active: 0, lastActivity: null };

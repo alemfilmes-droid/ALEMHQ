@@ -32,6 +32,7 @@ function toCompanyRow(values: z.infer<typeof companySchema>) {
     source_detail: source ? nullIfEmpty(values.sourceDetail) : null,
     document: nullIfEmpty(values.document),
     city: nullIfEmpty(values.city),
+    segment: nullIfEmpty(values.segment),
     instagram: nullIfEmpty(values.instagram),
     website: nullIfEmpty(values.website),
   };

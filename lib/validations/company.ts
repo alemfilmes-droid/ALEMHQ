@@ -14,6 +14,7 @@ export const companySchema = z.object({
   sourceDetail: z.string().trim().max(160, "Use até 160 caracteres."),
   document: z.string().trim().max(24, "Use até 24 caracteres."),
   city: z.string().trim().max(80, "Use até 80 caracteres."),
+  segment: z.string().trim().max(80, "Use até 80 caracteres."),
   instagram: z.string().trim().max(60, "Use até 60 caracteres."),
   website: z.string().trim().max(200, "Use até 200 caracteres."),
 });
