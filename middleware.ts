@@ -5,6 +5,7 @@ import {
   isGuestOnlyRoute,
   isPublicRoute,
 } from "@/lib/auth/permissions";
+import { userContextHeaders, type UserContext } from "@/lib/observability/request-error";
 import { updateSession } from "@/lib/supabase/middleware";
 
 function redirectTo(request: NextRequest, from: NextResponse, path: string, search?: string) {
@@ -15,6 +16,18 @@ function redirectTo(request: NextRequest, from: NextResponse, path: string, sear
   // Preserva cookies de sessão renovados/removidos.
   for (const cookie of from.cookies.getAll()) redirect.cookies.set(cookie);
   return redirect;
+}
+
+/**
+ * Segue para a página levando quem está logado em cabeçalhos internos — só para o log de erros
+ * (instrumentation.ts), nunca para autorização. Mantém os cookies de sessão renovados.
+ */
+function forwardWithUser(request: NextRequest, from: NextResponse, user: UserContext) {
+  const headers = new Headers(request.headers);
+  for (const [name, value] of Object.entries(userContextHeaders(user))) headers.set(name, value);
+  const next = NextResponse.next({ request: { headers } });
+  for (const cookie of from.cookies.getAll()) next.cookies.set(cookie);
+  return next;
 }
 
 export async function middleware(request: NextRequest) {
@@ -62,7 +75,7 @@ export async function middleware(request: NextRequest) {
     return redirectTo(request, getResponse(), isPautas ? "/minhas-pautas" : DEFAULT_ROUTE, pautaId ? `?pauta=${encodeURIComponent(pautaId)}` : undefined);
   }
 
-  return getResponse();
+  return forwardWithUser(request, getResponse(), { id: user.id, role: profile.access_role, orgLevel: profile.org_level, squads });
 }
 
 export const config = {
