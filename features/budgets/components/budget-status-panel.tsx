@@ -3,11 +3,12 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, PencilLine, RefreshCcw, Send, XCircle } from "lucide-react";
+import { CheckCircle2, Hourglass, PencilLine, RefreshCcw, Send, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { decideBudgetAction, getClientLinksAction, redoBudgetAction, sendBudgetAction } from "@/features/budgets/actions";
+import { decideBudgetAction, getClientLinksAction, markBudgetInAnalysisAction, redoBudgetAction, sendBudgetAction } from "@/features/budgets/actions";
+import { BudgetStatusPill } from "@/features/budgets/components/budget-status-pill";
 import { brl } from "@/features/budgets/pricing";
-import { BUDGET_STATUS_LABELS, type BudgetRecord } from "@/features/budgets/types";
+import { awaitingClient, type BudgetRecord } from "@/features/budgets/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,7 +36,7 @@ type Decision = "aprovado" | "em_ajuste" | "recusado";
 const DECISION_COPY: Record<Decision, { title: string; label: string; hint: string }> = {
   aprovado: { title: "Orçamento aprovado.", label: "Observação (opcional)", hint: "O CRM marca a proposta como aceita. O negócio é fechado como ganho no card do cliente." },
   em_ajuste: { title: "Cliente pediu ajuste.", label: "O que precisa mudar", hint: "Depois use “Refazer” para criar a nova versão com os ajustes." },
-  recusado: { title: "Orçamento recusado.", label: "Motivo (opcional)", hint: "O CRM marca a proposta como recusada." },
+  recusado: { title: "Orçamento não aprovado.", label: "Motivo (opcional)", hint: "O CRM marca a proposta como recusada." },
 };
 
 /** Recusa de orçamento ligado a um negócio: o lead volta ao CRM com motivo e data (spec 7.2). */
@@ -110,6 +111,17 @@ export function BudgetStatusPanel({
     });
   }
 
+  function markInAnalysis() {
+    startTransition(async () => {
+      const result = await markBudgetInAnalysisAction(budget.id);
+      if (!result.ok) toast.error(result.error);
+      else {
+        toast.success(result.message);
+        router.refresh();
+      }
+    });
+  }
+
   function redo() {
     startTransition(async () => {
       const result = await redoBudgetAction(budget.id);
@@ -127,7 +139,7 @@ export function BudgetStatusPanel({
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-raised p-4">
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex flex-wrap items-center gap-2">
-          <Badge variant={status === "aprovado" ? "solid" : "outline"}>{BUDGET_STATUS_LABELS[status]}</Badge>
+          <BudgetStatusPill status={status} />
           {budget.version > 1 ? <Badge variant="muted">Versão {budget.version}</Badge> : null}
           {budget.dealId ? (
             <Link href={`/crm?aba=leads&negocio=${budget.dealId}`} className="text-[13px] underline underline-offset-4 hover:text-foreground">
@@ -149,6 +161,12 @@ export function BudgetStatusPanel({
           </Button>
         ) : null}
         {status === "enviado" ? (
+          <Button type="button" variant="secondary" onClick={markInAnalysis} disabled={pending}>
+            <Hourglass aria-hidden />
+            Em análise
+          </Button>
+        ) : null}
+        {awaitingClient(status) ? (
           <>
             <Button type="button" onClick={() => setDecision("aprovado")} disabled={pending}>
               <CheckCircle2 aria-hidden />
@@ -160,7 +178,7 @@ export function BudgetStatusPanel({
             </Button>
             <Button type="button" variant="secondary" onClick={() => setDecision("recusado")} disabled={pending}>
               <XCircle aria-hidden />
-              Recusado
+              Não aprovado
             </Button>
           </>
         ) : null}

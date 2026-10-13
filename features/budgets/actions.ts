@@ -242,6 +242,19 @@ export async function sendBudgetAction(id: string, input: { dealId: string; chan
   return { ok: true, message: parsed.data.dealId ? "Enviado e registrado no CRM do cliente." : "Marcado como enviado." };
 }
 
+/** O cliente confirmou que está avaliando: Enviado → Em análise (a proposta no CRM continua enviada). */
+export async function markBudgetInAnalysisAction(id: string): Promise<ActionResult> {
+  if (!(await requireMaster())) return FORBIDDEN;
+  if (!z.string().uuid().safeParse(id).success) return { ok: false, error: "Orçamento inválido." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("budgets").update({ status: "em_analise" }).eq("id", id).eq("status", "enviado").select("id");
+  if (error) return { ok: false, error: "Não foi possível atualizar." };
+  if (!data || data.length === 0) return { ok: false, error: "Só orçamentos enviados ao cliente vão para Em análise." };
+  refresh(id);
+  revalidatePath("/financeiro");
+  return { ok: true, message: "Marcado como em análise pelo cliente." };
+}
+
 const DECISION_TO_PROPOSAL = { aprovado: "aceita", em_ajuste: "em_negociacao", recusado: "recusada" } as const;
 
 const decisionSchema = z.object({
@@ -275,14 +288,14 @@ export async function decideBudgetAction(id: string, input: z.input<typeof decis
   if (d.status === "recusado" && dealId && d.lossReason && d.reactivateOn) {
     const rejected = await supabase.rpc("prospect_quote_rejected", { p_budget_id: id, p_reason: d.lossReason, p_note: d.note, p_reactivate_on: d.reactivateOn });
     if (rejected.error) return { ok: false, error: rejected.error.code === "23514" ? rejected.error.message : "Recusado, mas o negócio não voltou ao CRM. Tente de novo." };
-    message = `Recusado. O negócio foi para Perdido e volta ao CRM em ${d.reactivateOn.split("-").reverse().join("/")}.`;
+    message = `Não aprovado. O negócio foi para Perdido e volta ao CRM em ${d.reactivateOn.split("-").reverse().join("/")}.`;
   } else if (d.status === "aprovado") {
     const approved = await supabase.rpc("prospect_quote_approved", { p_budget_id: id });
     const row = approved.data?.[0];
     if (row?.deal_id) await quoteApproved({ leadId: row.deal_id, quoteId: id, amount: Number(row.amount ?? 0) });
     message = "Aprovado! A empresa agora é cliente. Para fechar o negócio no CRM, marque como ganho no card.";
   } else {
-    message = d.status === "em_ajuste" ? "Marcado em ajuste. Use “Refazer” para criar a nova versão." : "Marcado como recusado.";
+    message = d.status === "em_ajuste" ? "Marcado em ajuste. Use “Refazer” para criar a nova versão." : "Marcado como não aprovado.";
   }
   refresh(id);
   revalidatePath("/crm");

@@ -113,7 +113,7 @@ export async function NegotiationTab({ canEditProbabilities }: { canEditProbabil
                       {item.label} · {item.title}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{item.status === "em_ajuste" ? "Em ajuste" : "Aguardando resposta"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{item.status === "em_ajuste" ? "Em ajuste" : item.status === "em_analise" ? "Em análise" : "Aguardando resposta"}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.sentAt ? formatDate(item.sentAt) : "—"}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatDate(item.validUntil)}</td>
                   <td data-sensitive className="whitespace-nowrap px-4 py-3 text-right font-bold tabular-nums">{formatCents(item.total)}</td>

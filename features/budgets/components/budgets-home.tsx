@@ -19,9 +19,9 @@ import {
   toggleCatalogItemAction,
 } from "@/features/budgets/actions";
 import { brl, pct, SECTION_LABELS, type BudgetSection } from "@/features/budgets/pricing";
-import { BUDGET_STATUS_LABELS, type CatalogItem, type ProposalProfile } from "@/features/budgets/types";
+import { BudgetStatusPill } from "@/features/budgets/components/budget-status-pill";
+import { type CatalogItem, type ProposalProfile } from "@/features/budgets/types";
 import type { BudgetListItem } from "@/features/budgets/queries";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -516,7 +516,7 @@ export function BudgetsHome({
                       <span className="block text-[12px] text-muted-foreground">{budget.title}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={budget.status === "aprovado" ? "solid" : "outline"}>{BUDGET_STATUS_LABELS[budget.status]}</Badge>
+                      <BudgetStatusPill status={budget.status} />
                       <span className="mt-1 block text-[11px] text-subtle">
                         {budget.decidedAt
                           ? `Resposta ${formatDate(budget.decidedAt.slice(0, 10))}`

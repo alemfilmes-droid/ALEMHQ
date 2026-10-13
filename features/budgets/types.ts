@@ -1,15 +1,22 @@
 import { z } from "zod";
 import type { BudgetLineInput } from "@/features/budgets/pricing";
 
-export type BudgetStatus = "rascunho" | "enviado" | "em_ajuste" | "aprovado" | "recusado";
+export type BudgetStatus = "rascunho" | "enviado" | "em_analise" | "em_ajuste" | "aprovado" | "recusado";
 
 export const BUDGET_STATUS_LABELS: Record<BudgetStatus, string> = {
   rascunho: "Rascunho",
   enviado: "Enviado ao cliente",
+  em_analise: "Em análise",
   em_ajuste: "Em ajuste",
   aprovado: "Aprovado",
-  recusado: "Recusado",
+  // O valor no banco continua "recusado"; na tela é "Não aprovado".
+  recusado: "Não aprovado",
 };
+
+/** Esperando a resposta do cliente: dá para registrar aprovado, ajuste ou não aprovado. */
+export function awaitingClient(status: BudgetStatus): boolean {
+  return status === "enviado" || status === "em_analise";
+}
 
 export const PROPOSAL_TEMPLATES = ["manifesto", "executivo", "tratamento"] as const;
 export type ProposalTemplate = (typeof PROPOSAL_TEMPLATES)[number];

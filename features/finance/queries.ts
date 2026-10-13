@@ -725,19 +725,19 @@ export interface BudgetNegotiationItem {
   label: string;
   clientName: string;
   title: string;
-  status: "enviado" | "em_ajuste";
+  status: "enviado" | "em_analise" | "em_ajuste";
   total: number;
   sentAt: string | null;
   validUntil: string;
 }
 
-/** Orçamentos enviados/em ajuste que não viraram proposta de um negócio do CRM (sem duplicar). */
+/** Orçamentos enviados/em análise/em ajuste que não viraram proposta de um negócio do CRM (sem duplicar). */
 export async function getBudgetsInNegotiation(): Promise<BudgetNegotiationItem[]> {
   const supabase = await financeClient();
   const { data, error } = await supabase.rpc("finance_budgets_in_negotiation");
   if (error) return [];
   return (data ?? []).flatMap((row) =>
-    row.status === "enviado" || row.status === "em_ajuste"
+    row.status === "enviado" || row.status === "em_analise" || row.status === "em_ajuste"
       ? [
           {
             budgetId: row.budget_id,

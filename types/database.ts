@@ -8398,6 +8398,7 @@ export type Database = {
       budget_status:
         | "rascunho"
         | "enviado"
+        | "em_analise"
         | "aprovado"
         | "recusado"
         | "em_ajuste"
@@ -8809,6 +8810,7 @@ export const Constants = {
       budget_status: [
         "rascunho",
         "enviado",
+        "em_analise",
         "aprovado",
         "recusado",
         "em_ajuste",
