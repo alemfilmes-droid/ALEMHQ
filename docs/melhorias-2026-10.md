@@ -541,3 +541,36 @@ favorecido do HQ → Equipe · Pagamento a colaborador com histórico; reembolso
 da empresa; pró-labore; fornecedor livre; favorecido sai do HQ → destrava; lançamento pago editado → categoria
 automática com pago/valor/vencimento iguais; comissão pela categoria antiga → Equipe · Comissão, com aviso e
 comemoração; lançamentos antigos intocados (0). Formulário testado numa página de teste (computador e celular 375 px).
+
+## Carteira — Módulo 1 de 3 (pedido do Anderson, 13/10/2026)
+
+**O que já existia e foi reaproveitado (fonte única, nada duplicado):** o "favorecido" do pagamento
+(`payables.payee_profile_id`) é o beneficiário; vencimento, pago (`paid_at`), cancelado (`cancelled_at`), cliente,
+projeto e meta (`commission_goal_id`) já estavam no pagamento. A Carteira é só uma leitura disso.
+
+**Banco** (`20261025090000_wallet.sql`, só adiciona): `profile_remuneration` (tipo: Fixo / Fixo + variável / Só
+comissão / Por job; fixo em centavos; dia de pagamento 1–28; % padrão de comissão) — só o master grava (RLS); a
+pessoa lê a própria. `payables.payout_date` (data em que cai na Carteira) e `payables.deal_id` (ligação com o CRM,
+para o Módulo 2). `payout_date_for` = regra pura (mesmos 10 casos de `lib/wallet/payout-date-cases.json`):
+primeiro dia igual ao dia de pagamento ESTRITAMENTE depois do vencimento; sem dia definido, o vencimento. Gatilhos
+recalculam só os lançamentos em aberto quando muda o vencimento/favorecido ou o dia da pessoa. `wallet_entries()`:
+a própria pessoa; master, admin, diretoria e financeiro leem a de qualquer um (`can_read_wallet`).
+
+**Código:** `lib/wallet/payout-date.ts` (motor de data, módulo próprio para CRM e Metas reaproveitarem),
+`lib/wallet/wallet.ts` (tipo de cada linha — Fixo, Pró-labore, Comissão, Bônus de meta, Cachê (job), Outro —
+derivado da categoria/tipo do Financeiro; grupos por data; próximo pagamento; linha do fixo calculada até o
+financeiro lançar; pagos por mês). Tela `/carteira` (menu Principal, todos os papéis): Próximo pagamento, A receber
+(por data, com descrição, cliente/projeto/meta, vencimento e valor), Pago (por mês) e Em negociação ("Em breve:
+previsões do CRM"); seletor de pessoa para quem pode ver as outras. Equipe → ⋯ → Remuneração (só o master).
+Financeiro → pagamento: "Cai na Carteira de X em DD/MM" ao vivo embaixo do vencimento.
+
+**Escolhas:** o pedido falava em uma "categoria" nova (salário fixo, comissão…) e em "status": já existem categoria
++ tipo da equipe e pago/cancelado no pagamento — o tipo da Carteira é derivado deles para não haver duas fontes. Os
+valores antigos do Financeiro continuam em reais no banco (mudar quebraria o que existe); o código trabalha em
+centavos e o fixo novo é gravado em centavos.
+
+**Testes:** 345 no código (novos: data de pagamento 12, Carteira 7). Banco em rollback: 10/10 casos iguais; sem dia →
+vencimento; dia 10 → 10/10; vencimento muda para 10/10 → 10/11; dia muda para 15 → 15/10; pago não muda; fornecedor
+sem data; a pessoa lê a própria (2 linhas) e é barrada na de outra; master lê; como usuário logado, só o master muda
+o dia (não-master: sem efeito). Tela testada numa página de teste no celular (375 px): sem rolagem lateral, sem o
+vermelho da marca.

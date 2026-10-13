@@ -49,6 +49,8 @@ export const ROUTE_ACCESS: Record<string, readonly AccessRole[]> = {
   "/fluxogramas": ALL_ROLES,
   // Metas: todo mundo pode ter uma; a RLS devolve só as da pessoa (ou todas para a diretoria).
   "/metas": INTERNAL_ROLES,
+  // Carteira: todo mundo tem a sua (o que tem a receber); ver a de outra pessoa é checado na página e no banco.
+  "/carteira": ALL_ROLES,
 };
 
 /** Rotas que dependem de uma capability (squad/flag do profile), além do papel. */
@@ -265,6 +267,19 @@ export function canCloseClients(subject: Pick<Profile, "org_level"> & { squads: 
  * funções client_delete / client_restore / client_purge / client_anonymize, que decidem de verdade.
  */
 export function canDeleteClients(subject: Pick<Profile, "org_level">): boolean {
+  return subject.org_level === "master";
+}
+
+/**
+ * Carteira de outra pessoa: master, admin, diretoria e financeiro (espelha can_read_wallet() no banco). Cada um
+ * sempre vê a própria. Ninguém edita valores pela Carteira.
+ */
+export function canReadAnyWallet(subject: Pick<Profile, "access_role" | "org_level"> & { squads: readonly Squad[] }): boolean {
+  return subject.org_level === "master" || subject.access_role === "admin" || subject.squads.includes("diretoria") || subject.squads.includes("financeiro");
+}
+
+/** Remuneração da equipe (tipo, fixo, dia de pagamento, % de comissão): só o master edita. */
+export function canEditRemuneration(subject: Pick<Profile, "org_level">): boolean {
   return subject.org_level === "master";
 }
 

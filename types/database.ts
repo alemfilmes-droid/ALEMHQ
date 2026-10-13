@@ -3381,6 +3381,8 @@ export type Database = {
       }
       payables: {
         Row: {
+          deal_id: string | null
+          payout_date: string | null
           is_pro_labore: boolean
           is_reimbursement: boolean
           team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
@@ -3433,6 +3435,8 @@ export type Database = {
           version: number
         }
         Insert: {
+          deal_id?: string | null
+          payout_date?: string | null
           is_pro_labore?: boolean
           is_reimbursement?: boolean
           team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
@@ -3487,6 +3491,8 @@ export type Database = {
           version?: number
         }
         Update: {
+          deal_id?: string | null
+          payout_date?: string | null
           is_pro_labore?: boolean
           is_reimbursement?: boolean
           team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
@@ -3943,6 +3949,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_remuneration: {
+        Row: {
+          default_commission_percent: number | null
+          fixed_amount_cents: number | null
+          payday: number
+          profile_id: string
+          remuneration_type: Database["public"]["Enums"]["remuneration_type"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          default_commission_percent?: number | null
+          fixed_amount_cents?: number | null
+          payday: number
+          profile_id: string
+          remuneration_type: Database["public"]["Enums"]["remuneration_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          default_commission_percent?: number | null
+          fixed_amount_cents?: number | null
+          payday?: number
+          profile_id?: string
+          remuneration_type?: Database["public"]["Enums"]["remuneration_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       profile_squads: {
         Row: {
@@ -6205,6 +6241,8 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
+          deal_id: string | null
+          payout_date: string | null
           is_pro_labore: boolean | null
           is_reimbursement: boolean | null
           team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
@@ -8024,6 +8062,25 @@ export type Database = {
         Args: { p_endpoint: string }
         Returns: undefined
       }
+      wallet_entries: {
+        Args: { p_profile_id: string }
+        Returns: {
+          amount: number
+          category: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id: string | null
+          company_name: string | null
+          description: string
+          due_date: string
+          goal_title: string | null
+          id: string
+          is_fixed: boolean
+          paid_at: string | null
+          payout_date: string
+          project_id: string | null
+          project_name: string | null
+          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
+        }[]
+      }
     }
     Enums: {
       access_role:
@@ -8184,6 +8241,7 @@ export type Database = {
         | "comissao"
         | "pro_labore"
       team_payment_type: "pro_labore" | "comissao" | "pagamento_colaborador"
+      remuneration_type: "fixo" | "fixo_mais_variavel" | "so_comissao" | "por_job"
       payable_recurrence: "none" | "mensal" | "trimestral" | "anual"
       payment_method:
         | "pix"
@@ -8605,6 +8663,7 @@ export const Constants = {
         "pro_labore",
       ],
       team_payment_type: ["pro_labore", "comissao", "pagamento_colaborador"],
+      remuneration_type: ["fixo", "fixo_mais_variavel", "so_comissao", "por_job"],
       payable_recurrence: ["none", "mensal", "trimestral", "anual"],
       payment_method: [
         "pix",

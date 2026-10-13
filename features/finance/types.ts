@@ -146,7 +146,8 @@ export interface AttentionItem extends UpcomingItem {
 export interface FinanceOptions {
   companies: { id: string; name: string }[];
   projects: { id: string; name: string; company_id: string | null }[];
-  members: { id: string; full_name: string }[];
+  /** payday: dia de pagamento na Carteira (null = cai no vencimento). */
+  members: { id: string; full_name: string; payday: number | null }[];
   /** Diretoria e squad financeiro: editar e estornar lançamentos já baixados (o banco repete a regra). */
   canEditSettled: boolean;
   /** Metas para o campo "Meta" do pagamento de comissão. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MoreHorizontal, Pencil, UserCheck, UserX } from "lucide-react";
+import { MoreHorizontal, Pencil, UserCheck, UserX, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { setMemberActiveAction } from "@/app/(app)/equipe/actions";
 import { EditMemberDialog } from "@/components/team/edit-member-dialog";
@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { canManageOrgLevel } from "@/lib/auth/permissions";
+import { RemunerationDialog } from "@/features/wallet/components/remuneration-dialog";
+import { canEditRemuneration, canManageOrgLevel } from "@/lib/auth/permissions";
 import type { ProfileWithSquads } from "@/types";
 
 interface MemberActionsProps {
@@ -31,8 +32,10 @@ export function MemberActions({ member, viewer, viewerIsAdmin, isSelf }: MemberA
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const canEditHierarchy = !isSelf && canManageOrgLevel(viewer.id, viewer, member);
+  const canEditPay = canEditRemuneration(viewer);
+  const [payOpen, setPayOpen] = useState(false);
 
-  if (!viewerIsAdmin && !canEditHierarchy) return null;
+  if (!viewerIsAdmin && !canEditHierarchy && !canEditPay) return null;
 
   function setActive(active: boolean) {
     startTransition(async () => {
@@ -52,10 +55,18 @@ export function MemberActions({ member, viewer, viewerIsAdmin, isSelf }: MemberA
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            <Pencil aria-hidden />
-            {viewerIsAdmin ? "Editar papel, cargo e atuação" : "Editar nível hierárquico"}
-          </DropdownMenuItem>
+          {viewerIsAdmin || canEditHierarchy ? (
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+              <Pencil aria-hidden />
+              {viewerIsAdmin ? "Editar papel, cargo e atuação" : "Editar nível hierárquico"}
+            </DropdownMenuItem>
+          ) : null}
+          {canEditPay ? (
+            <DropdownMenuItem onSelect={() => setPayOpen(true)}>
+              <Wallet aria-hidden />
+              Remuneração
+            </DropdownMenuItem>
+          ) : null}
           {!viewerIsAdmin || isSelf ? null : member.is_active ? (
             <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>
               <UserX aria-hidden />
@@ -69,6 +80,8 @@ export function MemberActions({ member, viewer, viewerIsAdmin, isSelf }: MemberA
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {payOpen ? <RemunerationDialog profileId={member.id} name={member.full_name} onClose={() => setPayOpen(false)} /> : null}
 
       {editOpen ? (
         <EditMemberDialog member={member} viewer={viewer} viewerIsAdmin={viewerIsAdmin} isSelf={isSelf} open={editOpen} onOpenChange={setEditOpen} />

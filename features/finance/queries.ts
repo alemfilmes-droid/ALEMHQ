@@ -464,17 +464,20 @@ export async function getHomeFinanceCard() {
 /** Opções dos formulários e filtros. Tabelas não financeiras (RLS própria de cada uma). */
 export async function getFinanceOptions(): Promise<FinanceOptions> {
   const supabase = await financeClient();
-  const [companies, projects, members, commissionGoals] = await Promise.all([
+  const [companies, projects, members, commissionGoals, paydays] = await Promise.all([
     supabase.from("companies").select("id, name").is("deleted_at", null).order("name"),
     supabase.from("projects").select("id, name, company_id").eq("is_internal", false).eq("hidden_by_client_deletion", false).order("name"),
     supabase.from("profiles").select("id, full_name").eq("is_active", true).neq("full_name", "").order("full_name"),
     supabase.rpc("finance_commission_goals"),
+    // Dia de pagamento de cada pessoa (Carteira): a data "cai em" ao vivo no formulário.
+    supabase.from("profile_remuneration").select("profile_id, payday"),
   ]);
   const profile = await getCurrentProfile();
+  const paydayOf = new Map((paydays.data ?? []).map((row) => [row.profile_id, row.payday]));
   return {
     companies: companies.data ?? [],
     projects: projects.data ?? [],
-    members: members.data ?? [],
+    members: (members.data ?? []).map((member) => ({ ...member, payday: paydayOf.get(member.id) ?? null })),
     canEditSettled: profile ? canEditSettled(profile.squads) : false,
     commissionGoals: (commissionGoals.data ?? []).map((row) => ({ id: row.id, title: row.title, ownerId: row.owner_id })),
   };

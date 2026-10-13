@@ -18,7 +18,10 @@ import { PayeePaymentDetails } from "@/features/goals/components/payee-payment-d
 import { BANK_ACCOUNT_TYPE_LABELS, BANK_ACCOUNT_TYPES, PIX_KEY_TYPE_LABELS, PIX_KEY_TYPES } from "@/features/goals/types";
 import { useTeamCategory } from "@/features/finance/components/use-team-category";
 import { CATEGORY_LOCK_NOTES, TEAM_PAYMENT_TYPE_LABELS, teamTypeOf } from "@/lib/finance/team-category";
+import { isDateOnly } from "@/lib/calendar";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { payoutDateFor } from "@/lib/wallet/payout-date";
 
 const NO_PROJECT = "none";
 const EXTERNAL = "external";
@@ -80,6 +83,11 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
   const team = useTeamCategory(form);
   const commission = team.teamType === "comissao";
   const goalsOfPayee = options.commissionGoals.filter((goal) => goal.ownerId === payeeProfileId);
+  const payee = options.members.find((member) => member.id === payeeProfileId);
+  const dueDate = watch("dueDate");
+  // Data em que cai na Carteira do favorecido (mesma regra do banco: lib/wallet/payout-date).
+  const payoutHint =
+    payee && isDateOnly(dueDate) ? `Cai na Carteira de ${payee.full_name} em ${formatDate(payee.payday ? payoutDateFor(dueDate, payee.payday) : dueDate)}.` : null;
   const costType = watch("costType");
   const isRecurring = watch("recurrence") !== "none";
 
@@ -354,7 +362,7 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
         <FormField id="pay-amount" label="Valor (R$)" error={errors.amount?.message}>
           <Input id="pay-amount" inputMode="decimal" placeholder="0,00" aria-invalid={!!errors.amount} {...register("amount")} />
         </FormField>
-        <FormField id="pay-due" label="Vencimento" error={errors.dueDate?.message}>
+        <FormField id="pay-due" label="Vencimento" error={errors.dueDate?.message} hint={payoutHint ?? undefined}>
           <Input id="pay-due" type="date" {...register("dueDate")} />
         </FormField>
         {settled ? null : (

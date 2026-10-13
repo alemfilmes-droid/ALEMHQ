@@ -1,0 +1,12 @@
+[
+  { "name": "venc. 09/10, dia 10 → 10/10", "due": "2026-10-09", "payday": 10, "expected": "2026-10-10" },
+  { "name": "venc. 10/10, dia 10 → 10/11 (estritamente depois)", "due": "2026-10-10", "payday": 10, "expected": "2026-11-10" },
+  { "name": "venc. 11/10, dia 10 → 10/11", "due": "2026-10-11", "payday": 10, "expected": "2026-11-10" },
+  { "name": "venc. 05/11, dia 10 → 10/11", "due": "2026-11-05", "payday": 10, "expected": "2026-11-10" },
+  { "name": "virada do ano: venc. 15/12, dia 10 → 10/01", "due": "2026-12-15", "payday": 10, "expected": "2027-01-10" },
+  { "name": "virada do ano: venc. 10/12, dia 10 → 10/01", "due": "2026-12-10", "payday": 10, "expected": "2027-01-10" },
+  { "name": "dia 1: venc. 31/01 → 01/02", "due": "2026-01-31", "payday": 1, "expected": "2026-02-01" },
+  { "name": "dia 28 em fevereiro: venc. 27/02 → 28/02", "due": "2027-02-27", "payday": 28, "expected": "2027-02-28" },
+  { "name": "dia 28: venc. 28/02 → 28/03", "due": "2027-02-28", "payday": 28, "expected": "2027-03-28" },
+  { "name": "venc. 31/03, dia 5 → 05/04", "due": "2027-03-31", "payday": 5, "expected": "2027-04-05" }
+]

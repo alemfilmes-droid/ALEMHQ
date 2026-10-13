@@ -13,6 +13,7 @@ import {
   Target,
   TrendingUp,
   Users,
+  Wallet,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -38,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/inicio", label: "Início", icon: Home },
       { href: "/minhas-pautas", label: "Minhas Pautas", icon: ListChecks },
       { href: "/agenda", label: "Agenda", icon: CalendarDays },
+      { href: "/carteira", label: "Carteira", icon: Wallet },
     ],
   },
   {
