@@ -1849,11 +1849,6 @@ export type Database = {
       }
       deals: {
         Row: {
-          prospect_override_at: string | null
-          prospect_override_due: string | null
-          prospect_override_touch: number | null
-          prospect_removed_at: string | null
-          prospect_removed_by: string | null
           archived_at: string | null
           code: string | null
           company_id: string
@@ -1892,9 +1887,14 @@ export type Database = {
             | null
           prospect_manual_reactivation_on: string | null
           prospect_origin_deal_id: string | null
+          prospect_override_at: string | null
+          prospect_override_due: string | null
+          prospect_override_touch: number | null
           prospect_pause_reason: string | null
           prospect_paused_at: string | null
           prospect_playbook_id: string | null
+          prospect_removed_at: string | null
+          prospect_removed_by: string | null
           prospect_replied_at: string | null
           prospect_resumed_at: string | null
           prospection_goals: Database["public"]["Enums"]["prospection_goal"][]
@@ -1909,11 +1909,6 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
-          prospect_override_at?: string | null
-          prospect_override_due?: string | null
-          prospect_override_touch?: number | null
-          prospect_removed_at?: string | null
-          prospect_removed_by?: string | null
           archived_at?: string | null
           code?: string | null
           company_id: string
@@ -1952,9 +1947,14 @@ export type Database = {
             | null
           prospect_manual_reactivation_on?: string | null
           prospect_origin_deal_id?: string | null
+          prospect_override_at?: string | null
+          prospect_override_due?: string | null
+          prospect_override_touch?: number | null
           prospect_pause_reason?: string | null
           prospect_paused_at?: string | null
           prospect_playbook_id?: string | null
+          prospect_removed_at?: string | null
+          prospect_removed_by?: string | null
           prospect_replied_at?: string | null
           prospect_resumed_at?: string | null
           prospection_goals?: Database["public"]["Enums"]["prospection_goal"][]
@@ -1969,11 +1969,6 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
-          prospect_override_at?: string | null
-          prospect_override_due?: string | null
-          prospect_override_touch?: number | null
-          prospect_removed_at?: string | null
-          prospect_removed_by?: string | null
           archived_at?: string | null
           code?: string | null
           company_id?: string
@@ -2012,9 +2007,14 @@ export type Database = {
             | null
           prospect_manual_reactivation_on?: string | null
           prospect_origin_deal_id?: string | null
+          prospect_override_at?: string | null
+          prospect_override_due?: string | null
+          prospect_override_touch?: number | null
           prospect_pause_reason?: string | null
           prospect_paused_at?: string | null
           prospect_playbook_id?: string | null
+          prospect_removed_at?: string | null
+          prospect_removed_by?: string | null
           prospect_replied_at?: string | null
           prospect_resumed_at?: string | null
           prospection_goals?: Database["public"]["Enums"]["prospection_goal"][]
@@ -2111,6 +2111,13 @@ export type Database = {
             columns: ["prospect_playbook_id"]
             isOneToOne: false
             referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_prospect_removed_by_fkey"
+            columns: ["prospect_removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3381,11 +3388,6 @@ export type Database = {
       }
       payables: {
         Row: {
-          deal_id: string | null
-          payout_date: string | null
-          is_pro_labore: boolean
-          is_reimbursement: boolean
-          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number
           cancel_reason: string | null
           cancelled_at: string | null
@@ -3396,11 +3398,14 @@ export type Database = {
           cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
           created_by: string | null
+          deal_id: string | null
           description: string
           due_date: string
           edited_at: string | null
           id: string
           is_fixed: boolean
+          is_pro_labore: boolean
+          is_reimbursement: boolean
           late_reason: string | null
           notes: string | null
           original_amount: number | null
@@ -3420,6 +3425,7 @@ export type Database = {
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_receipt_url: string | null
+          payout_date: string | null
           penalty_amount: number | null
           penalty_reason: string | null
           project_id: string | null
@@ -3430,16 +3436,14 @@ export type Database = {
           scheduled_by: string | null
           scheduled_for: string | null
           settle_key: string | null
+          team_payment_type:
+            | Database["public"]["Enums"]["team_payment_type"]
+            | null
           updated_at: string
           updated_by: string | null
           version: number
         }
         Insert: {
-          deal_id?: string | null
-          payout_date?: string | null
-          is_pro_labore?: boolean
-          is_reimbursement?: boolean
-          team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number
           cancel_reason?: string | null
           cancelled_at?: string | null
@@ -3450,11 +3454,14 @@ export type Database = {
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
           description: string
           due_date: string
           edited_at?: string | null
           id?: string
           is_fixed?: boolean
+          is_pro_labore?: boolean
+          is_reimbursement?: boolean
           late_reason?: string | null
           notes?: string | null
           original_amount?: number | null
@@ -3476,6 +3483,7 @@ export type Database = {
           payee_profile_id?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_receipt_url?: string | null
+          payout_date?: string | null
           penalty_amount?: number | null
           penalty_reason?: string | null
           project_id?: string | null
@@ -3486,16 +3494,14 @@ export type Database = {
           scheduled_by?: string | null
           scheduled_for?: string | null
           settle_key?: string | null
+          team_payment_type?:
+            | Database["public"]["Enums"]["team_payment_type"]
+            | null
           updated_at?: string
           updated_by?: string | null
           version?: number
         }
         Update: {
-          deal_id?: string | null
-          payout_date?: string | null
-          is_pro_labore?: boolean
-          is_reimbursement?: boolean
-          team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
           amount?: number
           cancel_reason?: string | null
           cancelled_at?: string | null
@@ -3506,11 +3512,14 @@ export type Database = {
           cost_scope?: Database["public"]["Enums"]["cost_scope"]
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
           description?: string
           due_date?: string
           edited_at?: string | null
           id?: string
           is_fixed?: boolean
+          is_pro_labore?: boolean
+          is_reimbursement?: boolean
           late_reason?: string | null
           notes?: string | null
           original_amount?: number | null
@@ -3532,6 +3541,7 @@ export type Database = {
           payee_profile_id?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           payment_receipt_url?: string | null
+          payout_date?: string | null
           penalty_amount?: number | null
           penalty_reason?: string | null
           project_id?: string | null
@@ -3542,6 +3552,9 @@ export type Database = {
           scheduled_by?: string | null
           scheduled_for?: string | null
           settle_key?: string | null
+          team_payment_type?:
+            | Database["public"]["Enums"]["team_payment_type"]
+            | null
           updated_at?: string
           updated_by?: string | null
           version?: number
@@ -3587,6 +3600,34 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
             referencedColumns: ["id"]
           },
           {
@@ -3978,7 +4019,22 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profile_remuneration_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_remuneration_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profile_squads: {
         Row: {
@@ -4827,6 +4883,44 @@ export type Database = {
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "prospect_playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_management_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          deal_id: string
+          details: Json
+          id: string
+          lead_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          deal_id: string
+          details: Json
+          id?: string
+          lead_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          deal_id?: string
+          details?: Json
+          id?: string
+          lead_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_management_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6241,11 +6335,6 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
-          deal_id: string | null
-          payout_date: string | null
-          is_pro_labore: boolean | null
-          is_reimbursement: boolean | null
-          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number | null
           cancel_reason: string | null
           cancelled_at: string | null
@@ -6256,11 +6345,14 @@ export type Database = {
           cost_scope: Database["public"]["Enums"]["cost_scope"] | null
           created_at: string | null
           created_by: string | null
+          deal_id: string | null
           description: string | null
           due_date: string | null
           edited_at: string | null
           id: string | null
           is_fixed: boolean | null
+          is_pro_labore: boolean | null
+          is_reimbursement: boolean | null
           late_reason: string | null
           notes: string | null
           original_amount: number | null
@@ -6281,6 +6373,7 @@ export type Database = {
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_receipt_url: string | null
+          payout_date: string | null
           penalty_amount: number | null
           penalty_reason: string | null
           project_id: string | null
@@ -6293,6 +6386,9 @@ export type Database = {
           scheduled_for: string | null
           settle_key: string | null
           status: string | null
+          team_payment_type:
+            | Database["public"]["Enums"]["team_payment_type"]
+            | null
           updated_at: string | null
           updated_by: string | null
           version: number | null
@@ -6338,6 +6434,34 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_needing_attention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_sla"
+            referencedColumns: ["deal_id"]
+          },
+          {
+            foreignKeyName: "payables_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_with_details"
             referencedColumns: ["id"]
           },
           {
@@ -6683,6 +6807,7 @@ export type Database = {
       can_manage_company_logos: { Args: never; Returns: boolean }
       can_manage_freelancers: { Args: never; Returns: boolean }
       can_manage_invoices: { Args: { p_project_id: string }; Returns: boolean }
+      can_manage_lead_cadence: { Args: never; Returns: boolean }
       can_manage_pautas: { Args: never; Returns: boolean }
       can_manage_profile: { Args: { p_target_id: string }; Returns: boolean }
       can_read_companies: { Args: never; Returns: boolean }
@@ -6690,6 +6815,7 @@ export type Database = {
         Args: { p_squad: Database["public"]["Enums"]["squad"] }
         Returns: boolean
       }
+      can_read_wallet: { Args: { p_profile_id: string }; Returns: boolean }
       can_see_busy_of: { Args: { p_owner_id: string }; Returns: boolean }
       can_see_crm: { Args: never; Returns: boolean }
       can_see_money: { Args: never; Returns: boolean }
@@ -7050,6 +7176,14 @@ export type Database = {
       crm_pauta_column: {
         Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
         Returns: Database["public"]["Enums"]["pauta_column"]
+      }
+      crm_pauta_on_agenda: {
+        Args: { p_assignee: string; p_people: string[] }
+        Returns: boolean
+      }
+      crm_pauta_on_agenda_rule: {
+        Args: { p_assignee: string; p_ceo: string; p_people: string[] }
+        Returns: boolean
       }
       crm_pauta_status: {
         Args: { p_stage: Database["public"]["Enums"]["deal_stage"] }
@@ -7462,11 +7596,14 @@ export type Database = {
           cost_scope: Database["public"]["Enums"]["cost_scope"]
           created_at: string
           created_by: string | null
+          deal_id: string | null
           description: string
           due_date: string
           edited_at: string | null
           id: string
           is_fixed: boolean
+          is_pro_labore: boolean
+          is_reimbursement: boolean
           late_reason: string | null
           notes: string | null
           original_amount: number | null
@@ -7486,6 +7623,7 @@ export type Database = {
           payee_profile_id: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           payment_receipt_url: string | null
+          payout_date: string | null
           penalty_amount: number | null
           penalty_reason: string | null
           project_id: string | null
@@ -7496,6 +7634,9 @@ export type Database = {
           scheduled_by: string | null
           scheduled_for: string | null
           settle_key: string | null
+          team_payment_type:
+            | Database["public"]["Enums"]["team_payment_type"]
+            | null
           updated_at: string
           updated_by: string | null
           version: number
@@ -7910,7 +8051,26 @@ export type Database = {
           em_andamento: number
         }[]
       }
+      payable_payout_date: {
+        Args: { p_due: string; p_payee: string }
+        Returns: string
+      }
+      payable_team_rule: {
+        Args: {
+          p_category: Database["public"]["Enums"]["payable_category"]
+          p_has_commission_goal: boolean
+          p_is_pro_labore: boolean
+          p_is_reimbursement: boolean
+          p_payee_is_member: boolean
+          p_type: Database["public"]["Enums"]["team_payment_type"]
+        }
+        Returns: Json
+      }
       payment_details_text: { Args: { p_profile_id: string }; Returns: string }
+      payout_date_for: {
+        Args: { p_due: string; p_payday: number }
+        Returns: string
+      }
       process_squad: {
         Args: { p_process_id: string }
         Returns: Database["public"]["Enums"]["squad"]
@@ -7967,6 +8127,28 @@ export type Database = {
         Args: { p_meeting_id: string; p_reason: string }
         Returns: undefined
       }
+      prospect_manage_begin: { Args: { p_deal_id: string }; Returns: string }
+      prospect_manage_edit: {
+        Args: {
+          p_deal_id: string
+          p_due: string
+          p_playbook_id: string
+          p_touch: number
+        }
+        Returns: undefined
+      }
+      prospect_manage_erase: {
+        Args: { p_confirm_name: string; p_deal_id: string }
+        Returns: Json
+      }
+      prospect_manage_remove: {
+        Args: { p_deal_id: string }
+        Returns: undefined
+      }
+      prospect_manage_restart: {
+        Args: { p_deal_id: string; p_playbook_id: string }
+        Returns: undefined
+      }
       prospect_mark_responded: { Args: { p_deal_id: string }; Returns: string }
       prospect_meeting_outcome: {
         Args: { p_held: boolean; p_meeting_id: string; p_note: string }
@@ -7975,6 +8157,10 @@ export type Database = {
       prospect_offsets_increasing: {
         Args: { p_offsets: number[] }
         Returns: boolean
+      }
+      prospect_playbook_touches: {
+        Args: { p_playbook_id: string }
+        Returns: number
       }
       prospect_quote_approved: {
         Args: { p_budget_id: string }
@@ -7990,19 +8176,6 @@ export type Database = {
           p_reactivate_on: string
           p_reason: Database["public"]["Enums"]["deal_loss_reason"]
         }
-        Returns: undefined
-      }
-      prospect_manage_edit: {
-        Args: { p_deal_id: string; p_due: string; p_playbook_id: string; p_touch: number }
-        Returns: undefined
-      }
-      prospect_manage_erase: {
-        Args: { p_confirm_name: string; p_deal_id: string }
-        Returns: Json
-      }
-      prospect_manage_remove: { Args: { p_deal_id: string }; Returns: undefined }
-      prospect_manage_restart: {
-        Args: { p_deal_id: string; p_playbook_id: string }
         Returns: undefined
       }
       prospect_record_touch: {
@@ -8067,18 +8240,18 @@ export type Database = {
         Returns: {
           amount: number
           category: Database["public"]["Enums"]["payable_category"]
-          commission_goal_id: string | null
-          company_name: string | null
+          commission_goal_id: string
+          company_name: string
           description: string
           due_date: string
-          goal_title: string | null
+          goal_title: string
           id: string
           is_fixed: boolean
-          paid_at: string | null
+          paid_at: string
           payout_date: string
-          project_id: string | null
-          project_name: string | null
-          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
+          project_id: string
+          project_name: string
+          team_payment_type: Database["public"]["Enums"]["team_payment_type"]
         }[]
       }
     }
@@ -8240,8 +8413,6 @@ export type Database = {
         | "estrutura"
         | "comissao"
         | "pro_labore"
-      team_payment_type: "pro_labore" | "comissao" | "pagamento_colaborador"
-      remuneration_type: "fixo" | "fixo_mais_variavel" | "so_comissao" | "por_job"
       payable_recurrence: "none" | "mensal" | "trimestral" | "anual"
       payment_method:
         | "pix"
@@ -8353,9 +8524,15 @@ export type Database = {
         | "notificado"
         | "em_reaquecimento"
         | "descartado"
+      remuneration_type:
+        | "fixo"
+        | "fixo_mais_variavel"
+        | "so_comissao"
+        | "por_job"
       service_type: "captacao" | "edicao" | "direcao" | "producao_completa"
       squad: "diretoria" | "audiovisual" | "comercial" | "financeiro"
       sync_job_status: "pendente" | "rodando" | "concluido" | "erro"
+      team_payment_type: "pro_labore" | "comissao" | "pagamento_colaborador"
       time_entry_kind: "entrada" | "saida"
       time_entry_source: "timer" | "manual"
     }
@@ -8662,8 +8839,6 @@ export const Constants = {
         "comissao",
         "pro_labore",
       ],
-      team_payment_type: ["pro_labore", "comissao", "pagamento_colaborador"],
-      remuneration_type: ["fixo", "fixo_mais_variavel", "so_comissao", "por_job"],
       payable_recurrence: ["none", "mensal", "trimestral", "anual"],
       payment_method: [
         "pix",
@@ -8786,9 +8961,16 @@ export const Constants = {
         "em_reaquecimento",
         "descartado",
       ],
+      remuneration_type: [
+        "fixo",
+        "fixo_mais_variavel",
+        "so_comissao",
+        "por_job",
+      ],
       service_type: ["captacao", "edicao", "direcao", "producao_completa"],
       squad: ["diretoria", "audiovisual", "comercial", "financeiro"],
       sync_job_status: ["pendente", "rodando", "concluido", "erro"],
+      team_payment_type: ["pro_labore", "comissao", "pagamento_colaborador"],
       time_entry_kind: ["entrada", "saida"],
       time_entry_source: ["timer", "manual"],
     },
