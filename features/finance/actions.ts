@@ -34,6 +34,7 @@ async function requireFinance() {
 
 function refresh() {
   revalidatePath("/financeiro");
+  revalidatePath("/carteira");
   revalidatePath("/inicio");
   revalidatePath("/projetos", "layout");
   revalidatePath("/clientes", "layout");

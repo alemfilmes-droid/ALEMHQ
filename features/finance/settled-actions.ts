@@ -38,6 +38,7 @@ async function requireSettledEditor() {
 // Totais, relatórios e dashboards são calculados na hora a partir dos dados: basta revalidar as telas.
 function refresh() {
   revalidatePath("/financeiro");
+  revalidatePath("/carteira");
   revalidatePath("/inicio");
   revalidatePath("/metas", "layout");
   revalidatePath("/projetos", "layout");

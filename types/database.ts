@@ -5752,6 +5752,62 @@ export type Database = {
           },
         ]
       }
+      wallet_ledger_events: {
+        Row: {
+          actor_id: string | null
+          amount_cents: number
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          occurred_at: string
+          paid_on: string
+          payable_id: string
+          profile_id: string
+          reverses_event_id: string | null
+          source: string
+          time_recorded: boolean
+        }
+        Insert: {
+          actor_id?: string | null
+          amount_cents: number
+          created_at?: string
+          description: string
+          id?: string
+          kind: string
+          occurred_at: string
+          paid_on: string
+          payable_id: string
+          profile_id: string
+          reverses_event_id?: string | null
+          source?: string
+          time_recorded?: boolean
+        }
+        Update: {
+          actor_id?: string | null
+          amount_cents?: number
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          paid_on?: string
+          payable_id?: string
+          profile_id?: string
+          reverses_event_id?: string | null
+          source?: string
+          time_recorded?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_ledger_events_reverses_event_id_fkey"
+            columns: ["reverses_event_id"]
+            isOneToOne: true
+            referencedRelation: "wallet_ledger_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_schedules: {
         Row: {
           daily_hours: number
@@ -8290,6 +8346,34 @@ export type Database = {
           project_id: string
           project_name: string
           team_payment_type: Database["public"]["Enums"]["team_payment_type"]
+          created_at: string
+        }[]
+      }
+      wallet_ledger: {
+        Args: { p_profile_id: string }
+        Returns: {
+          actor_name: string
+          amount_cents: number
+          category: Database["public"]["Enums"]["payable_category"]
+          commission_goal_id: string
+          company_name: string
+          created_at: string
+          description: string
+          due_date: string
+          entry_created_at: string
+          goal_title: string
+          id: string
+          is_fixed: boolean
+          kind: string
+          occurred_at: string
+          paid_on: string
+          payable_id: string
+          payout_date: string
+          project_id: string
+          project_name: string
+          reverses_event_id: string
+          team_payment_type: Database["public"]["Enums"]["team_payment_type"]
+          time_recorded: boolean
         }[]
       }
     }

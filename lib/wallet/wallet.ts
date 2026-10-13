@@ -52,9 +52,11 @@ export interface WalletEntry {
   isFixed: boolean;
   hasGoal: boolean;
   hasProject: boolean;
+  /** Quando foi lançado no Financeiro. */
+  createdAt: string | null;
 }
 
-export interface WalletLine extends Omit<WalletEntry, "teamType" | "category" | "isFixed" | "hasGoal" | "hasProject"> {
+export interface WalletLine extends Omit<WalletEntry, "teamType" | "isFixed" | "hasGoal" | "hasProject"> {
   kind: WalletKind;
   /** Linha do fixo calculada (ainda não lançada no Financeiro). */
   virtual: boolean;
@@ -91,6 +93,8 @@ function toLine(entry: WalletEntry): WalletLine {
     companyName: entry.companyName,
     projectName: entry.projectName,
     goalTitle: entry.goalTitle,
+    category: entry.category,
+    createdAt: entry.createdAt,
     kind: walletKindOf(entry),
     virtual: false,
   };
@@ -118,6 +122,8 @@ export function buildWallet(entries: readonly WalletEntry[], remuneration: Remun
         companyName: null,
         projectName: null,
         goalTitle: null,
+        category: "pessoal",
+        createdAt: null,
         kind: "salario_fixo",
         virtual: true,
       });

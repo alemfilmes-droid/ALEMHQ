@@ -1,0 +1,56 @@
+[
+  {
+    "name": "baixa hoje: saída com a hora de agora e quem confirmou",
+    "open": null,
+    "payable": { "payeeId": "p1", "amountCents": 200000, "paidAt": "2026-10-13", "cancelled": false, "reimbursement": false },
+    "expected": [{ "kind": "payout", "profileId": "p1", "amountCents": 200000, "paidOn": "2026-10-13", "occurredAt": "NOW", "timeRecorded": true, "reversesEventId": null }]
+  },
+  {
+    "name": "baixa com data passada: 12:00 e horário não registrado",
+    "open": null,
+    "payable": { "payeeId": "p1", "amountCents": 5000, "paidAt": "2026-10-06", "cancelled": false, "reimbursement": false },
+    "expected": [{ "kind": "payout", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T15:00:00.000Z", "timeRecorded": false, "reversesEventId": null }]
+  },
+  {
+    "name": "estorno da baixa: volta para A receber com um estorno",
+    "open": { "id": "e1", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T15:00:00.000Z", "timeRecorded": false },
+    "payable": { "payeeId": "p1", "amountCents": 5000, "paidAt": null, "cancelled": false, "reimbursement": false },
+    "expected": [{ "kind": "reversal", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "NOW", "timeRecorded": true, "reversesEventId": "e1" }]
+  },
+  {
+    "name": "edição de um pago sem mudar valor, data ou favorecido: nada",
+    "open": { "id": "e1", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T15:00:00.000Z", "timeRecorded": false },
+    "payable": { "payeeId": "p1", "amountCents": 5000, "paidAt": "2026-10-06", "cancelled": false, "reimbursement": false },
+    "expected": []
+  },
+  {
+    "name": "valor corrigido num pago: estorno + nova saída na mesma hora",
+    "open": { "id": "e1", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T18:22:00.000Z", "timeRecorded": true },
+    "payable": { "payeeId": "p1", "amountCents": 6000, "paidAt": "2026-10-06", "cancelled": false, "reimbursement": false },
+    "expected": [
+      { "kind": "reversal", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "NOW", "timeRecorded": true, "reversesEventId": "e1" },
+      { "kind": "payout", "profileId": "p1", "amountCents": 6000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T18:22:00.000Z", "timeRecorded": true, "reversesEventId": null }
+    ]
+  },
+  {
+    "name": "favorecido trocado num pago: estorno de um, saída do outro",
+    "open": { "id": "e1", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T15:00:00.000Z", "timeRecorded": false },
+    "payable": { "payeeId": "p2", "amountCents": 5000, "paidAt": "2026-10-06", "cancelled": false, "reimbursement": false },
+    "expected": [
+      { "kind": "reversal", "profileId": "p1", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "NOW", "timeRecorded": true, "reversesEventId": "e1" },
+      { "kind": "payout", "profileId": "p2", "amountCents": 5000, "paidOn": "2026-10-06", "occurredAt": "2026-10-06T15:00:00.000Z", "timeRecorded": false, "reversesEventId": null }
+    ]
+  },
+  {
+    "name": "reembolso pago não entra no extrato",
+    "open": null,
+    "payable": { "payeeId": "p1", "amountCents": 8000, "paidAt": "2026-10-13", "cancelled": false, "reimbursement": true },
+    "expected": []
+  },
+  {
+    "name": "pagamento sem favorecido do HQ não entra no extrato",
+    "open": null,
+    "payable": { "payeeId": null, "amountCents": 8000, "paidAt": "2026-10-13", "cancelled": false, "reimbursement": false },
+    "expected": []
+  }
+]

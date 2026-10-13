@@ -435,6 +435,118 @@ html[data-privacy="on"] .sensitive-axis .recharts-cartesian-axis-tick-value:not(
   opacity: 0;
 }
 
+/*
+  Carteira: o vermelho da marca é só do logo. Dentro de .wallet-scope o acento vira prata neutro (brilho dos
+  cards, anel de foco, ícones), sem tocar no resto do HQ.
+*/
+.wallet-scope {
+  --brand-accent: #c9c9c9;
+  --brand-accent-rgb: 201 201 201;
+  --accent-border: rgb(240 240 240 / 0.18);
+  --accent-glow: rgb(240 240 240 / 0.07);
+  --accent-soft: rgb(240 240 240 / 0.04);
+  --accent-ring: rgb(240 240 240 / 0.7);
+  --ring: rgb(240 240 240 / 0.7);
+}
+
+/*
+  Cartão "Próximo pagamento": fundo escuro (#0A0A0A → grafite) e uma luz branca/prata que percorre a borda.
+  A luz é um conic-gradient num quadrado maior que o cartão, girado só com transform (GPU, sem repintar);
+  a camada de dentro cobre tudo menos 1px de borda. Com movimento reduzido, a luz fica parada.
+*/
+.wallet-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 1px;
+  background: rgb(240 240 240 / 0.1);
+  box-shadow:
+    0 28px 60px -32px rgb(0 0 0 / 0.9),
+    0 0 48px -24px rgb(240 240 240 / 0.16);
+}
+.wallet-hero::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  width: 170%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 70deg,
+    rgb(170 170 175 / 0.18) 110deg,
+    transparent 150deg 250deg,
+    rgb(190 190 196 / 0.3) 300deg,
+    rgb(255 255 255 / 0.95) 345deg,
+    transparent 360deg
+  );
+  transform: translate(-50%, -50%) rotate(0turn);
+  animation: wallet-hero-orbit 7s linear infinite;
+  will-change: transform;
+}
+.wallet-hero-inner {
+  position: relative;
+  border-radius: 13px;
+  background:
+    radial-gradient(120% 160% at 100% 0%, rgb(240 240 240 / 0.07), transparent 55%),
+    linear-gradient(135deg, #0a0a0a 0%, #121213 55%, #1b1b1d 100%);
+}
+@keyframes wallet-hero-orbit {
+  to {
+    transform: translate(-50%, -50%) rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wallet-hero::before {
+    animation: none !important;
+    transform: translate(-50%, -50%) rotate(0.6turn);
+  }
+  .wallet-hero {
+    box-shadow:
+      0 28px 60px -32px rgb(0 0 0 / 0.9),
+      0 0 36px -16px rgb(240 240 240 / 0.22);
+  }
+}
+
+/* Indicadores da Carteira: no celular, trilho horizontal com encaixe; a partir de 640px, grade. */
+.kpi-rail {
+  display: flex;
+  gap: 0.75rem;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+}
+.kpi-rail::-webkit-scrollbar {
+  display: none;
+}
+.kpi-rail > * {
+  flex: 0 0 78%;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .kpi-rail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+  .kpi-rail > * {
+    flex: none;
+  }
+}
+@media (min-width: 1024px) {
+  .kpi-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cine-beam,
   .cine-flare,

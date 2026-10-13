@@ -17,6 +17,7 @@ const entry = (overrides: Partial<WalletEntry>): WalletEntry => ({
   isFixed: false,
   hasGoal: false,
   hasProject: false,
+  createdAt: null,
   ...overrides,
 });
 
