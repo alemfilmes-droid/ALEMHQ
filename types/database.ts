@@ -3681,6 +3681,36 @@ export type Database = {
           },
         ]
       }
+      payables_recategorization: {
+        Row: {
+          after: Json
+          batch: string
+          before: Json
+          created_at: string
+          id: string
+          payable_id: string
+          undone_at: string | null
+        }
+        Insert: {
+          after: Json
+          batch: string
+          before: Json
+          created_at?: string
+          id?: string
+          payable_id: string
+          undone_at?: string | null
+        }
+        Update: {
+          after?: Json
+          batch?: string
+          before?: Json
+          created_at?: string
+          id?: string
+          payable_id?: string
+          undone_at?: string | null
+        }
+        Relationships: []
+      }
       payment_details: {
         Row: {
           account_number: string | null
@@ -8065,6 +8095,14 @@ export type Database = {
           p_type: Database["public"]["Enums"]["team_payment_type"]
         }
         Returns: Json
+      }
+      payables_apply_state: {
+        Args: { p_payable_id: string; p_reason: string; p_state: Json }
+        Returns: undefined
+      }
+      payables_recategorization_undo: {
+        Args: { p_batch: string }
+        Returns: number
       }
       payment_details_text: { Args: { p_profile_id: string }; Returns: string }
       payout_date_for: {
