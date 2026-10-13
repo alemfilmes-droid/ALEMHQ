@@ -1,6 +1,6 @@
 import { Money } from "@/components/ui/money";
 import { Suspense } from "react";
-import { Building, Code2, Layers, Megaphone, Percent, Receipt, Shapes, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Briefcase, Building, Code2, Layers, Megaphone, Percent, Receipt, Shapes, Users, Wallet, type LucideIcon } from "lucide-react";
 import { FilterPopover } from "@/components/filters/filter-popover";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import { formatDate } from "@/lib/format";
 
 const GROUP_ICON: Record<CompanyCostGroup, LucideIcon> = {
   equipe: Users,
+  pro_labore: Briefcase,
   software: Code2,
   estrutura: Building,
   impostos: Receipt,
@@ -135,7 +136,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
           </CardHeader>
           <CardContent>
             {data.people.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum custo ligado a um colaborador neste mês. Ao lançar um custo de Pessoal/Equipe, escolha a pessoa em “Favorecido”.</p>
+              <p className="text-sm text-muted-foreground">Nenhum custo ligado a um colaborador neste mês. Ao lançar um custo de Equipe e colaboradores, escolha a pessoa em “Favorecido”. Pró-labore e reembolsos não entram aqui.</p>
             ) : (
               <ul className="divide-y divide-border">
                 {data.people.map((person) => (

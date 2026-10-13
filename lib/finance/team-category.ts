@@ -7,7 +7,8 @@ import type { PayableCategory } from "@/types";
  * regra de verdade ao criar e ao editar — inclusive lançamentos já baixados.
  *
  * - Pró-labore marcado (ou a categoria antiga "Pró-labore") → Equipe e colaboradores · Pró-labore.
- * - Reembolso de despesa → "Outro" (não é pagamento à equipe, mesmo para alguém do HQ).
+ * - Reembolso de despesa → a categoria da despesa (ex.: Software), nunca Equipe; sem tipo. Não é remuneração:
+ *   não aparece na Carteira e, ligado a cliente/projeto, sai dos custos da empresa.
  * - Favorecido é alguém do HQ → Equipe e colaboradores · Comissão (comissão ligada / categoria antiga
  *   "Comissão") ou Pagamento a colaborador; a pessoa escolhe entre os dois.
  * - Fora disso a categoria é livre; Equipe e colaboradores escolhida à mão vale como Pagamento a colaborador.
@@ -26,7 +27,7 @@ export const TEAM_CATEGORY: PayableCategory = "pessoal";
 export const AUTO_CATEGORY_REASON = "Categorização automática: equipe e colaboradores";
 
 /** Por que a categoria está travada (null = livre). */
-export type CategoryLock = "pro_labore" | "reembolso" | "equipe" | null;
+export type CategoryLock = "pro_labore" | "equipe" | null;
 
 export interface TeamRuleInput {
   category: PayableCategory;
@@ -47,7 +48,10 @@ export function teamCategoryRule(input: TeamRuleInput): TeamRuleResult {
   if (input.isProLabore || input.category === "pro_labore") {
     return { category: TEAM_CATEGORY, teamType: "pro_labore", lock: "pro_labore" };
   }
-  if (input.isReimbursement) return { category: "outro", teamType: null, lock: "reembolso" };
+  if (input.isReimbursement) {
+    const team = input.category === TEAM_CATEGORY || input.category === "comissao";
+    return { category: team ? "outro" : input.category, teamType: null, lock: null };
+  }
   const commission = input.teamType === "comissao" || input.category === "comissao" || input.hasCommissionGoal;
   if (input.payeeIsMember) {
     return { category: TEAM_CATEGORY, teamType: commission ? "comissao" : "pagamento_colaborador", lock: "equipe" };
@@ -60,7 +64,6 @@ export function teamCategoryRule(input: TeamRuleInput): TeamRuleResult {
 
 export const CATEGORY_LOCK_NOTES: Record<Exclude<CategoryLock, null>, string> = {
   pro_labore: "Definida automaticamente: pró-labore",
-  reembolso: "Definida automaticamente: reembolso de despesa",
   equipe: "Definida automaticamente: favorecido é da equipe",
 };
 

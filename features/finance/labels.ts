@@ -58,11 +58,13 @@ export const PAYABLE_CATEGORY_LABELS: Record<PayableCategory, string> = {
  * colaboradores (Pessoal/Equipe) e freelancers; Estrutura junta aluguel/locação, equipamento e a
  * própria categoria Estrutura.
  */
-export const COMPANY_COST_GROUPS = ["equipe", "software", "estrutura", "impostos", "marketing", "outros"] as const;
+export const COMPANY_COST_GROUPS = ["equipe", "pro_labore", "software", "estrutura", "impostos", "marketing", "outros"] as const;
 export type CompanyCostGroup = (typeof COMPANY_COST_GROUPS)[number];
 
 export const COMPANY_COST_GROUP_LABELS: Record<CompanyCostGroup, string> = {
   equipe: "Equipe e colaboradores",
+  // Retirada dos sócios: separada, nunca somada ao custo de colaboradores.
+  pro_labore: "Pró-labore (sócios)",
   software: "Software",
   estrutura: "Estrutura",
   impostos: "Impostos",
@@ -73,7 +75,7 @@ export const COMPANY_COST_GROUP_LABELS: Record<CompanyCostGroup, string> = {
 export const COMPANY_COST_GROUP_OF: Record<PayableCategory, CompanyCostGroup> = {
   pessoal: "equipe",
   comissao: "equipe",
-  pro_labore: "equipe",
+  pro_labore: "pro_labore",
   freelancer: "equipe",
   software: "software",
   estrutura: "estrutura",

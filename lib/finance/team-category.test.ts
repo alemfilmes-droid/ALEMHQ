@@ -24,7 +24,7 @@ describe("Equipe e colaboradores: categoria automática", () => {
     const base = { category: "outro" as PayableCategory, payeeIsMember: false, isProLabore: false, isReimbursement: false, teamType: null, hasCommissionGoal: false };
     assert.equal(teamCategoryRule({ ...base, payeeIsMember: true }).lock, "equipe");
     assert.equal(teamCategoryRule({ ...base, isProLabore: true }).lock, "pro_labore");
-    assert.equal(teamCategoryRule({ ...base, isReimbursement: true }).lock, "reembolso");
+    assert.equal(teamCategoryRule({ ...base, isReimbursement: true }).lock, null);
     assert.equal(teamCategoryRule(base).lock, null);
   });
 });

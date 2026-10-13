@@ -574,3 +574,19 @@ vencimento; dia 10 → 10/10; vencimento muda para 10/10 → 10/11; dia muda par
 sem data; a pessoa lê a própria (2 linhas) e é barrada na de outra; master lê; como usuário logado, só o master muda
 o dia (não-master: sem efeito). Tela testada numa página de teste no celular (375 px): sem rolagem lateral, sem o
 vermelho da marca.
+
+### Ajustes pedidos antes da recategorização (13/10/2026)
+- **Reembolso** mantém a categoria da despesa (o Drive da empresa continua em Software, marcado como reembolso);
+  nunca fica em Equipe (aí vira Outro). Reembolso **não aparece na Carteira** (não é remuneração) e não entra no
+  "Custo mensal por pessoa".
+- **Pró-labore** ganhou grupo próprio, "Pró-labore (sócios)", em Custos da empresa e barra própria em Custos por
+  categoria: nunca soma no custo de Equipe e colaboradores nem no custo por pessoa. O filtro "Pró-labore" do
+  Financeiro encontra os lançamentos pelo tipo.
+- **Recategorização dos 57 lançamentos antigos** (lote `2026-10-13-equipe`): lista de antes/depois salva antes de
+  aplicar em `~/Documents/backup-alem-hq/2026-10-13/recategorizacao-antes-depois.csv` (fora do projeto: tem nomes e
+  valores) e no banco (`payables_recategorization`). Para desfazer:
+  `select public.payables_recategorization_undo('2026-10-13-equipe');` (só o master). Testado com os dados reais em
+  rollback: 57 lançamentos (30 Pró-labore, 12 Pagamento a colaborador, 13 Software · reembolso, 2 Outro · reembolso),
+  status/valores/datas idênticos, histórico gravado nos 57, nenhum reembolso na Carteira, desfazer devolveu os 57
+  exatamente como antes.
+- **Migrações**: `20261026090000_reimbursement_rule_and_undo.sql`, `20261026090100_recategorize_team_payments.sql`.

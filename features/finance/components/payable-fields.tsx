@@ -182,7 +182,7 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {MANUAL_PAYABLE_CATEGORIES.map((category) => (
+                  {MANUAL_PAYABLE_CATEGORIES.filter((category) => !(team.isReimbursement && category === "pessoal")).map((category) => (
                     <SelectItem key={category} value={category}>
                       {PAYABLE_CATEGORY_LABELS[category]}
                     </SelectItem>
@@ -252,7 +252,7 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
       </div>
       {team.isReimbursement && !team.isProLabore ? (
         <p className="text-[12px] text-muted-foreground">
-          Reembolso fica em “Outro” e não conta como pagamento à equipe. Ligado a um cliente ou projeto, sai dos custos da empresa.
+          Reembolso: escolha a categoria da despesa (ex.: Software). Não conta como pagamento à equipe nem aparece na Carteira. Ligado a um cliente ou projeto, sai dos custos da empresa.
         </p>
       ) : null}
 

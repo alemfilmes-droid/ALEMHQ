@@ -7,7 +7,8 @@ import { TEAM_CATEGORY, teamCategoryRule, type TeamPaymentType } from "@/lib/fin
 
 /**
  * Aplica a regra de "Equipe e colaboradores" enquanto a pessoa preenche (o banco aplica a mesma ao salvar):
- * trava a categoria quando o favorecido é da equipe, é pró-labore ou reembolso; escolhe o tipo; e, quando a
+ * trava a categoria quando o favorecido é da equipe ou é pró-labore; reembolso fica na categoria da despesa (nunca
+ * Equipe); escolhe o tipo; e, quando a
  * trava sai (favorecido deixou de ser da equipe), limpa a categoria automática para a pessoa escolher outra.
  */
 export function useTeamCategory(form: UseFormReturn<PayableValues>) {
@@ -34,6 +35,9 @@ export function useTeamCategory(form: UseFormReturn<PayableValues>) {
     if (rule.lock) {
       if (category !== rule.category) setValue("category", rule.category, { shouldValidate: true });
       imposed.current = rule.category;
+    } else if (isReimbursement && Boolean(category) && category !== rule.category) {
+      // Reembolso nunca fica em Equipe e colaboradores.
+      setValue("category", rule.category, { shouldValidate: true });
     } else if (imposed.current !== null) {
       // Saiu a trava: a categoria que era automática não vale mais; a pessoa escolhe outra.
       if (category === imposed.current) setValue("category", "" as PayableValues["category"]);
@@ -41,7 +45,7 @@ export function useTeamCategory(form: UseFormReturn<PayableValues>) {
     }
     const nextType = rule.teamType ?? "";
     if (teamPaymentType !== nextType) setValue("teamPaymentType", nextType);
-  }, [rule.lock, rule.category, rule.teamType, category, teamPaymentType, setValue]);
+  }, [rule.lock, rule.category, rule.teamType, category, teamPaymentType, isReimbursement, setValue]);
 
   const typeOptions: TeamPaymentType[] = rule.teamType === "pro_labore" ? ["pro_labore"] : ["pagamento_colaborador", "comissao"];
   return {

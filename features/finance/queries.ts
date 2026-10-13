@@ -2,7 +2,7 @@ import "server-only";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { PAYABLE_COST_TYPE_FILTERS, type PayableCostTypeFilter } from "@/features/finance/labels";
+import { PAYABLE_CATEGORIES, PAYABLE_COST_TYPE_FILTERS, type PayableCostTypeFilter } from "@/features/finance/labels";
 import { addDaysISO, type Period, todayISO } from "@/features/finance/period";
 import { sumCents, toCents, type Cents } from "@/features/finance/money";
 import {
@@ -29,7 +29,7 @@ import type { Database } from "@/types/database";
 import { getCompanySettings } from "@/features/settings/queries";
 import { canEditSettled } from "@/lib/finance/settled-edit";
 import { deletedClientLabel } from "@/lib/clients/deletion";
-import { TEAM_CATEGORY, teamBreakdown } from "@/lib/finance/team-category";
+import { TEAM_CATEGORY, teamBreakdown, teamTypeOf, type TeamPaymentType } from "@/lib/finance/team-category";
 import { marginStatusFor } from "@/lib/margin";
 import type { MarginStatus, PayableCategory, PaymentMethod } from "@/types";
 
@@ -241,7 +241,13 @@ export async function listPayables(filters: PayableFilters): Promise<PayableItem
   if (filters.period && !(statuses.length === 1 && statuses[0] === "atrasado")) {
     query = query.gte("due_date", filters.period.from).lte("due_date", filters.period.to);
   }
-  if (filters.category && filters.category.length > 0) query = query.in("category", filters.category as PayableCategory[]);
+  if (filters.category && filters.category.length > 0) {
+    // "Pró-labore" é um tipo dentro de Equipe e colaboradores (a barra do Painel leva para cá).
+    const categories = multiIn(filters.category, PAYABLE_CATEGORIES);
+    query = categories.includes("pro_labore")
+      ? query.or(`category.in.(${categories.join(",")}),team_payment_type.eq.pro_labore`)
+      : query.in("category", categories);
+  }
   if (filters.projectId && filters.projectId.length > 0) query = query.in("project_id", filters.projectId);
   if (filters.companyId && filters.companyId.length > 0) query = query.in("company_id", filters.companyId);
   if (filters.method && filters.method.length > 0) query = query.in("payment_method", filters.method as PaymentMethod[]);
@@ -552,21 +558,29 @@ export async function getCategoryCosts(period: Period): Promise<CategoryCostItem
     .neq("status", "cancelado");
   if (error) throw new Error("Falha ao carregar os custos por categoria.");
 
+  // Pró-labore (retirada dos sócios) tem barra própria: nunca soma no custo de Equipe e colaboradores.
+  const keyOf = (category: PayableCategory, teamType: TeamPaymentType | null): PayableCategory => {
+    const type = teamTypeOf(category, teamType);
+    return type === "pro_labore" ? "pro_labore" : type ? TEAM_CATEGORY : category;
+  };
   const totals = new Map<PayableCategory, { fixed: number; variable: number }>();
   for (const row of data ?? []) {
     if (!row.category) continue;
-    const entry = totals.get(row.category) ?? { fixed: 0, variable: 0 };
+    const key = keyOf(row.category, row.team_payment_type);
+    const entry = totals.get(key) ?? { fixed: 0, variable: 0 };
     if (row.is_fixed) entry.fixed += toCents(row.amount);
     else entry.variable += toCents(row.amount);
-    totals.set(row.category, entry);
+    totals.set(key, entry);
   }
-  const rows = (data ?? []).flatMap((row) => (row.category ? [{ category: row.category, teamType: row.team_payment_type, amount: toCents(row.amount) }] : []));
+  const rows = (data ?? []).flatMap((row) =>
+    row.category && keyOf(row.category, row.team_payment_type) === TEAM_CATEGORY ? [{ category: row.category, teamType: row.team_payment_type, amount: toCents(row.amount) }] : [],
+  );
   return Array.from(totals.entries())
     .map(([category, sums]) => ({
       category,
       fixedTotal: sums.fixed,
       variableTotal: sums.variable,
-      teamBreakdown: category === TEAM_CATEGORY ? teamBreakdown(rows.filter((row) => row.category === TEAM_CATEGORY)) : [],
+      teamBreakdown: category === TEAM_CATEGORY ? teamBreakdown(rows) : [],
     }))
     .sort((a, b) => b.fixedTotal + b.variableTotal - (a.fixedTotal + a.variableTotal));
 }

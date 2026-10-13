@@ -3,7 +3,7 @@ import { COMPANY_COST_GROUPS, COMPANY_COST_GROUP_OF, PAYABLE_CATEGORIES, type Co
 import { sumCents, toCents, type Cents } from "@/features/finance/money";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { teamBreakdown, type TeamPaymentType } from "@/lib/finance/team-category";
+import { teamBreakdown, teamTypeOf, type TeamPaymentType } from "@/lib/finance/team-category";
 import { createClient } from "@/lib/supabase/server";
 import type { PayableCategory } from "@/types";
 
@@ -21,6 +21,7 @@ export interface CompanyCostLine {
   description: string;
   category: PayableCategory;
   teamType: TeamPaymentType | null;
+  isReimbursement: boolean;
   payeeLabel: string | null;
   payeeProfileId: string | null;
   amount: Cents;
@@ -70,6 +71,11 @@ export interface CompanyCostsData {
 
 const MONTH = /^\d{4}-\d{2}$/;
 
+/** Grupo da linha: pró-labore (pelo tipo, inclusive nos lançamentos antigos) tem grupo próprio. */
+function costGroupOf(line: Pick<CompanyCostLine, "category" | "teamType">): CompanyCostGroup {
+  return teamTypeOf(line.category, line.teamType) === "pro_labore" ? "pro_labore" : COMPANY_COST_GROUP_OF[line.category];
+}
+
 export function shiftYearMonth(yearMonth: string, delta: number): string {
   const [year = 0, month = 1] = yearMonth.split("-").map(Number);
   const index = year * 12 + (month - 1) + delta;
@@ -113,7 +119,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
 
   let payablesQuery = supabase
     .from("payables_with_status")
-    .select("id, description, category, team_payment_type, payee_label, payee_profile_id, amount, is_fixed, due_date, status")
+    .select("id, description, category, team_payment_type, is_reimbursement, payee_label, payee_profile_id, amount, is_fixed, due_date, status")
     .eq("cost_scope", "empresa")
     .neq("status", "cancelado")
     .gte("due_date", from)
@@ -138,6 +144,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
             description: row.description ?? "",
             category: row.category,
             teamType: row.team_payment_type,
+            isReimbursement: row.is_reimbursement === true,
             payeeLabel: row.payee_label,
             payeeProfileId: row.payee_profile_id,
             amount: toCents(row.amount),
@@ -167,7 +174,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
 
   const monthLines = lines.filter((line) => line.dueDate.startsWith(filters.month));
   const groups: CompanyCostGroupTotal[] = COMPANY_COST_GROUPS.map((group) => {
-    const inGroup = monthLines.filter((line) => COMPANY_COST_GROUP_OF[line.category] === group);
+    const inGroup = monthLines.filter((line) => costGroupOf(line) === group);
     const fixed = sumCents(inGroup.filter((line) => line.isFixed).map((line) => line.amount));
     const variable = sumCents(inGroup.filter((line) => !line.isFixed).map((line) => line.amount));
     return { group, fixed, variable, total: fixed + variable, teamBreakdown: group === "equipe" ? teamBreakdown(inGroup) : [] };
@@ -175,7 +182,9 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
 
   const profiles = new Map((people.data ?? []).map((person) => [person.id, person]));
   const perPerson = new Map<string, Cents>();
+  // Custo por colaborador: sem pró-labore (retirada dos sócios) e sem reembolso (não é remuneração).
   for (const line of monthLines) {
+    if (costGroupOf(line) === "pro_labore" || line.isReimbursement) continue;
     if (line.payeeProfileId) perPerson.set(line.payeeProfileId, (perPerson.get(line.payeeProfileId) ?? 0) + line.amount);
   }
   const personList: CompanyCostPerson[] = [...perPerson.entries()]
