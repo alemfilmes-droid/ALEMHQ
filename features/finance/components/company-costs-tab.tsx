@@ -9,13 +9,7 @@ import { Metric, MetricGrid, MetricValue } from "@/components/ui/metric-value";
 import { CompanyCostsChart } from "@/features/finance/components/charts/company-costs-chart";
 import { EmptyState } from "@/features/finance/components/table-shell";
 import { getCompanyCosts, type CompanyCostFilters } from "@/features/finance/company-costs";
-import {
-  COMPANY_COST_GROUP_LABELS,
-  FIXED_VARIABLE_LABELS,
-  MANUAL_PAYABLE_CATEGORIES,
-  PAYABLE_CATEGORY_LABELS,
-  type CompanyCostGroup,
-} from "@/features/finance/labels";
+import { COMPANY_COST_GROUP_LABELS, COMPANY_COST_GROUPS, FIXED_VARIABLE_LABELS, type CompanyCostGroup } from "@/features/finance/labels";
 import { formatCents } from "@/features/finance/money";
 import { categoryLabel, TEAM_PAYMENT_TYPE_LABELS } from "@/lib/finance/team-category";
 import type { FinanceOptions } from "@/features/finance/types";
@@ -55,7 +49,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
           <MonthSelector yearMonth={data.month} />
           <FilterPopover
             sections={[
-              { key: "categoria", label: "Categoria", options: MANUAL_PAYABLE_CATEGORIES.map((value) => ({ value, label: PAYABLE_CATEGORY_LABELS[value] })) },
+              { key: "categoria", label: "Categoria", options: COMPANY_COST_GROUPS.map((value) => ({ value, label: COMPANY_COST_GROUP_LABELS[value] })) },
               { key: "pessoa", label: "Pessoa", options: options.members.map((member) => ({ value: member.id, label: member.full_name })) },
               {
                 key: "fixo",
@@ -112,6 +106,11 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
               <p className="text-xs text-subtle">
                 Fixo <Money cents={group.fixed} /> · Variável <Money cents={group.variable} />
               </p>
+              {group.linkedToProjects > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Inclui <Money cents={group.linkedToProjects} /> ligados a projetos (também entram na margem do projeto).
+                </p>
+              ) : null}
               {group.teamBreakdown.length > 0 ? (
                 <ul className="space-y-0.5 text-xs text-muted-foreground">
                   {group.teamBreakdown.map((item) => (
@@ -158,7 +157,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
           </CardHeader>
           <CardContent>
             {data.lines.length === 0 ? (
-              <EmptyState icon={Layers} title="Nenhum custo da empresa neste mês." hint="Custos sem projeto aparecem aqui." />
+              <EmptyState icon={Layers} title="Nenhum custo da empresa neste mês." hint="Custos sem projeto e o pró-labore dos sócios aparecem aqui." />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-sm">
@@ -176,10 +175,11 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
                         <td className="max-w-[16rem] py-2.5 pr-3">
                           <p className="truncate font-semibold">{line.description}</p>
                           {line.payeeLabel ? <p className="truncate text-xs text-subtle">{line.payeeLabel}</p> : null}
+                          {line.projectName ? <p className="truncate text-xs text-subtle">Projeto: {line.projectName}</p> : null}
                         </td>
                         <td className="py-2.5 pr-3">
                           <span className="flex flex-wrap gap-1">
-                            <Badge variant="muted">{categoryLabel(line.category, line.teamType)}</Badge>
+                            <Badge variant="muted">{line.group === "pro_labore" ? COMPANY_COST_GROUP_LABELS.pro_labore : categoryLabel(line.category, line.teamType)}</Badge>
                             <Badge variant="outline">{line.isFixed ? FIXED_VARIABLE_LABELS.fixed : FIXED_VARIABLE_LABELS.variable}</Badge>
                           </span>
                         </td>
