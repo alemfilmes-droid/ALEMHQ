@@ -485,3 +485,59 @@ Agenda, Orçamentos, Financeiro (nome marcado e listas de escolha).
 - **Anonimização**: títulos de pautas e descrições de lançamentos ficam (são a descrição do serviço); trocar também, se
   o Anderson pedir.
 - **Busca global do topo**: continua sendo só um campo sem função (fora do escopo deste lote).
+
+## Lote 10 — Agenda do CEO, gestão da prospecção e "Equipe e colaboradores" (pedido do Anderson, 12/10/2026)
+
+### Diagnóstico
+- **Prazos do CRM na agenda do Anderson**: cada negócio tem uma pauta-espelho cujo responsável é quem está com a bola
+  (Bloco 5); em "Qualificado" a bola vai para o CEO. A agenda do HQ (agenda_feed) e a sincronização com o Google
+  mostravam o prazo dessa pauta para quem está com a bola. Os 5 citados (Núcleo Educacional Semear, NEC Pinguinho de
+  Gente, Escola Ativa, Ícaro Colégio e Curso, Colégio Vitória Kids) estavam em Qualificado com a bola com o Anderson, e
+  os 5 — mais 1 — estavam no Google dele: **6 eventos "Prazo:" do CRM criados pelo HQ** (mais 1 prazo do financeiro,
+  que não é do CRM e fica).
+- **Head comercial** já existia (head com o squad Comercial ou líder do squad Comercial): nenhuma mudança de papel.
+- **Pró-labore** já existia como categoria (30 lançamentos); "Equipe e colaboradores" era só um grupo do relatório
+  Custos da empresa. Favorecido: pessoa do HQ (payee_profile_id) ou nome digitado. 15 despesas (13 Software,
+  1 Deslocamento, 1 Outro) tinham uma pessoa do HQ como favorecida — reembolsos: decisão do Anderson, ficam em "Outro"
+  com a marca "Reembolso de despesa" e, ligados a cliente/projeto, saem dos custos da empresa.
+
+### 1. Prazos do CRM fora da agenda do CEO
+Regra única `crm_pauta_on_agenda_rule` (SQL) = `crmPautaOnAgenda` (lib/agenda/crm-items.ts), mesmos 8 casos nos dois:
+item da pauta-espelho do CRM só para quem está com a bola, nunca para o CEO. Usada pela agenda do HQ (agenda_feed
+recriada com o mesmo corpo) e pela sincronização do Google (lib/google/calendar.server.ts) — o que deixa de valer é
+apagado do Google na próxima sincronização, só os eventos que o HQ criou (marca própria do HQ em cada evento). As
+reuniões "com Anderson" continuam (são compromissos da agenda, não a pauta-espelho). Bola, notificações e o card do
+negócio não mudam. Conferido com as contas reais (contagem, em rollback): agenda do CEO 6 → 0 prazos do CRM; quem está
+com a bola (não CEO) 10 → 10.
+
+### 2. "Gerenciar prospecção" (CEO/admin e Head comercial)
+Menu "Gerenciar" no card do lead (Chamar hoje/Prospecção) e na seção Prospecção do negócio: Editar cadência (playbook,
+próximo toque e data — dia útil), Reiniciar cadência (Toque 1, ou Toque 0 sem decisor; toques antigos marcados "ciclo
+anterior" no histórico), Remover da prospecção (sai da cadência e das listas; o negócio segue no funil; volta com
+Reiniciar) e Apagar prospecção (separado, na cor de erro; digitar o nome do lead; apaga toques e as tentativas que eles
+criaram na linha do tempo, objeções, rascunhos e dados da cadência; o negócio fica; metas de toques recalculam sozinhas).
+Permissão: `canManageLeadCadence` (tela/ações) e `can_manage_lead_cadence()` (cada função do banco); as colunas de gestão
+só mudam pelas funções (gatilho). Registro imutável `prospect_management_log`.
+
+### 3. Equipe e colaboradores
+"Pessoal/Equipe" passa a se chamar **Equipe e colaboradores**, com tipo (Pró-labore, Comissão, Pagamento a colaborador)
+e as marcas "Pró-labore" e "Reembolso de despesa". Regra única `payable_team_rule` (SQL) = `teamCategoryRule`
+(lib/finance/team-category.ts), 13 casos nos dois, aplicada por gatilho ao criar e ao editar categoria/favorecido/marcas
+(dar baixa não mexe), inclusive na edição de lançamento já pago; cada troca automática vai para o histórico com
+"Categorização automática: equipe e colaboradores". A comissão passa a ser reconhecida pelo tipo (avisos e comemoração
+iguais). "Comissão" e "Pró-labore" saem da lista de categorias (viram tipos). Relatórios: Custos por categoria e Custos
+da empresa mostram Equipe por tipo. Formulário: categoria travada com a nota "Definida automaticamente: …", seletor de
+tipo, destrava e pede outra categoria quando o favorecido deixa de ser da equipe.
+**Lançamentos antigos não mudam nesta migração**: a lista do que mudaria vai para o Anderson confirmar antes.
+
+**Migrações**: `20261024090000_crm_deadlines_off_ceo_agenda.sql`, `20261024090100_prospecting_management.sql`,
+`20261024090200_team_payments.sql`.
+
+**Testes**: 326 no código (novos: agenda 8 casos, cadência editar/reiniciar 6, permissão da gestão 2, equipe 15).
+Cenário no banco em rollback (25 passos ok): casos da agenda 8/8 e da equipe 13/13 iguais ao código; SDR barrado ao
+remover e ao mexer direto nas colunas de gestão; editar (toque fora do playbook recusado); remover (negócio segue no
+funil); reiniciar; apagar (nome errado recusado; 1 toque e 1 tentativa apagados; negócio continua); registro imutável;
+favorecido do HQ → Equipe · Pagamento a colaborador com histórico; reembolso ligado a cliente → Outro, fora dos custos
+da empresa; pró-labore; fornecedor livre; favorecido sai do HQ → destrava; lançamento pago editado → categoria
+automática com pago/valor/vencimento iguais; comissão pela categoria antiga → Equipe · Comissão, com aviso e
+comemoração; lançamentos antigos intocados (0). Formulário testado numa página de teste (computador e celular 375 px).

@@ -15,7 +15,7 @@ import type { DealStage, ProspectAudience, ProspectTouchZeroVariant, Tables } fr
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 export const LEAD_COLUMNS =
-  "id, stage, archived_at, next_action_at, prospect_playbook_id, prospect_lead_type, prospect_contact_is_decision_maker, prospect_decision_maker_name, prospect_decision_maker_role, prospect_decision_maker_whatsapp, prospect_decision_maker_set_at, prospect_hook, prospect_goal_id, prospect_last_delivered_project, prospect_cadence_started_at, prospect_replied_at, prospect_paused_at, prospect_pause_reason, prospect_resumed_at, prospect_discarded_at, prospect_discard_reason, prospect_manual_reactivation_on, prospect_cadence_restarted_at, prospect_house_return_on, prospect_origin_deal_id" as const;
+  "id, stage, archived_at, next_action_at, prospect_playbook_id, prospect_lead_type, prospect_contact_is_decision_maker, prospect_decision_maker_name, prospect_decision_maker_role, prospect_decision_maker_whatsapp, prospect_decision_maker_set_at, prospect_hook, prospect_goal_id, prospect_last_delivered_project, prospect_cadence_started_at, prospect_replied_at, prospect_paused_at, prospect_pause_reason, prospect_resumed_at, prospect_discarded_at, prospect_discard_reason, prospect_manual_reactivation_on, prospect_cadence_restarted_at, prospect_house_return_on, prospect_origin_deal_id, prospect_override_touch, prospect_override_due, prospect_override_at, prospect_removed_at" as const;
 
 export type ProspectLeadRow = Pick<
   Tables["deals"]["Row"],
@@ -44,6 +44,10 @@ export type ProspectLeadRow = Pick<
   | "prospect_cadence_restarted_at"
   | "prospect_house_return_on"
   | "prospect_origin_deal_id"
+  | "prospect_override_touch"
+  | "prospect_override_due"
+  | "prospect_override_at"
+  | "prospect_removed_at"
 >;
 
 export interface PlaybookCadence {
@@ -132,12 +136,17 @@ export function toCadenceLead(row: ProspectLeadRow): CadenceLead {
     houseReturnOn: row.prospect_house_return_on,
     // Em análise, a data de retorno é a próxima ação do negócio (o banco exige as duas juntas).
     analysisReturnOn: row.stage === "em_analise" && row.next_action_at ? todayInAppZone(new Date(row.next_action_at)) : null,
+    override:
+      row.prospect_override_at && row.prospect_override_touch !== null && row.prospect_override_due
+        ? { touch: row.prospect_override_touch, due: row.prospect_override_due, at: row.prospect_override_at }
+        : null,
   };
 }
 
 /** Estados de cadência dos leads com playbook que a pessoa enxerga (RLS de deals). `dealId` restringe a um. */
 export async function loadLeadCadences(supabase: Supabase, dealId?: string): Promise<Map<string, LeadCadence>> {
-  let leads = supabase.from("deals").select(LEAD_COLUMNS).not("prospect_playbook_id", "is", null);
+  // Removido da prospecção pela gestão: fora da cadência e das listas (o negócio segue no funil).
+  let leads = supabase.from("deals").select(LEAD_COLUMNS).not("prospect_playbook_id", "is", null).is("prospect_removed_at", null);
   // Toque riscado (abordagem excluída com motivo) não conta na cadência.
   let touches = supabase.from("prospect_touch_logs").select("deal_id, touch_number, sent_at").is("deleted_at", null);
   if (dealId) {

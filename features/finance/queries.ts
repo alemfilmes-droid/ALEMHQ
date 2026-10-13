@@ -29,6 +29,7 @@ import type { Database } from "@/types/database";
 import { getCompanySettings } from "@/features/settings/queries";
 import { canEditSettled } from "@/lib/finance/settled-edit";
 import { deletedClientLabel } from "@/lib/clients/deletion";
+import { TEAM_CATEGORY, teamBreakdown } from "@/lib/finance/team-category";
 import { marginStatusFor } from "@/lib/margin";
 import type { MarginStatus, PayableCategory, PaymentMethod } from "@/types";
 
@@ -150,6 +151,9 @@ function mapPayable(row: PayableRow): PayableItem | null {
     version: row.version ?? 1,
     editedAt: row.edited_at,
     commissionGoalId: row.commission_goal_id ?? null,
+    teamPaymentType: row.team_payment_type ?? null,
+    isProLabore: row.is_pro_labore ?? false,
+    isReimbursement: row.is_reimbursement ?? false,
   };
 }
 
@@ -539,7 +543,7 @@ export async function getCategoryCosts(period: Period): Promise<CategoryCostItem
   const supabase = await financeClient();
   const { data, error } = await supabase
     .from("payables_with_status")
-    .select("category, amount, is_fixed, status")
+    .select("category, team_payment_type, amount, is_fixed, status")
     .gte("due_date", period.from)
     .lte("due_date", period.to)
     .neq("status", "cancelado");
@@ -553,8 +557,14 @@ export async function getCategoryCosts(period: Period): Promise<CategoryCostItem
     else entry.variable += toCents(row.amount);
     totals.set(row.category, entry);
   }
+  const rows = (data ?? []).flatMap((row) => (row.category ? [{ category: row.category, teamType: row.team_payment_type, amount: toCents(row.amount) }] : []));
   return Array.from(totals.entries())
-    .map(([category, sums]) => ({ category, fixedTotal: sums.fixed, variableTotal: sums.variable }))
+    .map(([category, sums]) => ({
+      category,
+      fixedTotal: sums.fixed,
+      variableTotal: sums.variable,
+      teamBreakdown: category === TEAM_CATEGORY ? teamBreakdown(rows.filter((row) => row.category === TEAM_CATEGORY)) : [],
+    }))
     .sort((a, b) => b.fixedTotal + b.variableTotal - (a.fixedTotal + a.variableTotal));
 }
 

@@ -33,6 +33,7 @@ function lead(overrides: Partial<CadenceLead> = {}): CadenceLead {
     restartedAt: null,
     houseReturnOn: null,
     analysisReturnOn: null,
+    override: null,
     ...overrides,
   };
 }
@@ -355,5 +356,49 @@ describe("horário efetivo e registros riscados", () => {
     // Quem chama a função já filtra os riscados (deleted_at): sem o Toque 2, o próximo é o 2 de novo.
     const state = getCadenceState(lead(), [sent(1, "2026-10-13")], SAZONAL, calendar, "2026-10-16");
     assert.equal(state?.currentTouch, 2);
+  });
+});
+
+describe("gestão: editar cadência", () => {
+  const edited = (touch: number, due: string, at_: string) => lead({ override: { touch, due, at: at_ } });
+
+  it("o próximo envio é o toque e o dia escolhidos, ignorando os toques anteriores", () => {
+    const l = edited(3, "2026-10-22", at("2026-10-20", "09:00"));
+    const s = state(l, [sent(1, "2026-10-13"), sent(2, "2026-10-15")], "2026-10-20");
+    assert.equal(s.currentTouch, 3);
+    assert.equal(s.nextDueDate, "2026-10-22");
+    assert.equal(s.status, "em_cadencia");
+  });
+
+  it("data escolhida num feriado vai para o próximo dia útil", () => {
+    assert.equal(state(edited(2, "2026-11-02", at("2026-10-30")), [], "2026-10-30").nextDueDate, "2026-11-03");
+  });
+
+  it("depois de enviar o toque escolhido, segue a cadência normal a partir dele", () => {
+    const l = edited(2, "2026-10-21", at("2026-10-20", "09:00"));
+    const s = state(l, [sent(1, "2026-10-13"), sent(2, "2026-10-21")], "2026-10-21");
+    assert.equal(s.currentTouch, 3);
+    assert.equal(s.nextDueDate, "2026-10-26");
+  });
+
+  it("resposta antiga (antes da edição) não para a cadência", () => {
+    const l = { ...edited(2, "2026-10-21", at("2026-10-20", "09:00")), repliedAt: at("2026-10-14") };
+    assert.equal(state(l, [sent(1, "2026-10-13")], "2026-10-21").status, "chamar_hoje");
+  });
+});
+
+describe("gestão: reiniciar cadência", () => {
+  it("com decisor: recomeça do Toque 1 no dia do reinício; toques antigos são do ciclo anterior", () => {
+    const l = lead({ restartedAt: at("2026-10-20", "09:00") });
+    const s = state(l, [sent(1, "2026-10-13"), sent(2, "2026-10-15"), sent(3, "2026-10-19")], "2026-10-20");
+    assert.equal(s.currentTouch, 1);
+    assert.equal(s.nextDueDate, "2026-10-20");
+  });
+
+  it("sem decisor: recomeça do Toque 0", () => {
+    const l = lead({ contactIsDecisionMaker: false, restartedAt: at("2026-10-20", "09:00") });
+    const s = state(l, [sent(0, "2026-10-13")], "2026-10-20");
+    assert.equal(s.currentTouch, 0);
+    assert.equal(s.nextDueDate, "2026-10-20");
   });
 });

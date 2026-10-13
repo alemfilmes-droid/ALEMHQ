@@ -1,0 +1,10 @@
+[
+  { "name": "SDR com a bola vê o prazo na própria agenda", "assignee": "sdr", "people": ["sdr"], "expected": true },
+  { "name": "CEO com a bola (Qualificado) não vê o prazo", "assignee": "ceo", "people": ["ceo"], "expected": false },
+  { "name": "CEO com a bola, vendo a agenda do SDR junto: continua fora", "assignee": "ceo", "people": ["ceo", "sdr"], "expected": false },
+  { "name": "CEO vendo a agenda do SDR: o prazo do SDR aparece", "assignee": "sdr", "people": ["sdr"], "expected": true },
+  { "name": "bola com o SDR: não vai para a agenda do CEO", "assignee": "sdr", "people": ["ceo"], "expected": false },
+  { "name": "Head comercial com a bola vê o prazo", "assignee": "head", "people": ["head"], "expected": true },
+  { "name": "sem ninguém com a bola (perdido)", "assignee": null, "people": ["sdr"], "expected": false },
+  { "name": "sem CEO cadastrado: vale só a bola", "assignee": "sdr", "people": ["sdr"], "ceo": null, "expected": true }
+]

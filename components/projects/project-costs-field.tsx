@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PAYABLE_CATEGORIES, PAYABLE_CATEGORY_LABELS } from "@/features/finance/labels";
+import { MANUAL_PAYABLE_CATEGORIES, PAYABLE_CATEGORY_LABELS } from "@/features/finance/labels";
 import type { ProjectValues } from "@/lib/validations/project";
 
 interface ProjectCostsFieldProps {
@@ -55,7 +55,7 @@ export function ProjectCostsField({ control, register, errors }: ProjectCostsFie
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {PAYABLE_CATEGORIES.map((category) => (
+                          {MANUAL_PAYABLE_CATEGORIES.map((category) => (
                             <SelectItem key={category} value={category}>
                               {PAYABLE_CATEGORY_LABELS[category]}
                             </SelectItem>

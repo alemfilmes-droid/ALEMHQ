@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { PAYABLE_CATEGORIES, PAYABLE_RECURRENCES, PAYMENT_METHODS } from "@/features/finance/labels";
 import { parseMoneyToCents } from "@/features/finance/money";
+import { TEAM_PAYMENT_TYPES } from "@/lib/finance/team-category";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.");
 const optionalIsoDate = isoDate.or(z.literal(""));
@@ -78,6 +79,10 @@ const payableObject = z.object({
   payeeAccountType: z.enum(["corrente", "poupanca", "pagamento"]).or(z.literal("")),
   /** "Referente a: Comissão": a meta ligada (opcional). */
   commissionGoalId: optionalUuid,
+  /** Equipe e colaboradores: marcas e tipo (o banco aplica a mesma regra — lib/finance/team-category). */
+  isProLabore: z.boolean(),
+  isReimbursement: z.boolean(),
+  teamPaymentType: z.enum(TEAM_PAYMENT_TYPES).or(z.literal("")),
 });
 
 /** Regras de criação/edição do pagamento — as mesmas valem na edição de um lançamento já baixado. */
@@ -91,7 +96,7 @@ function payableRules(data: z.infer<typeof payableObject>, ctx: z.RefinementCtx)
   if (data.costType === "projeto" && data.projectId === "") {
     ctx.addIssue({ code: "custom", path: ["projectId"], message: "Selecione o projeto." });
   }
-  if (data.category === "comissao" && !data.payeeProfileId) {
+  if (data.teamPaymentType === "comissao" && !data.payeeProfileId) {
     ctx.addIssue({ code: "custom", path: ["payeeProfileId"], message: "Comissão: escolha a pessoa da equipe que recebe." });
   }
 }

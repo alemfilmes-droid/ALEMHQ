@@ -32,8 +32,11 @@ function payableFields(data: Omit<PayableValues, "recurrence" | "recurrenceUntil
     payee_bank_agency: data.payeeProfileId ? null : orNull(data.payeeBankAgency),
     payee_bank_account: data.payeeProfileId ? null : orNull(data.payeeBankAccount),
     payee_account_type: data.payeeProfileId || data.payeeAccountType === "" ? null : data.payeeAccountType,
-    // "Referente a: Comissão": meta ligada (opcional) — só faz sentido na categoria comissão.
-    commission_goal_id: data.category === "comissao" ? orNull(data.commissionGoalId) : null,
+    // "Referente a: Comissão": meta ligada (opcional) — só faz sentido no tipo comissão.
+    commission_goal_id: data.teamPaymentType === "comissao" ? orNull(data.commissionGoalId) : null,
+    is_pro_labore: data.isProLabore,
+    is_reimbursement: data.isReimbursement,
+    team_payment_type: data.teamPaymentType === "" ? null : data.teamPaymentType,
   };
 }
 

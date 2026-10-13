@@ -3,6 +3,7 @@ import { COMPANY_COST_GROUPS, COMPANY_COST_GROUP_OF, PAYABLE_CATEGORIES, type Co
 import { sumCents, toCents, type Cents } from "@/features/finance/money";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { teamBreakdown, type TeamPaymentType } from "@/lib/finance/team-category";
 import { createClient } from "@/lib/supabase/server";
 import type { PayableCategory } from "@/types";
 
@@ -19,6 +20,7 @@ export interface CompanyCostLine {
   id: string;
   description: string;
   category: PayableCategory;
+  teamType: TeamPaymentType | null;
   payeeLabel: string | null;
   payeeProfileId: string | null;
   amount: Cents;
@@ -32,6 +34,8 @@ export interface CompanyCostGroupTotal {
   total: Cents;
   fixed: Cents;
   variable: Cents;
+  /** Equipe e colaboradores por tipo (só no grupo Equipe). */
+  teamBreakdown: { type: TeamPaymentType; total: Cents }[];
 }
 
 export interface CompanyCostPerson {
@@ -109,7 +113,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
 
   let payablesQuery = supabase
     .from("payables_with_status")
-    .select("id, description, category, payee_label, payee_profile_id, amount, is_fixed, due_date, status")
+    .select("id, description, category, team_payment_type, payee_label, payee_profile_id, amount, is_fixed, due_date, status")
     .eq("cost_scope", "empresa")
     .neq("status", "cancelado")
     .gte("due_date", from)
@@ -133,6 +137,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
             id: row.id,
             description: row.description ?? "",
             category: row.category,
+            teamType: row.team_payment_type,
             payeeLabel: row.payee_label,
             payeeProfileId: row.payee_profile_id,
             amount: toCents(row.amount),
@@ -165,7 +170,7 @@ export async function getCompanyCosts(filters: CompanyCostFilters): Promise<Comp
     const inGroup = monthLines.filter((line) => COMPANY_COST_GROUP_OF[line.category] === group);
     const fixed = sumCents(inGroup.filter((line) => line.isFixed).map((line) => line.amount));
     const variable = sumCents(inGroup.filter((line) => !line.isFixed).map((line) => line.amount));
-    return { group, fixed, variable, total: fixed + variable };
+    return { group, fixed, variable, total: fixed + variable, teamBreakdown: group === "equipe" ? teamBreakdown(inGroup) : [] };
   });
 
   const profiles = new Map((people.data ?? []).map((person) => [person.id, person]));

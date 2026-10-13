@@ -20,6 +20,12 @@ export const PAYABLE_CATEGORIES = [
   "outro",
 ] as const satisfies readonly PayableCategory[];
 
+/**
+ * Categorias que a pessoa escolhe no formulário. "Comissão" e "Pró-labore" viraram tipos dentro de
+ * "Equipe e colaboradores" (continuam valendo nos lançamentos antigos, até a recategorização).
+ */
+export const MANUAL_PAYABLE_CATEGORIES = PAYABLE_CATEGORIES.filter((category) => category !== "comissao" && category !== "pro_labore");
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   pix: "Pix",
   boleto: "Boleto",
@@ -30,7 +36,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 export const PAYABLE_CATEGORY_LABELS: Record<PayableCategory, string> = {
-  pessoal: "Pessoal/Equipe",
+  pessoal: "Equipe e colaboradores",
   comissao: "Comissão",
   pro_labore: "Pró-labore",
   freelancer: "Freelancer",

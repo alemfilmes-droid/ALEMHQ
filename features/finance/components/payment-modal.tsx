@@ -18,12 +18,13 @@ import { ReverseSettlementDialog } from "@/features/finance/components/reverse-s
 import { SettledPayableDialog } from "@/features/finance/components/settled-payable-dialog";
 import { SettlePayableDialog } from "@/features/finance/components/settle-dialogs";
 import { StatusBadge } from "@/features/finance/components/status-badge";
-import { PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from "@/features/finance/labels";
+import { PAYMENT_METHOD_LABELS } from "@/features/finance/labels";
 import { formatCents } from "@/features/finance/money";
 import type { FinanceOptions, PayableItem } from "@/features/finance/types";
 import { CopyValue, PayeePaymentDetails } from "@/features/goals/components/payee-payment-details";
 import { BANK_ACCOUNT_TYPE_LABELS, PIX_KEY_TYPE_LABELS } from "@/features/goals/types";
 import { formatDate } from "@/lib/format";
+import { categoryLabel } from "@/lib/finance/team-category";
 
 /** "Agendado para dd/mm" — e se a data passou sem baixa. */
 export function ScheduledMarker({ item, today }: { item: PayableItem; today: string }) {
@@ -137,7 +138,7 @@ export function PaymentModal({ item, options, today, onOpenChange }: { item: Pay
               ) : (
                 "Custo da empresa"
               )}{" "}
-              · {PAYABLE_CATEGORY_LABELS[item.category]}
+              · {categoryLabel(item.category, item.teamPaymentType)}
             </DialogDescription>
           </DialogHeader>
 

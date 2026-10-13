@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { crmPautaOnAgenda } from "@/lib/agenda/crm-items";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
 import type { CommitmentKind, Squad } from "@/types";
@@ -203,10 +204,11 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
   const fromDay = dateInZone(fromIso);
   const toDay = dateInZone(toIso);
 
-  const [owned, attending, membership] = await Promise.all([
+  const [owned, attending, membership, ceo] = await Promise.all([
     admin.from("commitments").select("*").eq("owner_id", profileId).neq("status", "cancelado").lte("starts_at", toIso),
     admin.from("commitments").select("*").contains("attendees", [profileId]).neq("status", "cancelado").lte("starts_at", toIso),
     admin.from("pauta_members").select("pauta_id").eq("profile_id", profileId),
+    admin.rpc("ceo_id"),
   ]);
 
   const commitments = new Map([...(owned.data ?? []), ...(attending.data ?? [])].map((row) => [row.id, row]));
@@ -250,9 +252,9 @@ async function desiredEventsFor(profileId: string, windowStart: Date, windowEnd:
 
   for (const pauta of pautas ?? []) {
     if (!pauta.id || !pauta.title) continue;
-    // Negócio do CRM só vai para o Google de quem está com a bola (o SDR não enche a agenda do CEO). O que
-    // deixa de valer aqui é apagado do Google na próxima sincronização — só a cópia, nunca a tarefa.
-    if (pauta.source === "crm" && pauta.current_assignee_id !== profileId) continue;
+    // Negócio do CRM: só no Google de quem está com a bola, e nunca no do CEO (mesma regra da agenda do HQ). O
+    // que deixa de valer aqui é apagado do Google na próxima sincronização — só a cópia, nunca a tarefa.
+    if (pauta.source === "crm" && !crmPautaOnAgenda(pauta.current_assignee_id, [profileId], ceo.data ?? null)) continue;
     const url = link(`/minhas-pautas?pauta=${pauta.id}`);
     const client = pauta.company_name ? ` · ${pauta.company_name}` : "";
     if (pauta.scheduled_at && !linkedPautas.has(pauta.id) && pauta.scheduled_at >= fromIso && pauta.scheduled_at <= toIso) {

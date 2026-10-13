@@ -2,11 +2,12 @@
 
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { MethodSelect } from "@/features/finance/components/method-select";
-import { PAYABLE_CATEGORIES, PAYABLE_CATEGORY_LABELS, PAYABLE_RECURRENCES, PAYABLE_RECURRENCE_LABELS } from "@/features/finance/labels";
+import { MANUAL_PAYABLE_CATEGORIES, PAYABLE_CATEGORY_LABELS, PAYABLE_RECURRENCES, PAYABLE_RECURRENCE_LABELS } from "@/features/finance/labels";
 import { PAYABLE_COST_TYPES, type PayableCostType, type PayableValues } from "@/features/finance/schemas";
 import { centsToInput } from "@/features/finance/money";
 import type { FinanceOptions, PayableItem } from "@/features/finance/types";
 import { Alert } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -15,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { PayeePaymentDetails } from "@/features/goals/components/payee-payment-details";
 import { BANK_ACCOUNT_TYPE_LABELS, BANK_ACCOUNT_TYPES, PIX_KEY_TYPE_LABELS, PIX_KEY_TYPES } from "@/features/goals/types";
+import { useTeamCategory } from "@/features/finance/components/use-team-category";
+import { CATEGORY_LOCK_NOTES, TEAM_PAYMENT_TYPE_LABELS, teamTypeOf } from "@/lib/finance/team-category";
 import { cn } from "@/lib/utils";
 
 const NO_PROJECT = "none";
@@ -48,6 +51,9 @@ export function payableValuesFrom(item: PayableItem): PayableValues {
     payeeBankAccount: item.payee.account ?? "",
     payeeAccountType: item.payee.accountType ?? "",
     commissionGoalId: item.commissionGoalId ?? "",
+    isProLabore: item.isProLabore,
+    isReimbursement: item.isReimbursement,
+    teamPaymentType: teamTypeOf(item.category, item.teamPaymentType) ?? "",
   };
 }
 
@@ -71,7 +77,8 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
     formState: { errors },
   } = form;
   const payeeProfileId = watch("payeeProfileId");
-  const commission = watch("category") === "comissao";
+  const team = useTeamCategory(form);
+  const commission = team.teamType === "comissao";
   const goalsOfPayee = options.commissionGoals.filter((goal) => goal.ownerId === payeeProfileId);
   const costType = watch("costType");
   const isRecurring = watch("recurrence") !== "none";
@@ -152,17 +159,22 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
       )}
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <FormField id="pay-category" label="Categoria" error={errors.category?.message}>
+        <FormField
+          id="pay-category"
+          label="Categoria"
+          error={errors.category?.message}
+          hint={team.lock ? CATEGORY_LOCK_NOTES[team.lock] : undefined}
+        >
           <Controller
             control={control}
             name="category"
             render={({ field }) => (
-              <Select value={field.value || undefined} onValueChange={field.onChange}>
+              <Select value={field.value || undefined} onValueChange={field.onChange} disabled={team.lock !== null}>
                 <SelectTrigger id="pay-category" aria-invalid={!!errors.category}>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYABLE_CATEGORIES.map((category) => (
+                  {MANUAL_PAYABLE_CATEGORIES.map((category) => (
                     <SelectItem key={category} value={category}>
                       {PAYABLE_CATEGORY_LABELS[category]}
                     </SelectItem>
@@ -201,6 +213,57 @@ export function PayableFields({ form, options, lockedProjectId, settled = false,
           />
         </FormField>
       </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
+          <Controller
+            control={control}
+            name="isProLabore"
+            render={({ field }) => (
+              <Checkbox className="size-5" aria-label="Pró-labore" checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
+            )}
+          />
+          Pró-labore
+        </label>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
+          <Controller
+            control={control}
+            name="isReimbursement"
+            render={({ field }) => (
+              <Checkbox
+                className="size-5"
+                aria-label="Reembolso de despesa"
+                checked={field.value}
+                disabled={team.isProLabore}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+            )}
+          />
+          Reembolso de despesa
+        </label>
+      </div>
+      {team.isReimbursement && !team.isProLabore ? (
+        <p className="text-[12px] text-muted-foreground">
+          Reembolso fica em “Outro” e não conta como pagamento à equipe. Ligado a um cliente ou projeto, sai dos custos da empresa.
+        </p>
+      ) : null}
+
+      {team.teamType ? (
+        <FormField id="pay-team-type" label="Tipo (equipe e colaboradores)">
+          <NativeSelect
+            id="pay-team-type"
+            value={team.teamType}
+            disabled={team.teamType === "pro_labore"}
+            onChange={(event) => setValue("teamPaymentType", event.target.value as typeof team.teamType, { shouldValidate: true })}
+          >
+            {team.typeOptions.map((type) => (
+              <option key={type} value={type}>
+                {TEAM_PAYMENT_TYPE_LABELS[type]}
+              </option>
+            ))}
+          </NativeSelect>
+        </FormField>
+      ) : null}
 
       {commission ? (
         <div className="space-y-3 rounded-md border border-border-strong p-3">

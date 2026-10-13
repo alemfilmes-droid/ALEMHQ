@@ -7,6 +7,7 @@ import { ChartCard } from "@/features/finance/components/charts/chart-card";
 import { PAYABLE_CATEGORY_LABELS } from "@/features/finance/labels";
 import { formatCentsCompact } from "@/features/finance/money";
 import type { CategoryCostItem } from "@/features/finance/types";
+import { TEAM_PAYMENT_TYPE_LABELS } from "@/lib/finance/team-category";
 import { CHART_AXIS_TICK, CHART_CATEGORY_COLORS, CHART_GRID, CHART_TOOLTIP_STYLE } from "@/lib/chart-colors";
 import { EmptyState } from "@/features/finance/components/table-shell";
 import { Layers } from "lucide-react";
@@ -26,6 +27,11 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Tooltip
       <p className="mb-1 font-bold">{PAYABLE_CATEGORY_LABELS[category.category]}</p>
       <p>Fixo: <Money cents={category.fixedTotal} /></p>
       <p>Variável: <Money cents={category.variableTotal} /></p>
+      {category.teamBreakdown.map((item) => (
+        <p key={item.type}>
+          {TEAM_PAYMENT_TYPE_LABELS[item.type]}: <Money cents={item.total} />
+        </p>
+      ))}
     </div>
   );
 }

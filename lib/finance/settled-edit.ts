@@ -2,6 +2,7 @@ import { PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from "@/features/finan
 import { formatCents, toCents } from "@/features/finance/money";
 import { BANK_ACCOUNT_TYPE_LABELS, PIX_KEY_TYPE_LABELS } from "@/features/goals/types";
 import { formatDateShort } from "@/lib/format";
+import { TEAM_PAYMENT_TYPE_LABELS, type TeamPaymentType } from "@/lib/finance/team-category";
 import type { BankAccountType, PayableCategory, PaymentMethod, PixKeyType, Squad } from "@/types";
 
 /**
@@ -21,6 +22,7 @@ export const SETTLED_FIELDS: Record<FinanceEntryType, readonly string[]> = {
     "payee_pix_key_type", "payee_pix_key", "payee_holder_name", "payee_document", "payee_bank_name",
     "payee_bank_agency", "payee_bank_account", "payee_account_type", "amount", "due_date", "notes",
     "paid_at", "payment_method", "payment_receipt_url", "late_reason", "penalty_amount", "penalty_reason",
+    "team_payment_type", "is_pro_labore", "is_reimbursement",
   ],
   receivable: [
     "company_id", "project_id", "description", "service_description", "competence_month", "amount",
@@ -101,6 +103,9 @@ const FIELD_LABELS: Record<string, string> = {
   invoice_file_path: "Arquivo da nota",
   received_at: "Data do recebimento",
   received_amount: "Valor recebido",
+  team_payment_type: "Tipo (equipe e colaboradores)",
+  is_pro_labore: "Pró-labore",
+  is_reimbursement: "Reembolso de despesa",
 };
 
 const MONEY_FIELDS = new Set(["amount", "penalty_amount", "original_amount", "received_amount"]);
@@ -122,6 +127,7 @@ export function formatHistoryValue(field: string, value: unknown, lookup?: NameL
   if (field === "invoice_file_path") return "arquivo anexado";
   if (field === "company_id" || field === "project_id" || field === "payee_profile_id") return lookup?.(field, value) ?? "(removido)";
   if (field === "category") return PAYABLE_CATEGORY_LABELS[value as PayableCategory] ?? value;
+  if (field === "team_payment_type") return TEAM_PAYMENT_TYPE_LABELS[value as TeamPaymentType] ?? value;
   if (field === "payment_method") return PAYMENT_METHOD_LABELS[value as PaymentMethod] ?? value;
   if (field === "payee_pix_key_type") return PIX_KEY_TYPE_LABELS[value as PixKeyType] ?? value;
   if (field === "payee_account_type") return BANK_ACCOUNT_TYPE_LABELS[value as BankAccountType] ?? value;

@@ -12,11 +12,12 @@ import { getCompanyCosts, type CompanyCostFilters } from "@/features/finance/com
 import {
   COMPANY_COST_GROUP_LABELS,
   FIXED_VARIABLE_LABELS,
-  PAYABLE_CATEGORIES,
+  MANUAL_PAYABLE_CATEGORIES,
   PAYABLE_CATEGORY_LABELS,
   type CompanyCostGroup,
 } from "@/features/finance/labels";
 import { formatCents } from "@/features/finance/money";
+import { categoryLabel, TEAM_PAYMENT_TYPE_LABELS } from "@/lib/finance/team-category";
 import type { FinanceOptions } from "@/features/finance/types";
 import { MonthSelector } from "@/features/time-tracking/components/month-selector";
 import { formatDate } from "@/lib/format";
@@ -53,7 +54,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
           <MonthSelector yearMonth={data.month} />
           <FilterPopover
             sections={[
-              { key: "categoria", label: "Categoria", options: PAYABLE_CATEGORIES.map((value) => ({ value, label: PAYABLE_CATEGORY_LABELS[value] })) },
+              { key: "categoria", label: "Categoria", options: MANUAL_PAYABLE_CATEGORIES.map((value) => ({ value, label: PAYABLE_CATEGORY_LABELS[value] })) },
               { key: "pessoa", label: "Pessoa", options: options.members.map((member) => ({ value: member.id, label: member.full_name })) },
               {
                 key: "fixo",
@@ -110,6 +111,15 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
               <p className="text-xs text-subtle">
                 Fixo <Money cents={group.fixed} /> · Variável <Money cents={group.variable} />
               </p>
+              {group.teamBreakdown.length > 0 ? (
+                <ul className="space-y-0.5 text-xs text-muted-foreground">
+                  {group.teamBreakdown.map((item) => (
+                    <li key={item.type}>
+                      {TEAM_PAYMENT_TYPE_LABELS[item.type]}: <Money cents={item.total} />
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </Card>
           ))}
         </div>
@@ -168,7 +178,7 @@ export async function CompanyCostsTab({ filters, options }: { filters: CompanyCo
                         </td>
                         <td className="py-2.5 pr-3">
                           <span className="flex flex-wrap gap-1">
-                            <Badge variant="muted">{PAYABLE_CATEGORY_LABELS[line.category]}</Badge>
+                            <Badge variant="muted">{categoryLabel(line.category, line.teamType)}</Badge>
                             <Badge variant="outline">{line.isFixed ? FIXED_VARIABLE_LABELS.fixed : FIXED_VARIABLE_LABELS.variable}</Badge>
                           </span>
                         </td>

@@ -8,6 +8,7 @@ import { useCrmFlow } from "@/features/crm/components/flow/crm-flow-provider";
 import { resumeLeadAction, markRespondedAction } from "@/features/prospeccao/cadence-actions";
 import { CadenceStatusTag } from "@/features/prospeccao/components/cadence-status-tag";
 import { HouseSwitcher } from "@/features/prospeccao/components/house-switcher";
+import { ManageProspectingMenu } from "@/features/prospeccao/components/manage/manage-prospecting-menu";
 import { MeetingBlock } from "@/features/prospeccao/components/meeting-block";
 import { MeetingDialog } from "@/features/prospeccao/components/meeting-dialog";
 import { ObjectionDialog } from "@/features/prospeccao/components/objection-dialog";
@@ -107,6 +108,12 @@ export function ProspectLeadCard({ item, today, canAct, objections }: Props) {
           {header}
         </button>
       )}
+
+      {flow.canManageCadence && !item.demo ? (
+        <div className="flex justify-end">
+          <ManageProspectingMenu dealId={item.dealId} />
+        </div>
+      ) : null}
 
       {item.meeting && !item.meeting.awaitingOutcome ? <MeetingBlock dealId={item.dealId} leadName={item.leadName} meeting={item.meeting} canAct={canAct} /> : null}
 

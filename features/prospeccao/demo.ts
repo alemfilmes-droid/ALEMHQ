@@ -34,6 +34,7 @@ export function demoQueueItems(today: string, calendar: HolidayCalendar): QueueI
     restartedAt: null,
     houseReturnOn: null,
     analysisReturnOn: null,
+    override: null,
   };
   const touch = (touchNumber: number | null, day: string): SentTouch => ({ touchNumber, sentAt: at(day) });
   const fullSazonal = (lastDay: string) => [touch(1, addDays(lastDay, -14)), touch(2, addDays(lastDay, -12)), touch(3, addDays(lastDay, -7)), touch(4, lastDay)];

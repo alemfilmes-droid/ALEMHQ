@@ -195,7 +195,7 @@ function DealDetailBody({ detail, options, canManageAll, reload }: { detail: Dea
 
           {detail.prospect && !closed ? (
             <Section id="prospeccao-title" title="Prospecção">
-              <ProspectSection dealId={deal.id!} prospect={detail.prospect} options={options.prospect} onSaved={reload} />
+              <ProspectSection dealId={deal.id!} prospect={detail.prospect} options={options.prospect} canManage={flow.canManageCadence} onSaved={reload} />
             </Section>
           ) : null}
 

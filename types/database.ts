@@ -1849,6 +1849,11 @@ export type Database = {
       }
       deals: {
         Row: {
+          prospect_override_at: string | null
+          prospect_override_due: string | null
+          prospect_override_touch: number | null
+          prospect_removed_at: string | null
+          prospect_removed_by: string | null
           archived_at: string | null
           code: string | null
           company_id: string
@@ -1904,6 +1909,11 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
+          prospect_override_at?: string | null
+          prospect_override_due?: string | null
+          prospect_override_touch?: number | null
+          prospect_removed_at?: string | null
+          prospect_removed_by?: string | null
           archived_at?: string | null
           code?: string | null
           company_id: string
@@ -1959,6 +1969,11 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
+          prospect_override_at?: string | null
+          prospect_override_due?: string | null
+          prospect_override_touch?: number | null
+          prospect_removed_at?: string | null
+          prospect_removed_by?: string | null
           archived_at?: string | null
           code?: string | null
           company_id?: string
@@ -3366,6 +3381,9 @@ export type Database = {
       }
       payables: {
         Row: {
+          is_pro_labore: boolean
+          is_reimbursement: boolean
+          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number
           cancel_reason: string | null
           cancelled_at: string | null
@@ -3415,6 +3433,9 @@ export type Database = {
           version: number
         }
         Insert: {
+          is_pro_labore?: boolean
+          is_reimbursement?: boolean
+          team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number
           cancel_reason?: string | null
           cancelled_at?: string | null
@@ -3466,6 +3487,9 @@ export type Database = {
           version?: number
         }
         Update: {
+          is_pro_labore?: boolean
+          is_reimbursement?: boolean
+          team_payment_type?: Database["public"]["Enums"]["team_payment_type"] | null
           amount?: number
           cancel_reason?: string | null
           cancelled_at?: string | null
@@ -6181,6 +6205,9 @@ export type Database = {
       }
       payables_with_status: {
         Row: {
+          is_pro_labore: boolean | null
+          is_reimbursement: boolean | null
+          team_payment_type: Database["public"]["Enums"]["team_payment_type"] | null
           amount: number | null
           cancel_reason: string | null
           cancelled_at: string | null
@@ -7927,6 +7954,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      prospect_manage_edit: {
+        Args: { p_deal_id: string; p_due: string; p_playbook_id: string; p_touch: number }
+        Returns: undefined
+      }
+      prospect_manage_erase: {
+        Args: { p_confirm_name: string; p_deal_id: string }
+        Returns: Json
+      }
+      prospect_manage_remove: { Args: { p_deal_id: string }; Returns: undefined }
+      prospect_manage_restart: {
+        Args: { p_deal_id: string; p_playbook_id: string }
+        Returns: undefined
+      }
       prospect_record_touch: {
         Args: {
           p_deal_id: string
@@ -8143,6 +8183,7 @@ export type Database = {
         | "estrutura"
         | "comissao"
         | "pro_labore"
+      team_payment_type: "pro_labore" | "comissao" | "pagamento_colaborador"
       payable_recurrence: "none" | "mensal" | "trimestral" | "anual"
       payment_method:
         | "pix"
@@ -8563,6 +8604,7 @@ export const Constants = {
         "comissao",
         "pro_labore",
       ],
+      team_payment_type: ["pro_labore", "comissao", "pagamento_colaborador"],
       payable_recurrence: ["none", "mensal", "trimestral", "anual"],
       payment_method: [
         "pix",

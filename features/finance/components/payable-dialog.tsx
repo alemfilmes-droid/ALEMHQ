@@ -62,6 +62,9 @@ function initialValues(props: PayableDialogProps): PayableValues {
     payeeBankAccount: "",
     payeeAccountType: "",
     commissionGoalId: "",
+    isProLabore: false,
+    isReimbursement: false,
+    teamPaymentType: "",
   };
 }
 

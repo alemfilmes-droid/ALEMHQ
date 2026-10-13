@@ -1,4 +1,5 @@
 import type { Cents } from "@/features/finance/money";
+import type { TeamPaymentType } from "@/lib/finance/team-category";
 import type { BankAccountType, DealStage, MarginStatus, PayableCategory, PayableRecurrence, PaymentMethod, PixKeyType, ProposalStatus } from "@/types";
 
 export const RECEIVABLE_STATUSES = ["pendente", "atrasado", "recebido", "cancelado"] as const;
@@ -74,6 +75,10 @@ export interface PayableItem {
   editedAt: string | null;
   /** "Referente a: Comissão": meta ligada. */
   commissionGoalId: string | null;
+  /** Equipe e colaboradores: Pró-labore, Comissão ou Pagamento a colaborador. */
+  teamPaymentType: TeamPaymentType | null;
+  isProLabore: boolean;
+  isReimbursement: boolean;
 }
 
 /** Uma linha do "Histórico de alterações" de um lançamento. */
@@ -199,6 +204,8 @@ export interface CategoryCostItem {
   category: PayableCategory;
   fixedTotal: Cents;
   variableTotal: Cents;
+  /** Equipe e colaboradores por tipo (vazio nas outras categorias). */
+  teamBreakdown: { type: TeamPaymentType; total: Cents }[];
 }
 
 /** Projeção comercial: negócio com proposta registrada e ainda não ganho/perdido. Nunca se mistura com recebíveis reais. */

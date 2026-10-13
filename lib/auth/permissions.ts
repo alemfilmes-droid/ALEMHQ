@@ -269,6 +269,20 @@ export function canDeleteClients(subject: Pick<Profile, "org_level">): boolean {
 }
 
 /**
+ * "Gerenciar prospecção" (editar, reiniciar, remover e apagar a cadência de um lead): CEO (master), admin e Head
+ * comercial — head com o squad Comercial ou líder do squad Comercial. O SDR nunca. Espelha
+ * can_manage_lead_cadence() no banco, que confere de novo em cada ação.
+ */
+export function canManageLeadCadence(subject: Pick<Profile, "access_role"> & HierarchySubject & { leadSquads?: readonly Squad[] }): boolean {
+  return (
+    subject.org_level === "master" ||
+    subject.access_role === "admin" ||
+    (subject.org_level === "head" && subject.squads.includes("comercial")) ||
+    (subject.leadSquads?.includes("comercial") ?? false)
+  );
+}
+
+/**
  * Espelha can_access_all_deals() no banco: gestão de todos os negócios do CRM (ver qualquer
  * negócio, reatribuir responsável, fechar como ganho) — diretoria, master, ou head do squad
  * comercial, ou quem lidera o squad comercial (liderança de squad, não cargo). Quem não se encaixa

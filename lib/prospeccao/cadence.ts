@@ -53,6 +53,11 @@ export interface CadenceLead {
   houseReturnOn: string | null;
   /** Etapa "Em análise": dia (yyyy-mm-dd) do retorno combinado — a cadência pausa até lá. */
   analysisReturnOn: string | null;
+  /**
+   * "Editar cadência" (gestão): o próximo envio é o toque `touch` no dia `due`; os toques enviados antes de `at`
+   * não contam para a numeração. Depois do primeiro envio, a cadência segue normal a partir dele.
+   */
+  override: { touch: number; due: string; at: string } | null;
 }
 
 export interface SentTouch {
@@ -156,7 +161,9 @@ export function getCadenceState(
   }
 
   const restart = lead.restartedAt;
-  const sorted = [...touches].filter((touch) => !restart || touch.sentAt >= restart).sort((a, b) => a.sentAt.localeCompare(b.sentAt));
+  // Início do ciclo atual: reinício ou edição (o que vier depois). Toques e resposta anteriores não contam.
+  const cycleStart = lead.override && (!restart || lead.override.at > restart) ? lead.override.at : restart;
+  const sorted = [...touches].filter((touch) => !cycleStart || touch.sentAt >= cycleStart).sort((a, b) => a.sentAt.localeCompare(b.sentAt));
   const last = sorted.at(-1) ?? null;
   const resumedDay = lead.resumedAt ? nextBusinessDay(dayOf(lead.resumedAt), calendar) : null;
   const reactivation = (due: string, waiting: CadenceStatus): CadenceState => {
@@ -175,7 +182,7 @@ export function getCadenceState(
   if (manual && !sorted.some((touch) => dayOf(touch.sentAt) >= manual)) return reactivation(manual, "em_cadencia");
 
   // Respondeu depois do último toque: a cadência para.
-  if (lead.repliedAt && (!restart || lead.repliedAt >= restart) && (!last || lead.repliedAt >= last.sentAt)) {
+  if (lead.repliedAt && (!cycleStart || lead.repliedAt >= cycleStart) && (!last || lead.repliedAt >= last.sentAt)) {
     return { ...base, status: "em_conversa" };
   }
 
@@ -188,14 +195,20 @@ export function getCadenceState(
     return reactivation(addDays(dayOf(last.sentAt), rules.reactivationDays), "sem_resposta");
   }
 
-  const needsTouchZero = !restart && !lead.houseReturnOn && !lead.contactIsDecisionMaker && !lead.decisionMakerSetAt;
   const pending = (touch: number, due: string): CadenceState => {
     const nextDueDate = laterDay(due, resumedDay);
     return { ...base, status: dueStatus(nextDueDate, today), currentTouch: touch, nextDueDate, applicableScript: scriptFor(lead, rules, touch) };
   };
 
+  // Editada pela gestão e nada enviado desde então: o toque e a data escolhidos.
+  if (lead.override && cycleStart === lead.override.at && highest < 0) {
+    return pending(Math.min(lead.override.touch, totalTouches), nextBusinessDay(lead.override.due, calendar));
+  }
+
+  // Sem decisor: começa (ou recomeça, no reinício) pelo Toque 0.
+  const needsTouchZero = !lead.houseReturnOn && !lead.contactIsDecisionMaker && !lead.decisionMakerSetAt;
   if (needsTouchZero) {
-    if (highest < 0) return pending(0, nextBusinessDay(dayOf(lead.cadenceStartedAt), calendar));
+    if (highest < 0) return pending(0, nextBusinessDay(dayOf(cycleStart ?? lead.cadenceStartedAt), calendar));
     return { ...base, status: "aguardando_decisor" };
   }
 

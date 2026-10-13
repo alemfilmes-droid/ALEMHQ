@@ -71,6 +71,8 @@ export interface TouchHistoryItem {
   sentBy: string | null;
   /** Abordagem riscada (excluída com motivo): aparece riscada e não conta. */
   struck: boolean;
+  /** Enviado antes do último reinício ou edição da cadência: ciclo anterior (não conta no ciclo atual). */
+  previousCycle: boolean;
 }
 
 /** Histórico de toques do card (carregado só quando a pessoa abre). */
@@ -78,10 +80,22 @@ export async function touchHistoryAction(dealId: string): Promise<TouchHistoryIt
   const profile = await getCurrentProfile();
   if (!profile || !hasCapability(profile, "crm") || !idSchema.safeParse(dealId).success) return [];
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("prospect_touch_logs")
-    .select("id, touch_number, sent_at, deleted_at, rendered_text, sender:profiles!prospect_touch_logs_sent_by_fkey(full_name)")
-    .eq("deal_id", dealId)
-    .order("sent_at", { ascending: false });
-  return (data ?? []).map((row) => ({ id: row.id, touchNumber: row.touch_number, sentAt: row.sent_at, text: row.rendered_text, sentBy: row.sender?.full_name ?? null, struck: row.deleted_at !== null }));
+  const [{ data }, { data: deal }] = await Promise.all([
+    supabase
+      .from("prospect_touch_logs")
+      .select("id, touch_number, sent_at, deleted_at, rendered_text, sender:profiles!prospect_touch_logs_sent_by_fkey(full_name)")
+      .eq("deal_id", dealId)
+      .order("sent_at", { ascending: false }),
+    supabase.from("deals").select("prospect_cadence_restarted_at, prospect_override_at").eq("id", dealId).maybeSingle(),
+  ]);
+  const cycleStart = [deal?.prospect_cadence_restarted_at, deal?.prospect_override_at].filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    touchNumber: row.touch_number,
+    sentAt: row.sent_at,
+    text: row.rendered_text,
+    sentBy: row.sender?.full_name ?? null,
+    struck: row.deleted_at !== null,
+    previousCycle: cycleStart !== null && row.sent_at < cycleStart,
+  }));
 }

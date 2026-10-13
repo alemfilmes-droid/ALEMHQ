@@ -18,7 +18,7 @@ import { ReceivableDialog } from "@/features/finance/components/receivable-dialo
 import { ReceivablesTable } from "@/features/finance/components/receivables-table";
 import {
   FIXED_VARIABLE_LABELS,
-  PAYABLE_CATEGORIES,
+  MANUAL_PAYABLE_CATEGORIES,
   PAYABLE_CATEGORY_LABELS,
   PAYABLE_COST_TYPE_FILTERS,
   PAYABLE_COST_TYPE_FILTER_LABELS,
@@ -191,7 +191,7 @@ async function PayablesTab({ params, period, options, today }: TabProps) {
               { key: "status", label: "Status", options: PAYABLE_STATUSES.map((value) => ({ value, label: STATUS_LABELS[value] })) },
               { key: "cliente", label: "Cliente", options: options.companies.map((item) => ({ value: item.id, label: item.name })) },
               { key: "projeto", label: "Projeto", options: options.projects.map((item) => ({ value: item.id, label: item.name })) },
-              { key: "categoria", label: "Categoria", options: PAYABLE_CATEGORIES.map((value) => ({ value, label: PAYABLE_CATEGORY_LABELS[value] })) },
+              { key: "categoria", label: "Categoria", options: MANUAL_PAYABLE_CATEGORIES.map((value) => ({ value, label: PAYABLE_CATEGORY_LABELS[value] })) },
               { key: "metodo", label: "Forma de pagamento", options: PAYMENT_METHODS.map((value) => ({ value, label: PAYMENT_METHOD_LABELS[value] })) },
               { key: "fixo", label: "Fixo ou variável", options: [{ value: "fixo", label: FIXED_VARIABLE_LABELS.fixed }, { value: "variavel", label: FIXED_VARIABLE_LABELS.variable }] },
               {

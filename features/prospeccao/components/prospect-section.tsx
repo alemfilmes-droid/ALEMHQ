@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CadenceStatusTag } from "@/features/prospeccao/components/cadence-status-tag";
+import { ManageProspectingMenu } from "@/features/prospeccao/components/manage/manage-prospecting-menu";
 import { ProspectFieldsInputs } from "@/features/prospeccao/components/prospect-fields-inputs";
 import { useSave } from "@/features/prospeccao/components/use-save";
 import { saveProspectFieldsAction } from "@/features/prospeccao/lead-actions";
@@ -28,18 +29,45 @@ function toValues(prospect: LeadProspect): ProspectFieldsValues {
 }
 
 /** Prospecção no detalhe do negócio: status da cadência e os campos do lead. */
-export function ProspectSection({ dealId, prospect, options, onSaved }: { dealId: string; prospect: LeadProspect; options: ProspectFormOptions; onSaved: () => void }) {
-  const inCadence = prospect.fields.prospect_playbook_id !== null;
+export function ProspectSection({
+  dealId,
+  prospect,
+  options,
+  canManage,
+  onSaved,
+}: {
+  dealId: string;
+  prospect: LeadProspect;
+  options: ProspectFormOptions;
+  /** CEO/admin ou Head comercial: menu "Gerenciar" (editar, reiniciar, remover, apagar). */
+  canManage: boolean;
+  onSaved: () => void;
+}) {
+  const removedAt = prospect.fields.prospect_removed_at;
+  const inCadence = prospect.fields.prospect_playbook_id !== null && removedAt === null;
+  const manage = canManage && prospect.fields.prospect_cadence_started_at !== null ? <ManageProspectingMenu dealId={dealId} /> : null;
   const [editing, setEditing] = useState(inCadence);
   const [values, setValues] = useState(() => toValues(prospect));
   const { pending, run } = useSave();
   const cadence = prospect.cadence;
   const touch = cadence ? touchLabel(cadence.state) : null;
 
+  if (removedAt) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Removido da prospecção em {formatDate(removedAt)}. {canManage ? "Para voltar, use Gerenciar → Reiniciar cadência." : "Só a gestão do comercial traz de volta."}
+        </p>
+        {manage}
+      </div>
+    );
+  }
+
   if (!editing) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Este negócio está fora da cadência de prospecção.</p>
+        {manage}
         <Button type="button" variant="secondary" size="lg" onClick={() => setEditing(true)} disabled={options.playbooks.length === 0}>
           <Plus aria-hidden />
           Colocar na prospecção
@@ -50,6 +78,7 @@ export function ProspectSection({ dealId, prospect, options, onSaved }: { dealId
 
   return (
     <div className="space-y-4">
+      {manage ? <div className="flex justify-end">{manage}</div> : null}
       {cadence ? (
         <p className="flex flex-wrap items-center gap-2 text-sm">
           <CadenceStatusTag status={cadence.state.status} />

@@ -14,7 +14,7 @@ import { PayeePaymentDetailsDialog } from "@/features/goals/components/payee-pay
 import { PaymentModal, ScheduledMarker } from "@/features/finance/components/payment-modal";
 import { DirectionIcon, StatusBadge } from "@/features/finance/components/status-badge";
 import { EmptyState, TableShell, Th } from "@/features/finance/components/table-shell";
-import { FIXED_VARIABLE_LABELS, PAYABLE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, STATUS_LABELS } from "@/features/finance/labels";
+import { FIXED_VARIABLE_LABELS, PAYMENT_METHOD_LABELS, STATUS_LABELS } from "@/features/finance/labels";
 import { centsToInput, formatCents } from "@/features/finance/money";
 import type { FinanceOptions, PayableItem } from "@/features/finance/types";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { categoryLabel } from "@/lib/finance/team-category";
 
 interface PayablesTableProps {
   rows: PayableItem[];
@@ -102,7 +103,7 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
     formatDate(item.dueDate),
     item.projectName ?? "Despesa geral",
     item.payeeLabel,
-    PAYABLE_CATEGORY_LABELS[item.category],
+    categoryLabel(item.category, item.teamPaymentType),
     item.isFixed ? FIXED_VARIABLE_LABELS.fixed : FIXED_VARIABLE_LABELS.variable,
     item.description,
     centsToInput(item.amount),
@@ -151,7 +152,7 @@ export function PayablesTable({ rows, options, today, compact = false, csvName =
               <td className="px-4 py-3">
                 <span className={item.status === "cancelado" ? "line-through" : undefined}>{item.description}</span>
                 <span className="mt-1 flex flex-wrap gap-1">
-                  <Badge variant="muted">{PAYABLE_CATEGORY_LABELS[item.category]}</Badge>
+                  <Badge variant="muted">{categoryLabel(item.category, item.teamPaymentType)}</Badge>
                   <Badge variant="outline">{item.isFixed ? FIXED_VARIABLE_LABELS.fixed : FIXED_VARIABLE_LABELS.variable}</Badge>
                   {item.recurrence !== "none" || item.recurrenceParentId ? <Badge variant="outline">Recorrente</Badge> : null}
                   {item.editedAt ? <EditedTag type="payable" id={item.id} label={`${item.payeeLabel} · ${item.description}`} options={options} /> : null}

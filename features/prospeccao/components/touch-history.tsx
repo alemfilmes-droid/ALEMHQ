@@ -35,6 +35,7 @@ export function TouchHistory({ dealId }: { dealId: string }) {
                     {" "}
                     · {formatDateTime(item.sentAt)}
                     {item.sentBy ? ` · ${item.sentBy}` : ""}
+                    {item.previousCycle ? " · ciclo anterior" : ""}
                   </span>
                 </p>
                 <p className="whitespace-pre-wrap break-words text-[13px] text-muted-foreground">{item.text}</p>
