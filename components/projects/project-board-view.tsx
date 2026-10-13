@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { StatusBar } from "@/components/ui/status-bar";
 import { StatusDot } from "@/components/ui/status-dot";
 import { ProjectClientLabel } from "@/components/projects/project-client-label";
 import { ProjectDates } from "@/components/projects/project-dates";
-import { ALL_PROJECT_STAGES, MODEL_LABELS, STAGE_LABELS } from "@/lib/domain";
+import { ALL_PROJECT_STAGES, STAGE_LABELS } from "@/lib/domain";
+import { ProjectModelPill } from "@/components/projects/project-pills";
 import { PROJECT_STAGE_TONE } from "@/lib/status";
 import type { Project } from "@/types";
 
@@ -42,7 +42,7 @@ export function ProjectBoardView({ projects }: { projects: BoardProject[] }) {
                       <ProjectClientLabel isInternal={project.is_internal} company={project.company} withAvatar className="max-w-full" />
                     </p>
                     <div className="mt-2 flex items-center justify-between">
-                      <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
+                      <ProjectModelPill model={project.model} />
                       <span className="text-[12px] text-muted-foreground">
                         <ProjectDates project={project} />
                       </span>

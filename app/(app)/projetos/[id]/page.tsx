@@ -20,7 +20,7 @@ import { ClosureCard } from "@/features/clients/components/closure-card";
 import { CloseClientDialog } from "@/features/clients/components/close-client-dialog";
 import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth/session";
-import { MODEL_LABELS } from "@/lib/domain";
+import { ProjectModelPill } from "@/components/projects/project-pills";
 import { formatDate } from "@/lib/format";
 import { FinalizeProjectButton } from "@/features/projects/components/finalize-project-dialog";
 import { InvoiceSchedulesCard } from "@/features/projects/components/invoice-schedules-card";
@@ -111,7 +111,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
         <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <ProjectClientLabel isInternal={project.is_internal} company={project.company} asLink />
           {project.is_internal ? <Badge variant="muted">Interno</Badge> : null}
-          <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
+          <ProjectModelPill model={project.model} />
           {project.finalized_at ? <Badge variant="outline">Finalizado em {formatDate(project.finalized_at.slice(0, 10))}</Badge> : null}
           {project.closed_at ? <Badge variant="outline">Encerrado em {formatDate(project.closed_at.slice(0, 10))}</Badge> : null}
           <span>Código: {project.id.slice(0, 8)}</span>

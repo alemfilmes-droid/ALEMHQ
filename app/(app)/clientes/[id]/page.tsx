@@ -15,8 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "@/components/ui/external-link";
 import { LinkTabs } from "@/components/ui/link-tabs";
-import { StatusDot } from "@/components/ui/status-dot";
 import { ProjectDates } from "@/components/projects/project-dates";
+import { ProjectModelPill, ProjectStageDot, ProjectStagePill } from "@/components/projects/project-pills";
 import { ClientMetrics } from "@/features/clients/components/client-metrics";
 import { RelationshipTimeline } from "@/features/clients/components/relationship-timeline";
 import { getClientOverview, getClientTimeline } from "@/features/clients/queries";
@@ -31,10 +31,10 @@ import { ClosureNotice } from "@/features/clients/components/closure-notice";
 import { ClientLifecycleActions } from "@/features/clients/components/close-flow/client-lifecycle-actions";
 import { INACTIVE_STATUS_LABELS, inactiveStatusOf } from "@/lib/clients/lifecycle";
 import { requireProfile } from "@/lib/auth/session";
-import { MODEL_LABELS, STAGE_LABELS, TIER_LABELS } from "@/lib/domain";
+import { TIER_LABELS } from "@/lib/domain";
 import { formatDate } from "@/lib/format";
 import { toInstagramUrl, toWebsiteUrl } from "@/lib/links";
-import { PROJECT_STAGE_TONE } from "@/lib/status";
+import { clientModelOf } from "@/lib/projects/colors";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Empresa" };
@@ -89,6 +89,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
     : [null, null, null];
   const contacts = contactsResult.data ?? [];
   const projects = projectsResult.data ?? [];
+  const clientModel = clientModelOf(projects);
   const origin = sourceSummary(company);
   const isClient = company.lifecycle === "client";
   const inactiveStatus = company.lifecycle === "former_client" && closure && !closure.reopenedAt ? inactiveStatusOf(closure.reason) : null;
@@ -115,6 +116,7 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <LifecycleBadge lifecycle={company.lifecycle} />
+            {clientModel ? <ProjectModelPill model={clientModel} /> : null}
             {inactiveStatus ? <Badge variant="outline">{INACTIVE_STATUS_LABELS[inactiveStatus]}</Badge> : null}
             {canClose && (company.lifecycle === "client" || company.lifecycle === "former_client") ? (
               <ClientLifecycleActions companyId={company.id} companyName={company.name} inactive={inactiveStatus} />
@@ -258,11 +260,11 @@ export default async function CompanyPage({ params, searchParams }: { params: Pa
                   <li key={project.id}>
                     <Link href={`/projetos/${project.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4 transition-colors hover:bg-surface-raised">
                       <span className="flex min-w-0 flex-1 basis-48 items-center gap-2">
-                        <StatusDot tone={PROJECT_STAGE_TONE[project.stage]} />
+                        <ProjectStageDot stage={project.stage} />
                         <span className="truncate text-sm font-bold">{project.name}</span>
                       </span>
-                      <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
-                      <Badge variant="outline">{STAGE_LABELS[project.stage]}</Badge>
+                      <ProjectModelPill model={project.model} />
+                      <ProjectStagePill stage={project.stage} />
                       <span className="text-[13px] text-muted-foreground">
                         <ProjectDates project={project} />
                       </span>

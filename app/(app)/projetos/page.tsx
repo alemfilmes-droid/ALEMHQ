@@ -8,13 +8,12 @@ import { ProjectBoardView } from "@/components/projects/project-board-view";
 import { ProjectClientLabel } from "@/components/projects/project-client-label";
 import { ProjectDates } from "@/components/projects/project-dates";
 import { ProjectFilters } from "@/components/projects/project-filters";
+import { ProjectModelPill, ProjectStageDot, ProjectStagePill } from "@/components/projects/project-pills";
 import { Badge } from "@/components/ui/badge";
-import { StatusDot } from "@/components/ui/status-dot";
 import { getCompanySettings } from "@/features/settings/queries";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
-import { ALL_PROJECT_STAGES, MODEL_LABELS, MODELS, STAGE_LABELS } from "@/lib/domain";
-import { PROJECT_STAGE_TONE } from "@/lib/status";
+import { ALL_PROJECT_STAGES, MODELS } from "@/lib/domain";
 import { createClient } from "@/lib/supabase/server";
 import type { ProjectModel, ProjectStage } from "@/types";
 
@@ -120,7 +119,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
               <li key={project.id}>
                 <Link href={`/projetos/${project.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4 transition-colors hover:bg-surface-raised">
                   <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
-                    <StatusDot tone={PROJECT_STAGE_TONE[project.stage]} />
+                    <ProjectStageDot stage={project.stage} />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold">{project.name}</p>
                       <p className="flex min-w-0 text-[13px] text-muted-foreground">
@@ -129,8 +128,8 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
                     </div>
                   </div>
                   {project.is_internal ? <Badge variant="muted">Interno</Badge> : null}
-                  <Badge variant="muted">{MODEL_LABELS[project.model]}</Badge>
-                  <Badge variant="outline">{STAGE_LABELS[project.stage]}</Badge>
+                  <ProjectModelPill model={project.model} />
+                  <ProjectStagePill stage={project.stage} />
                   <span className="w-32 text-right text-[13px] text-muted-foreground">
                     <ProjectDates project={project} />
                   </span>
