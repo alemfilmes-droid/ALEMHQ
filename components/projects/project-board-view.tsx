@@ -48,7 +48,9 @@ type Pending = { project: BoardProject; to: BoardColumn; kind: "needs_reason" | 
 export function ProjectBoardView({ projects, canMove }: { projects: BoardProject[]; canMove: boolean }) {
   const router = useRouter();
   const [items, setItems] = useState(projects);
+  // O pedido fica guardado enquanto a janela fecha (sem piscar vazia); `dialogOpen` controla a janela.
   const [pending, setPending] = useState<Pending | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
@@ -64,7 +66,7 @@ export function ProjectBoardView({ projects, canMove }: { projects: BoardProject
   function run(project: BoardProject, to: BoardColumn, extra: { reason?: string; confirmed?: boolean }) {
     const previous = items;
     setItems((current) => current.map((item) => (item.id === project.id ? { ...item, stage: stageAfterMove(to, item.stage_before_close ?? null) } : item)));
-    setPending(null);
+    setDialogOpen(false);
     setReason("");
     startTransition(async () => {
       const result = await moveProjectOnBoardAction({ projectId: project.id, to, ...extra });
@@ -82,7 +84,11 @@ export function ProjectBoardView({ projects, canMove }: { projects: BoardProject
     const check = checkMove(project.stage, to);
     if (check.kind === "noop") return;
     if (check.kind === "ok") run(project, to, {});
-    else setPending({ project, to, kind: check.kind });
+    else {
+      setReason("");
+      setPending({ project, to, kind: check.kind });
+      setDialogOpen(true);
+    }
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -116,7 +122,7 @@ export function ProjectBoardView({ projects, canMove }: { projects: BoardProject
         <DragOverlay>{active ? <CardBody project={active} dragging /> : null}</DragOverlay>
       </DndContext>
 
-      <Dialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           {pending?.kind === "needs_reason" ? (
             <>
@@ -128,7 +134,7 @@ export function ProjectBoardView({ projects, canMove }: { projects: BoardProject
                 <Textarea id="churn-reason" rows={3} maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} />
               </FormField>
               <DialogFooter>
-                <Button type="button" variant="secondary" onClick={() => setPending(null)}>
+                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>
                   Cancelar
                 </Button>
                 <Button type="button" disabled={reason.trim().length < MIN_CHURN_REASON} onClick={() => run(pending.project, pending.to, { reason: reason.trim() })}>
@@ -145,7 +151,7 @@ export function ProjectBoardView({ projects, canMove }: { projects: BoardProject
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button type="button" variant="secondary" onClick={() => setPending(null)}>
+                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>
                   Cancelar
                 </Button>
                 <Button type="button" onClick={() => run(pending.project, pending.to, { confirmed: true })}>
