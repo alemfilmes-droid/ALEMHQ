@@ -362,6 +362,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "budgets_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "budgets_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -2872,6 +2879,54 @@ export type Database = {
           },
         ]
       }
+      notifications_archive: {
+        Row: {
+          archive_reason: string
+          archived_at: string
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          pushed_at: string | null
+          read_at: string | null
+          recipient_id: string
+          title: string
+          type: string
+          url: string | null
+        }
+        Insert: {
+          archive_reason: string
+          archived_at?: string
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          pushed_at?: string | null
+          read_at?: string | null
+          recipient_id: string
+          title: string
+          type: string
+          url?: string | null
+        }
+        Update: {
+          archive_reason?: string
+          archived_at?: string
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          pushed_at?: string | null
+          read_at?: string | null
+          recipient_id?: string
+          title?: string
+          type?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       pauta_code_counters: {
         Row: {
           last_number: number
@@ -4421,7 +4476,29 @@ export type Database = {
           to_column?: string
           to_stage?: Database["public"]["Enums"]["project_stage"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_stage_moves_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_stage_moves_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_profitability"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_stage_moves_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -4463,7 +4540,9 @@ export type Database = {
           ready_notified_at: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
           stage: Database["public"]["Enums"]["project_stage"]
-          stage_before_close: Database["public"]["Enums"]["project_stage"] | null
+          stage_before_close:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           start_date: string | null
           updated_at: string
         }
@@ -4508,7 +4587,9 @@ export type Database = {
           ready_notified_at?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           stage?: Database["public"]["Enums"]["project_stage"]
-          stage_before_close?: Database["public"]["Enums"]["project_stage"] | null
+          stage_before_close?:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           start_date?: string | null
           updated_at?: string
         }
@@ -4553,11 +4634,20 @@ export type Database = {
           ready_notified_at?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           stage?: Database["public"]["Enums"]["project_stage"]
-          stage_before_close?: Database["public"]["Enums"]["project_stage"] | null
+          stage_before_close?:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           start_date?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_churned_by_fkey"
+            columns: ["churned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_closure_id_fkey"
             columns: ["closure_id"]
@@ -5627,6 +5717,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "receivables_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "receivables_cancelled_by_fkey"
             columns: ["cancelled_by"]
             isOneToOne: false
@@ -5650,6 +5747,13 @@ export type Database = {
           {
             foreignKeyName: "receivables_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_date_owner_id_fkey"
+            columns: ["date_owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -6732,6 +6836,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "receivables_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "receivables_cancelled_by_fkey"
             columns: ["cancelled_by"]
             isOneToOne: false
@@ -6755,6 +6866,13 @@ export type Database = {
           {
             foreignKeyName: "receivables_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_date_owner_id_fkey"
+            columns: ["date_owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -7156,6 +7274,9 @@ export type Database = {
         }
         Returns: {
           briefing: string | null
+          churn_reason: string | null
+          churned_at: string | null
+          churned_by: string | null
           closed_at: string | null
           closure_id: string | null
           company_id: string | null
@@ -7190,6 +7311,9 @@ export type Database = {
           ready_notified_at: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
           stage: Database["public"]["Enums"]["project_stage"]
+          stage_before_close:
+            | Database["public"]["Enums"]["project_stage"]
+            | null
           start_date: string | null
           updated_at: string
         }
@@ -7725,6 +7849,7 @@ export type Database = {
         }
         Returns: {
           amount: number
+          budget_id: string | null
           cancel_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -7732,9 +7857,10 @@ export type Database = {
           competence_month: string | null
           created_at: string
           created_by: string | null
+          date_owner_id: string | null
           deal_id: string | null
           description: string
-          due_date: string
+          due_date: string | null
           edited_at: string | null
           id: string
           installment_number: number | null
@@ -7934,6 +8060,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_commercial_recipient: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       is_company_logo_path: {
         Args: { p_object_name: string }
         Returns: boolean
@@ -7987,12 +8117,21 @@ export type Database = {
         Returns: boolean
       }
       notification_category: { Args: { p_type: string }; Returns: string }
+      notification_entity_is_crm: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: boolean
+      }
+      notification_is_crm: {
+        Args: { p_entity_is_crm: boolean; p_type: string }
+        Returns: boolean
+      }
       notification_rule: {
         Args: {
+          p_entity_is_crm: boolean
           p_holds_ball: boolean
-          p_pauta_is_crm: boolean
           p_pauta_squad: Database["public"]["Enums"]["squad"]
           p_recipient_is_ceo: boolean
+          p_recipient_is_commercial: boolean
           p_type: string
         }
         Returns: boolean
@@ -8273,6 +8412,14 @@ export type Database = {
         }
         Returns: Json
       }
+      project_board_column: {
+        Args: { p_stage: Database["public"]["Enums"]["project_stage"] }
+        Returns: string
+      }
+      project_board_move: {
+        Args: { p_project_id: string; p_reason: string; p_to: string }
+        Returns: Database["public"]["Enums"]["project_stage"]
+      }
       project_contract_plan: {
         Args: {
           p_amount: number
@@ -8292,14 +8439,6 @@ export type Database = {
         }[]
       }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
-      project_board_column: {
-        Args: { p_stage: Database["public"]["Enums"]["project_stage"] }
-        Returns: string
-      }
-      project_board_move: {
-        Args: { p_project_id: string; p_reason: string; p_to: string }
-        Returns: Database["public"]["Enums"]["project_stage"]
-      }
       project_finalization_status: {
         Args: { p_project_id: string }
         Returns: {
@@ -8444,6 +8583,7 @@ export type Database = {
           category: Database["public"]["Enums"]["payable_category"]
           commission_goal_id: string
           company_name: string
+          created_at: string
           description: string
           due_date: string
           goal_title: string
@@ -8454,7 +8594,6 @@ export type Database = {
           project_id: string
           project_name: string
           team_payment_type: Database["public"]["Enums"]["team_payment_type"]
-          created_at: string
         }[]
       }
       wallet_ledger: {
