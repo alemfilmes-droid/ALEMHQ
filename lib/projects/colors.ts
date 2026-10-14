@@ -38,6 +38,7 @@ export const PROJECT_STAGE_FAMILY: Record<ProjectStage, ProjectStatusFamily> = {
   pausado: "encerrado",
   cancelado: "encerrado",
   encerrado: "encerrado",
+  churn: "churn",
 };
 
 export function projectStageTint(stage: ProjectStage): Tint {

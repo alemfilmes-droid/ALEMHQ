@@ -1,0 +1,15 @@
+[
+  { "stage": "planejamento", "column": "ativos" },
+  { "stage": "pre_producao", "column": "ativos" },
+  { "stage": "captacao", "column": "ativos" },
+  { "stage": "producao", "column": "ativos" },
+  { "stage": "edicao", "column": "ativos" },
+  { "stage": "revisao_interna", "column": "ativos" },
+  { "stage": "aprovacao_cliente", "column": "ativos" },
+  { "stage": "alteracao", "column": "ativos" },
+  { "stage": "entregue", "column": "ativos" },
+  { "stage": "pausado", "column": "ativos" },
+  { "stage": "cancelado", "column": "encerrados" },
+  { "stage": "encerrado", "column": "encerrados" },
+  { "stage": "churn", "column": "churn" }
+]

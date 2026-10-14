@@ -105,7 +105,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
   for (const project of projects ?? []) {
     if (!project.company_id) continue;
     const current = stats.get(project.company_id) ?? { active: 0, lastActivity: null };
-    if (project.stage !== "entregue" && project.stage !== "cancelado" && project.stage !== "encerrado") current.active += 1;
+    if (project.stage !== "entregue" && project.stage !== "cancelado" && project.stage !== "encerrado" && project.stage !== "churn") current.active += 1;
     if (!current.lastActivity || project.created_at > current.lastActivity) current.lastActivity = project.created_at;
     stats.set(project.company_id, current);
   }

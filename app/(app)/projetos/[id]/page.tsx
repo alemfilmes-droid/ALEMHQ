@@ -72,7 +72,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
     ? await supabase.from("client_closures").select(CLOSURE_SELECT).eq("id", project.closure_id).maybeSingle()
     : { data: null };
   const closure = closureResult.data ? toClosureInfo(closureResult.data) : null;
-  const canClose = canCloseClients(profile) && !project.is_internal && Boolean(project.company) && project.stage !== "encerrado" && project.stage !== "cancelado";
+  const canClose = canCloseClients(profile) && !project.is_internal && Boolean(project.company) && project.stage !== "encerrado" && project.stage !== "cancelado" && project.stage !== "churn";
   const canManageInvoices = canInvoicesResult.data === true;
   const canFinalize = canFinalizeResult.data === true;
 
@@ -102,7 +102,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pa
                 }
               />
             ) : null}
-            {!project.finalized_at && project.stage !== "encerrado" && !project.is_internal && canFinalize ? <FinalizeProjectButton projectId={project.id} autoOpen={finalizar === "1"} /> : null}
+            {!project.finalized_at && project.stage !== "encerrado" && project.stage !== "churn" && !project.is_internal && canFinalize ? <FinalizeProjectButton projectId={project.id} autoOpen={finalizar === "1"} /> : null}
             <StageSelect projectId={project.id} stage={project.stage} disabled={!canManage} />
           </div>
         }

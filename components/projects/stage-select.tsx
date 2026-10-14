@@ -9,8 +9,8 @@ import type { ProjectStage } from "@/types";
 
 export function StageSelect({ projectId, stage, disabled }: { projectId: string; stage: ProjectStage; disabled: boolean }) {
   const [pending, startTransition] = useTransition();
-  // "Encerrado" só entra pelo encerramento e não sai pelo seletor.
-  const closed = stage === "encerrado";
+  // "Encerrado" e "Churn" só entram pelo encerramento/quadro e não saem pelo seletor (volta pelo quadro).
+  const closed = stage === "encerrado" || stage === "churn";
 
   return (
     <Select

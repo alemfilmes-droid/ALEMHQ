@@ -50,6 +50,7 @@ export const PROJECT_STAGE_TONE: Record<ProjectStage, StatusTone> = {
   pausado: "danger",
   cancelado: "danger",
   encerrado: "neutral",
+  churn: "danger",
 };
 
 export const SQUAD_TONE: Record<Squad, StatusTone> = {

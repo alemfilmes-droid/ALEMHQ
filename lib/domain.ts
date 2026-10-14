@@ -29,8 +29,8 @@ export const PROJECT_STAGES = [
   "cancelado",
 ] as const satisfies readonly ProjectStage[];
 
-/** Todas as etapas, inclusive "Encerrado" — que só entra pelo encerramento (não aparece no seletor). */
-export const ALL_PROJECT_STAGES = [...PROJECT_STAGES, "encerrado"] as const satisfies readonly ProjectStage[];
+/** Todas as etapas, inclusive "Encerrado" e "Churn" — que só entram pelo encerramento/quadro (não aparecem no seletor). */
+export const ALL_PROJECT_STAGES = [...PROJECT_STAGES, "encerrado", "churn"] as const satisfies readonly ProjectStage[];
 
 export const LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
   client: "Cliente",
@@ -62,6 +62,7 @@ export const STAGE_LABELS: Record<ProjectStage, string> = {
   pausado: "Pausado",
   cancelado: "Cancelado",
   encerrado: "Encerrado",
+  churn: "Churn",
 };
 
 export const INTERNAL_PROJECT_LABEL = "Interno — Além Filmes";

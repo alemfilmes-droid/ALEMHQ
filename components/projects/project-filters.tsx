@@ -23,6 +23,7 @@ export function ProjectFilters({ companies }: ProjectFiltersProps) {
   const [search, setSearch] = useState(searchParams.get("busca") ?? "");
   const view = searchParams.get("visao") === "quadro" ? "quadro" : "lista";
   const onlyMine = searchParams.get("meus") === "1";
+  const onlyActive = searchParams.get("todos") !== "1";
 
   function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -31,7 +32,7 @@ export function ProjectFilters({ companies }: ProjectFiltersProps) {
     router.replace(`${pathname}?${params.toString()}`);
   }
 
-  const hasFilters = ["modelo", "cliente", "etapa", "busca", "meus"].some((key) => searchParams.has(key));
+  const hasFilters = ["modelo", "cliente", "etapa", "busca", "meus", "todos"].some((key) => searchParams.has(key));
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
@@ -91,6 +92,14 @@ export function ProjectFilters({ companies }: ProjectFiltersProps) {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" aria-hidden />
           <Input aria-label="Buscar projeto" placeholder="Buscar projeto" className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
         </form>
+        {view === "lista" ? (
+          <div className="flex items-center gap-2">
+            <Switch id="only-active" checked={onlyActive} onCheckedChange={(checked) => update("todos", checked ? "" : "1")} />
+            <Label htmlFor="only-active" className="cursor-pointer font-normal">
+              Somente ativos
+            </Label>
+          </div>
+        ) : null}
         <div className="flex items-center gap-2">
           <Switch id="only-mine" checked={onlyMine} onCheckedChange={(checked) => update("meus", checked ? "1" : "")} />
           <Label htmlFor="only-mine" className="cursor-pointer font-normal">

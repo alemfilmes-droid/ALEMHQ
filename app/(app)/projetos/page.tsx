@@ -14,6 +14,7 @@ import { getCompanySettings } from "@/features/settings/queries";
 import { hasCapability } from "@/lib/auth/permissions";
 import { requireProfile } from "@/lib/auth/session";
 import { ALL_PROJECT_STAGES, MODELS } from "@/lib/domain";
+import { INACTIVE_STAGES } from "@/lib/projects/board";
 import { createClient } from "@/lib/supabase/server";
 import type { ProjectModel, ProjectStage } from "@/types";
 
@@ -26,6 +27,8 @@ type SearchParams = Promise<{
   busca?: string;
   meus?: string;
   visao?: string;
+  /** "1": mostra também encerrados e churn (o padrão é "Somente ativos"). */
+  todos?: string;
 }>;
 
 export default async function ProjectsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -36,6 +39,8 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
   const stage = ALL_PROJECT_STAGES.find((item): item is ProjectStage => item === params.etapa);
   const onlyMine = params.meus === "1";
   const boardView = params.visao === "quadro";
+  // Lista: "Somente ativos" por padrão. O quadro mostra as três colunas (Ativos, Encerrados, Churn).
+  const onlyActive = !boardView && params.todos !== "1";
 
   const supabase = await createClient();
 
@@ -47,13 +52,14 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
 
   let query = supabase
     .from("projects")
-    .select("id, name, stage, model, due_date, start_date, end_date, is_internal, owner_id, company:companies(id, name, logo_url)")
+    .select("id, name, stage, stage_before_close, model, due_date, start_date, end_date, is_internal, owner_id, company:companies(id, name, logo_url)")
     // Projetos de cliente excluído (Lixeira) saem da lista.
     .eq("hidden_by_client_deletion", false)
     .order("created_at", { ascending: false });
   if (model) query = query.eq("model", model);
   if (params.cliente) query = query.eq("company_id", params.cliente);
   if (stage) query = query.eq("stage", stage);
+  else if (onlyActive) query = query.not("stage", "in", `(${INACTIVE_STAGES.join(",")})`);
   if (params.busca?.trim()) query = query.ilike("name", `%${params.busca.trim()}%`);
   if (onlyMine) {
     const ids = Array.from(new Set([...(memberProjectIds ?? [])]));
@@ -106,13 +112,13 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
         ) : projects.length === 0 ? (
           <div className="flex flex-col items-center rounded-lg border border-dashed border-border-strong px-6 py-16 text-center">
             <FolderKanban className="mb-3 size-6 text-muted-foreground" aria-hidden />
-            <p className="font-bold">{hasFilters ? "Nenhum projeto com esses filtros." : "Nenhum projeto por aqui."}</p>
+            <p className="font-bold">{hasFilters ? "Nenhum projeto com esses filtros." : onlyActive ? "Nenhum projeto ativo." : "Nenhum projeto por aqui."}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {hasFilters ? "Ajuste ou limpe os filtros." : canManage ? "Use “Novo projeto” para começar." : "Você ainda não foi adicionado a projetos."}
+              {hasFilters ? "Ajuste ou limpe os filtros." : onlyActive ? "Desligue “Somente ativos” para ver encerrados e churn." : canManage ? "Use “Novo projeto” para começar." : "Você ainda não foi adicionado a projetos."}
             </p>
           </div>
         ) : boardView ? (
-          <ProjectBoardView projects={projects} />
+          <ProjectBoardView projects={projects} canMove={canManage} />
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {projects.map((project) => (

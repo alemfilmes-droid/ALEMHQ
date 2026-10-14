@@ -4384,9 +4384,45 @@ export type Database = {
           },
         ]
       }
+      project_stage_moves: {
+        Row: {
+          from_stage: Database["public"]["Enums"]["project_stage"]
+          id: string
+          moved_at: string
+          moved_by: string | null
+          project_id: string
+          reason: string | null
+          to_column: string
+          to_stage: Database["public"]["Enums"]["project_stage"]
+        }
+        Insert: {
+          from_stage: Database["public"]["Enums"]["project_stage"]
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          project_id: string
+          reason?: string | null
+          to_column: string
+          to_stage: Database["public"]["Enums"]["project_stage"]
+        }
+        Update: {
+          from_stage?: Database["public"]["Enums"]["project_stage"]
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          project_id?: string
+          reason?: string | null
+          to_column?: string
+          to_stage?: Database["public"]["Enums"]["project_stage"]
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           briefing: string | null
+          churn_reason: string | null
+          churned_at: string | null
+          churned_by: string | null
           closed_at: string | null
           closure_id: string | null
           company_id: string | null
@@ -4421,11 +4457,15 @@ export type Database = {
           ready_notified_at: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
           stage: Database["public"]["Enums"]["project_stage"]
+          stage_before_close: Database["public"]["Enums"]["project_stage"] | null
           start_date: string | null
           updated_at: string
         }
         Insert: {
           briefing?: string | null
+          churn_reason?: string | null
+          churned_at?: string | null
+          churned_by?: string | null
           closed_at?: string | null
           closure_id?: string | null
           company_id?: string | null
@@ -4462,11 +4502,15 @@ export type Database = {
           ready_notified_at?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           stage?: Database["public"]["Enums"]["project_stage"]
+          stage_before_close?: Database["public"]["Enums"]["project_stage"] | null
           start_date?: string | null
           updated_at?: string
         }
         Update: {
           briefing?: string | null
+          churn_reason?: string | null
+          churned_at?: string | null
+          churned_by?: string | null
           closed_at?: string | null
           closure_id?: string | null
           company_id?: string | null
@@ -4503,6 +4547,7 @@ export type Database = {
           ready_notified_at?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           stage?: Database["public"]["Enums"]["project_stage"]
+          stage_before_close?: Database["public"]["Enums"]["project_stage"] | null
           start_date?: string | null
           updated_at?: string
         }
@@ -8200,6 +8245,14 @@ export type Database = {
         }[]
       }
       project_delete_summary: { Args: { p_project_id: string }; Returns: Json }
+      project_board_column: {
+        Args: { p_stage: Database["public"]["Enums"]["project_stage"] }
+        Returns: string
+      }
+      project_board_move: {
+        Args: { p_project_id: string; p_reason: string; p_to: string }
+        Returns: Database["public"]["Enums"]["project_stage"]
+      }
       project_finalization_status: {
         Args: { p_project_id: string }
         Returns: {
@@ -8605,6 +8658,7 @@ export type Database = {
         | "pausado"
         | "cancelado"
         | "encerrado"
+        | "churn"
       proposal_channel:
         | "whatsapp_pdf"
         | "email"
@@ -9036,6 +9090,7 @@ export const Constants = {
         "pausado",
         "cancelado",
         "encerrado",
+        "churn",
       ],
       proposal_channel: [
         "whatsapp_pdf",

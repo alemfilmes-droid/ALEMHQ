@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { BOARD_COLUMNS, BOARD_COLUMN_LABELS, MIN_CHURN_REASON } from "@/lib/projects/board";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/types";
 
@@ -52,4 +53,36 @@ export async function finalizeProjectAction(projectId: string): Promise<ActionRe
   revalidatePath(`/projetos/${projectId}`);
   revalidatePath("/projetos");
   return { ok: true, message: "Projeto finalizado. Em 30 dias o comercial recebe a tarefa de prospecção deste cliente." };
+}
+
+const boardMoveSchema = z.object({
+  projectId: z.string().uuid(),
+  to: z.enum(BOARD_COLUMNS),
+  reason: z.string().trim().max(500).optional(),
+  confirmed: z.boolean().optional(),
+});
+
+/**
+ * Quadro de Projetos: move entre Ativos, Encerrados e Churn. Churn exige motivo; Encerrar exige confirmação.
+ * O banco (project_board_move) confere a permissão e o motivo de novo e registra quem/quando.
+ */
+export async function moveProjectOnBoardAction(input: z.input<typeof boardMoveSchema>): Promise<ActionResult> {
+  const parsed = boardMoveSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Movimento inválido." };
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false, error: "Sessão expirada. Entre novamente." };
+  const d = parsed.data;
+  if (d.to === "churn" && (d.reason ?? "").length < MIN_CHURN_REASON) return { ok: false, error: "Informe o motivo do churn." };
+  if (d.to === "encerrados" && !d.confirmed) return { ok: false, error: "Confirme o encerramento do projeto." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("project_board_move", { p_project_id: d.projectId, p_to: d.to, p_reason: d.reason ?? "" });
+  if (error) {
+    console.error("moveProjectOnBoardAction:", error.code, error.message);
+    return { ok: false, error: error.code === "42501" || error.code === "22023" ? error.message : "Não foi possível mover o projeto." };
+  }
+  revalidatePath("/projetos");
+  revalidatePath(`/projetos/${d.projectId}`);
+  revalidatePath("/clientes", "layout");
+  return { ok: true, message: `Projeto movido para ${BOARD_COLUMN_LABELS[d.to]}.` };
 }
