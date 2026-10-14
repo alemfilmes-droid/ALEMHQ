@@ -6,7 +6,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_approved",
@@ -15,7 +16,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_adjustment",
@@ -24,7 +26,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_comment",
@@ -33,7 +36,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_log",
@@ -42,7 +46,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_lead_assigned",
@@ -51,7 +56,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_member_added",
@@ -60,7 +66,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_assignee_changed",
@@ -69,7 +76,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_closed",
@@ -78,7 +86,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_due_today",
@@ -87,7 +96,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · audiovisual · pauta_overdue",
@@ -96,7 +106,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · pauta da diretoria",
@@ -105,7 +116,8 @@
   "squad": "diretoria",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · Paulo respondeu o direcionamento",
@@ -114,7 +126,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · direcionamento resolvido",
@@ -123,7 +136,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": true
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · negócio enviado para revisão (qualificado)",
@@ -132,7 +146,8 @@
   "squad": null,
   "crm": null,
   "holds": true,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · bola passou para ele",
@@ -141,7 +156,8 @@
   "squad": null,
   "crm": null,
   "holds": true,
-  "expected": true
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · pedido de direcionamento para ele",
@@ -150,7 +166,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": true
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · lead frio para reaquecer (é do SDR)",
@@ -159,7 +176,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · próxima ação vencida de negócio do SDR",
@@ -168,7 +186,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · próxima ação vencida de negócio com a bola dele",
@@ -177,7 +196,8 @@
   "squad": null,
   "crm": null,
   "holds": true,
-  "expected": true
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · lead parado do SDR",
@@ -186,7 +206,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · prazo de pauta do CRM do SDR",
@@ -195,7 +216,8 @@
   "squad": "comercial",
   "crm": true,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · pauta do CRM em revisão",
@@ -204,7 +226,8 @@
   "squad": "comercial",
   "crm": true,
   "holds": true,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · pauta comercial (não CRM)",
@@ -213,7 +236,8 @@
   "squad": "comercial",
   "crm": false,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · recebimento vencido",
@@ -222,7 +246,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · pagamento vencendo hoje (tarefa)",
@@ -231,7 +256,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · pagamento vencido (alerta de atraso)",
@@ -240,7 +266,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · recebimento vence hoje (tarefa)",
@@ -249,7 +276,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · emitir nota fiscal (tarefa)",
@@ -258,7 +286,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · pagamento agendado sem baixa (tarefa)",
@@ -267,7 +296,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · relatório de margem",
@@ -276,7 +306,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · margem crítica",
@@ -285,7 +316,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · tarefa do financeiro em revisão",
@@ -294,7 +326,8 @@
   "squad": "financeiro",
   "crm": false,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · outros · announcement_published",
@@ -303,7 +336,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · outros · project_ready_to_finalize",
@@ -312,7 +346,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · outros · project_payment_check",
@@ -321,7 +356,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · outros · project_closed",
@@ -330,7 +366,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "Equipe · finance_overdue_payable",
@@ -339,7 +376,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · finance_due_today_receivable",
@@ -348,7 +386,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · finance_invoice_due",
@@ -357,7 +396,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · finance_payment_scheduled",
@@ -366,7 +406,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · deal_request",
@@ -375,7 +416,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "Equipe · crm_reheat_ready",
@@ -384,7 +426,8 @@
   "squad": null,
   "crm": null,
   "holds": true,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "Equipe · goal_daily",
@@ -393,7 +436,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · pauta_in_review",
@@ -402,7 +446,8 @@
   "squad": "financeiro",
   "crm": false,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "SDR · prazo de pauta do CRM com a bola dele",
@@ -411,7 +456,8 @@
   "squad": "comercial",
   "crm": true,
   "holds": true,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "SDR · prazo de pauta do CRM com a bola no Anderson",
@@ -420,7 +466,8 @@
   "squad": "comercial",
   "crm": true,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "SDR · próxima ação vencida com a bola dele",
@@ -429,7 +476,8 @@
   "squad": null,
   "crm": null,
   "holds": true,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "SDR · próxima ação vencida com a bola no Anderson",
@@ -438,7 +486,8 @@
   "squad": null,
   "crm": null,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "SDR · retorno ao cliente (pauta CRM) sem a bola",
@@ -447,7 +496,8 @@
   "squad": "comercial",
   "crm": true,
   "holds": false,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "Audiovisual · prazo da própria pauta",
@@ -456,7 +506,8 @@
   "squad": "audiovisual",
   "crm": false,
   "holds": false,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "CEO · metas/comissões · goal_review",
@@ -465,7 +516,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · goal_entry_pending",
@@ -474,7 +526,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · goal_commission_to_schedule",
@@ -483,7 +536,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · goal_milestone",
@@ -492,7 +546,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · goal_period_ended",
@@ -501,7 +556,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · goal_daily",
@@ -510,7 +566,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": false
+  "expected": false,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · finance_commission",
@@ -519,7 +576,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · finance_commission_updated",
@@ -528,7 +586,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "CEO · metas/comissões · commission_scheduled",
@@ -537,7 +596,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": true
  },
  {
   "name": "Equipe · goal_reached",
@@ -546,7 +606,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · goal_not_reached",
@@ -555,7 +616,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · commission_scheduled",
@@ -564,7 +626,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · commission_paid",
@@ -573,7 +636,8 @@
   "squad": null,
   "crm": null,
   "holds": null,
-  "expected": true
+  "expected": true,
+  "commercial": false
  },
  {
   "name": "Equipe · goal_milestone",
@@ -581,6 +645,267 @@
   "type": "goal_milestone",
   "squad": null,
   "crm": null,
+  "holds": null,
+  "expected": true,
+  "commercial": false
+ },
+ {
+  "name": "CEO · negócio sem atualização há 24h com a bola dele",
+  "ceo": true,
+  "commercial": true,
+  "type": "crm_needs_update",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "CEO · lead parado com a bola dele",
+  "ceo": true,
+  "commercial": true,
+  "type": "crm_stale_prospection",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "CEO · prazo de pauta do CRM com a bola dele",
+  "ceo": true,
+  "commercial": true,
+  "type": "pauta_due_today",
+  "squad": "comercial",
+  "crm": true,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "CEO · retorno ao cliente (follow-up) com a bola dele",
+  "ceo": true,
+  "commercial": true,
+  "type": "pauta_client_followup",
+  "squad": "comercial",
+  "crm": true,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "CEO · reunião de negócio marcada (vai para o Google Agenda)",
+  "ceo": true,
+  "commercial": true,
+  "type": "deal_meeting_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · compromisso de reunião comercial",
+  "ceo": true,
+  "commercial": true,
+  "type": "commitment_invited",
+  "squad": null,
+  "crm": true,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · compromisso que não é do CRM",
+  "ceo": true,
+  "commercial": true,
+  "type": "commitment_invited",
+  "squad": null,
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "CEO · negócio passou para o atendimento",
+  "ceo": true,
+  "commercial": true,
+  "type": "deal_handoff",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "CEO · prospecção (qualquer)",
+  "ceo": true,
+  "commercial": true,
+  "type": "prospect_touch_due",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "Comercial · negócio qualificado",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_qualification_review",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · bola passou para ele",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_responsible",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · pedido de direcionamento",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_request",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · resposta no direcionamento",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_request_reply",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · direcionamento resolvido",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_request_resolved",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · reunião de negócio marcada",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_meeting_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · negócio atribuído",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_assigned",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · negócio passou para o atendimento",
+  "ceo": false,
+  "commercial": true,
+  "type": "deal_handoff",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · lead frio para reaquecer",
+  "ceo": false,
+  "commercial": true,
+  "type": "crm_reheat_ready",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Comercial · negócio sem atualização com a bola dele",
+  "ceo": false,
+  "commercial": true,
+  "type": "crm_needs_update",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": true
+ },
+ {
+  "name": "Comercial · compromisso de reunião comercial",
+  "ceo": false,
+  "commercial": true,
+  "type": "commitment_invited",
+  "squad": null,
+  "crm": true,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Fora do comercial · pedido de direcionamento",
+  "ceo": false,
+  "commercial": false,
+  "type": "deal_request",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "Fora do comercial · próxima ação vencida com a bola dele",
+  "ceo": false,
+  "commercial": false,
+  "type": "crm_action_overdue",
+  "squad": null,
+  "crm": null,
+  "holds": true,
+  "expected": false
+ },
+ {
+  "name": "Fora do comercial · reunião de negócio marcada",
+  "ceo": false,
+  "commercial": false,
+  "type": "deal_meeting_scheduled",
+  "squad": null,
+  "crm": null,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "Fora do comercial · pauta do CRM em revisão",
+  "ceo": false,
+  "commercial": false,
+  "type": "pauta_in_review",
+  "squad": "comercial",
+  "crm": true,
+  "holds": null,
+  "expected": false
+ },
+ {
+  "name": "Fora do comercial · compromisso que não é do CRM",
+  "ceo": false,
+  "commercial": false,
+  "type": "commitment_invited",
+  "squad": null,
+  "crm": false,
+  "holds": null,
+  "expected": true
+ },
+ {
+  "name": "Fora do comercial · pauta de audiovisual",
+  "ceo": false,
+  "commercial": false,
+  "type": "pauta_in_review",
+  "squad": "audiovisual",
+  "crm": false,
   "holds": null,
   "expected": true
  }
