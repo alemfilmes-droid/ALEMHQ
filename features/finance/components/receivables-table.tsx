@@ -4,10 +4,11 @@ import { Money } from "@/components/ui/money";
 import { useState } from "react";
 import Link from "next/link";
 import { ClientAvatar } from "@/components/companies/client-avatar";
-import { ArrowDownLeft, CheckCircle2, ExternalLink, MoreHorizontal, Paperclip, Pencil, XCircle, Undo2 } from "lucide-react";
+import { ArrowDownLeft, CalendarClock, CheckCircle2, ExternalLink, MoreHorizontal, Paperclip, Pencil, XCircle, Undo2 } from "lucide-react";
 import { attachReceivableInvoiceAction, cancelReceivableAction } from "@/features/finance/actions";
 import { CancelDialog } from "@/features/finance/components/cancel-dialog";
 import { CsvExportButton } from "@/features/finance/components/csv-export-button";
+import { DefineDatesDialog } from "@/features/finance/components/define-dates-dialog";
 import { AttachInvoiceDialog, InvoiceFileButton } from "@/features/finance/components/invoice-controls";
 import { ReceivableDialog } from "@/features/finance/components/receivable-dialog";
 import { SettleReceivableDialog } from "@/features/finance/components/settle-dialogs";
@@ -39,11 +40,14 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [datesOpen, setDatesOpen] = useState(false);
   const settled = useSettledEntryDialogs({ kind: "receivable", item }, options);
   if (item.status === "cancelado") return null;
   const canEditSettled = item.status === "recebido" && options.canEditSettled;
   // Nota fiscal vale antes e depois do recebimento; receber/editar/cancelar só em aberto.
   const open = item.status === "pendente" || item.status === "atrasado";
+  // "Data a definir": só definir a data (ou parcelas) ou cancelar; baixa só depois de ter data.
+  const undated = item.status === "data_a_definir";
 
   return (
     <>
@@ -54,6 +58,12 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {undated ? (
+            <DropdownMenuItem onSelect={() => setDatesOpen(true)}>
+              <CalendarClock aria-hidden />
+              Definir data de pagamento
+            </DropdownMenuItem>
+          ) : null}
           {open ? (
             <DropdownMenuItem onSelect={() => setSettleOpen(true)}>
               <CheckCircle2 aria-hidden />
@@ -94,6 +104,12 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
               </DropdownMenuItem>
             </>
           ) : null}
+          {undated ? (
+            <DropdownMenuItem onSelect={() => setCancelOpen(true)}>
+              <XCircle aria-hidden />
+              Cancelar
+            </DropdownMenuItem>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -104,12 +120,13 @@ function RowActions({ item, options, today }: { item: ReceivableItem; options: F
           folder={`receivables/${item.id}`}
           initialNumber={item.invoiceNumber}
           hasFile={!!item.invoiceFilePath}
-          driveFile={{ clientName: item.companyName, month: item.competenceMonth ?? item.dueDate }}
+          driveFile={{ clientName: item.companyName, month: item.competenceMonth ?? item.dueDate ?? today }}
           onSave={(input) => attachReceivableInvoiceAction(item.id, input)}
           onOpenChange={setInvoiceOpen}
         />
       ) : null}
       {settled.dialogs}
+      {datesOpen ? <DefineDatesDialog receivable={item} today={today} open onOpenChange={setDatesOpen} /> : null}
       {settleOpen ? <SettleReceivableDialog receivable={item} open onOpenChange={setSettleOpen} today={today} /> : null}
       {editOpen ? <ReceivableDialog mode="edit" receivable={item} options={options} today={today} open onOpenChange={setEditOpen} /> : null}
       <CancelDialog
@@ -144,7 +161,7 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
     "Nota fiscal",
   ];
   const csvRows = rows.map((item) => [
-    formatDate(item.dueDate),
+    item.dueDate ? formatDate(item.dueDate) : STATUS_LABELS.data_a_definir,
     item.companyName,
     item.projectName ?? "",
     item.description,
@@ -184,7 +201,7 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
               <td className="whitespace-nowrap px-4 py-3">
                 <span className="flex items-center gap-3">
                   <DirectionIcon direction="in" />
-                  {formatDate(item.dueDate)}
+                  {item.dueDate ? formatDate(item.dueDate) : <span className="font-semibold">A definir</span>}
                 </span>
               </td>
               {compact ? null : (
@@ -220,6 +237,9 @@ export function ReceivablesTable({ rows, options, today, compact = false, showPr
               <td className="px-4 py-3">
                 <StatusBadge status={item.status} />
                 {item.receivedAt ? <span className="mt-1 block text-[12px] text-muted-foreground">em {formatDate(item.receivedAt)}</span> : null}
+                {item.status === "data_a_definir" && item.dateOwnerId ? (
+                  <span className="mt-1 block text-[12px] text-muted-foreground">com {options.members.find((member) => member.id === item.dateOwnerId)?.full_name ?? "o financeiro"}</span>
+                ) : null}
               </td>
               <td className="px-4 py-3 text-muted-foreground">{item.paymentMethod ? PAYMENT_METHOD_LABELS[item.paymentMethod] : "—"}</td>
               <td className="px-2 py-3 text-right">

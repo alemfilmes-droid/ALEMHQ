@@ -1,4 +1,5 @@
 import "server-only";
+import { buildNegotiation, type BudgetCandidate, type DealCandidate, type NegotiationSummary } from "@/lib/finance/negotiation";
 import { hasCapability } from "@/lib/auth/permissions";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -15,8 +16,6 @@ import {
   type DashboardKpis,
   type FinanceOptions,
   type MonthlySummaryItem,
-  type NegotiationItem,
-  type NegotiationTotals,
   type PayableItem,
   type PayableStatus,
   type PeriodSummary,
@@ -81,7 +80,7 @@ function asStatus<T extends string>(value: string | null, allowed: readonly T[])
 
 function mapReceivable(row: ReceivableRow): ReceivableItem | null {
   const status = asStatus(row.status, RECEIVABLE_STATUSES);
-  if (!row.id || !row.company_id || !row.description || row.amount == null || !row.due_date || !status) return null;
+  if (!row.id || !row.company_id || !row.description || row.amount == null || (!row.due_date && status !== "data_a_definir") || !status) return null;
   return {
     id: row.id,
     companyId: row.company_id,
@@ -95,6 +94,8 @@ function mapReceivable(row: ReceivableRow): ReceivableItem | null {
     installmentTotal: row.installment_total,
     amount: toCents(row.amount),
     dueDate: row.due_date,
+    dateOwnerId: row.date_owner_id,
+    budgetId: row.budget_id,
     receivedAt: row.received_at,
     receivedAmount: row.received_amount == null ? null : toCents(row.received_amount),
     paymentMethod: row.payment_method,
@@ -187,13 +188,15 @@ function multiIn<T extends string>(values: string[] | undefined, allowed: readon
 
 export async function listReceivables(filters: ReceivableFilters): Promise<ReceivableItem[]> {
   const supabase = await financeClient();
-  let query = supabase.from("receivables_with_status").select("*").order("due_date").limit(LIST_LIMIT);
+  // "Data a definir" (sem vencimento) vem primeiro: é o que precisa de ação.
+  let query = supabase.from("receivables_with_status").select("*").order("due_date", { nullsFirst: true }).limit(LIST_LIMIT);
 
   const statuses = multiIn(filters.status, RECEIVABLE_STATUSES);
   if (statuses.length > 0) query = query.in("status", statuses);
-  // "Atrasado" mostra todos os atrasados, independente do período.
-  if (filters.period && !(statuses.length === 1 && statuses[0] === "atrasado")) {
-    query = query.gte("due_date", filters.period.from).lte("due_date", filters.period.to);
+  // "Atrasado" e "Data a definir" aparecem sempre, independente do período.
+  const onlyFlagged = statuses.length > 0 && statuses.every((status) => status === "atrasado" || status === "data_a_definir");
+  if (filters.period && !onlyFlagged) {
+    query = query.or(`and(due_date.gte.${filters.period.from},due_date.lte.${filters.period.to}),status.eq.data_a_definir`);
   }
   if (filters.companyId && filters.companyId.length > 0) query = query.in("company_id", filters.companyId);
   if (filters.projectId && filters.projectId.length > 0) query = query.in("project_id", filters.projectId);
@@ -386,14 +389,9 @@ export async function listUpcoming(days = 30): Promise<UpcomingItem[]> {
   ]);
   if (receivables.error || payables.error) throw new Error("Falha ao carregar os próximos vencimentos.");
 
-  const incoming: UpcomingItem[] = (await withCompanyLogos(supabase, compact((receivables.data ?? []).map(mapReceivable)))).map((item) => ({
-    id: item.id,
-    direction: "in",
-    dueDate: item.dueDate,
-    label: item.description,
-    counterpart: item.companyName,
-    amount: item.amount,
-  }));
+  const incoming: UpcomingItem[] = (await withCompanyLogos(supabase, compact((receivables.data ?? []).map(mapReceivable)))).flatMap((item) =>
+    item.dueDate ? [{ id: item.id, direction: "in" as const, dueDate: item.dueDate, label: item.description, counterpart: item.companyName, amount: item.amount }] : [],
+  );
   const outgoing: UpcomingItem[] = compact((payables.data ?? []).map(mapPayable)).map((item) => ({
     id: item.id,
     direction: "out",
@@ -599,16 +597,20 @@ export async function getAttentionItems(limit = 30): Promise<AttentionItem[]> {
   ]);
   const today = todayISO();
 
-  const incoming: AttentionItem[] = receivables.map((item) => ({
-    id: item.id,
-    direction: "in",
-    dueDate: item.dueDate,
-    label: item.description,
-    counterpart: item.companyName,
-    amount: item.amount,
-    daysOverdue: daysOverdue(item.dueDate, today),
-    href: `/clientes/${item.companyId}`,
-  }));
+  const incoming: AttentionItem[] = receivables.flatMap((item) =>
+    item.dueDate
+      ? [{
+          id: item.id,
+          direction: "in" as const,
+          dueDate: item.dueDate,
+          label: item.description,
+          counterpart: item.companyName,
+          amount: item.amount,
+          daysOverdue: daysOverdue(item.dueDate, today),
+          href: `/clientes/${item.companyId}`,
+        }]
+      : [],
+  );
   const outgoing: AttentionItem[] = payables.map((item) => ({
     id: item.id,
     direction: "out",
@@ -697,69 +699,45 @@ export type { ReceivableStatus, PayableStatus };
 // Em negociação (projeção do CRM)
 // ---------------------------------------------------------------------------
 
-/** Negócios com proposta registrada, ainda em aberto — a função do banco já exige acesso ao financeiro. */
-export async function getDealsInNegotiation(): Promise<NegotiationItem[]> {
+/**
+ * "Em negociação" do card e da gaveta: candidatos do banco (orçamentos e negócios do CRM) somados pela regra única
+ * de lib/finance/negotiation.ts — Rascunho não conta, Não aprovado sai, versões e negócio com orçamento sem soma dupla.
+ */
+export async function getNegotiationPipeline(): Promise<NegotiationSummary> {
   const supabase = await financeClient();
-  const { data, error } = await supabase.rpc("finance_deals_in_negotiation");
-  if (error) throw new Error("Falha ao carregar os negócios em negociação.");
-  const items: NegotiationItem[] = (data ?? []).map((row) => ({
-    dealId: row.deal_id,
-    code: row.code,
-    title: row.title,
-    companyId: row.company_id,
-    companyName: row.company_name,
-    stage: row.stage,
-    ownerName: row.owner_name,
-    proposalAmount: toCents(row.proposal_amount),
-    proposalSentAt: row.proposal_sent_at,
-    proposalStatus: row.proposal_status,
-    expectedCloseDate: row.expected_close_date,
-    probability: Number(row.probability),
-    weightedAmount: toCents(row.weighted_amount),
-  }));
-  return withCompanyLogos(supabase, items);
-}
-
-export interface BudgetNegotiationItem {
-  budgetId: string;
-  label: string;
-  clientName: string;
-  title: string;
-  status: "enviado" | "em_analise" | "em_ajuste";
-  total: number;
-  sentAt: string | null;
-  validUntil: string;
-}
-
-/** Orçamentos enviados/em análise/em ajuste que não viraram proposta de um negócio do CRM (sem duplicar). */
-export async function getBudgetsInNegotiation(): Promise<BudgetNegotiationItem[]> {
-  const supabase = await financeClient();
-  const { data, error } = await supabase.rpc("finance_budgets_in_negotiation");
-  if (error) return [];
-  return (data ?? []).flatMap((row) =>
-    row.status === "enviado" || row.status === "em_analise" || row.status === "em_ajuste"
-      ? [
-          {
-            budgetId: row.budget_id,
-            label: `Orçamento ${String(row.number).padStart(4, "0")}${row.version > 1 ? ` v${row.version}` : ""}`,
-            clientName: row.client_name,
-            title: row.title,
-            status: row.status,
-            total: toCents(row.total),
-            sentAt: row.sent_at,
-            validUntil: row.valid_until,
-          },
-        ]
-      : [],
-  );
-}
-
-export function summarizeNegotiation(items: NegotiationItem[]): NegotiationTotals {
-  return {
-    count: items.length,
-    total: sumCents(items.map((item) => item.proposalAmount)),
-    weighted: sumCents(items.map((item) => item.weightedAmount)),
-  };
+  const { data, error } = await supabase.rpc("finance_negotiation_pipeline");
+  if (error) throw new Error("Falha ao carregar os valores em negociação.");
+  const rows = data ?? [];
+  const budgets: BudgetCandidate[] = rows
+    .filter((row) => row.source === "budget")
+    .map((row) => ({
+      id: row.id,
+      number: row.budget_number,
+      version: row.budget_version,
+      status: row.status,
+      dealId: row.deal_id,
+      companyId: row.company_id,
+      clientName: row.client_name ?? "—",
+      title: row.title,
+      totalCents: toCents(row.amount),
+      probability: row.deal_id ? Number(row.probability ?? 0) : null,
+      updatedAt: row.updated_at,
+    }));
+  const deals: DealCandidate[] = rows
+    .filter((row) => row.source === "deal")
+    .map((row) => ({
+      id: row.id,
+      code: row.deal_code,
+      companyId: row.company_id,
+      clientName: row.client_name ?? "—",
+      title: row.title,
+      status: row.status,
+      stage: row.deal_stage,
+      amountCents: toCents(row.amount),
+      probability: Number(row.probability ?? 0),
+      updatedAt: row.updated_at,
+    }));
+  return buildNegotiation(budgets, deals);
 }
 
 export async function getStageProbabilities() {

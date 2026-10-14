@@ -281,7 +281,7 @@ export function BudgetEditor({ budget, catalog, companies, canConfirmContract }:
 
   return (
     <div className="space-y-6">
-      <BudgetStatusPanel budget={budget} total={totals.final} companyId={header.companyId || null} beforeSend={async () => (dirty ? persist() : true)} />
+      <BudgetStatusPanel budget={budget} total={totals.final} companyId={header.companyId || null} companies={companies} beforeSend={async () => (dirty ? persist() : true)} />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" onClick={save} loading={saving} disabled={!dirty}>

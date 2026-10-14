@@ -1,7 +1,7 @@
 // AJUSTE MANUAL após `npm run db:types`: em Functions.generate_installments.Args, marque
 // p_project_id, p_company_id e p_payment_method como `| null`; em
 // Functions.project_apply_contract_change.Args, p_budget_id como `| null`; em Functions.close_client.Args,
-// p_project_id como `| null`; em Functions.prospect_record_touch.Args, p_touch_number e p_script_id como `| null` (as funções aceitam NULL, mas o gerador não indica). Ver README → Migrações.
+// p_project_id como `| null`; em Functions.prospect_record_touch.Args, p_touch_number e p_script_id como `| null`; em Functions.receivable_define_dates.Args, p_method como `| null` (as funções aceitam NULL, mas o gerador não indica). Ver README → Migrações.
 export type Json =
   | string
   | number
@@ -265,6 +265,8 @@ export type Database = {
       }
       budgets: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           archived_at: string | null
           client_name: string
           company_id: string | null
@@ -295,6 +297,8 @@ export type Database = {
           version: number
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           archived_at?: string | null
           client_name: string
           company_id?: string | null
@@ -325,6 +329,8 @@ export type Database = {
           version?: number
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           archived_at?: string | null
           client_name?: string
           company_id?: string | null
@@ -5522,6 +5528,7 @@ export type Database = {
       receivables: {
         Row: {
           amount: number
+          budget_id: string | null
           cancel_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -5529,9 +5536,10 @@ export type Database = {
           competence_month: string | null
           created_at: string
           created_by: string | null
+          date_owner_id: string | null
           deal_id: string | null
           description: string
-          due_date: string
+          due_date: string | null
           edited_at: string | null
           id: string
           installment_number: number | null
@@ -5553,6 +5561,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          budget_id?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -5560,9 +5569,10 @@ export type Database = {
           competence_month?: string | null
           created_at?: string
           created_by?: string | null
+          date_owner_id?: string | null
           deal_id?: string | null
           description: string
-          due_date: string
+          due_date?: string | null
           edited_at?: string | null
           id?: string
           installment_number?: number | null
@@ -5584,6 +5594,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          budget_id?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
@@ -5591,9 +5602,10 @@ export type Database = {
           competence_month?: string | null
           created_at?: string
           created_by?: string | null
+          date_owner_id?: string | null
           deal_id?: string | null
           description?: string
-          due_date?: string
+          due_date?: string | null
           edited_at?: string | null
           id?: string
           installment_number?: number | null
@@ -6684,6 +6696,7 @@ export type Database = {
       receivables_with_status: {
         Row: {
           amount: number | null
+          budget_id: string | null
           cancel_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
@@ -6692,6 +6705,7 @@ export type Database = {
           competence_month: string | null
           created_at: string | null
           created_by: string | null
+          date_owner_id: string | null
           deal_id: string | null
           description: string | null
           due_date: string | null
@@ -6897,6 +6911,11 @@ export type Database = {
         }[]
       }
       announcements_unread_count: { Args: never; Returns: number }
+      approve_budget: {
+        Args: { p_budget_id: string; p_payload: Json }
+        Returns: Json
+      }
+      budget_approval_total: { Args: { p_budget_id: string }; Returns: number }
       budget_contract_status: {
         Args: { p_budget_id: string }
         Returns: {
@@ -7637,11 +7656,39 @@ export type Database = {
           project_name: string
         }[]
       }
+      finance_negotiation_pipeline: {
+        Args: never
+        Returns: {
+          amount: number
+          budget_number: number
+          budget_version: number
+          client_name: string
+          company_id: string
+          deal_code: string
+          deal_id: string
+          deal_stage: Database["public"]["Enums"]["deal_stage"]
+          id: string
+          probability: number
+          source: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+      }
       finance_payee_key: {
         Args: { p_name: string; p_profile_id: string }
         Returns: string
       }
       finance_payment_lead_id: { Args: never; Returns: string }
+      finance_people_for_delegation: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          org_level: Database["public"]["Enums"]["org_level"]
+          profile_id: string
+        }[]
+      }
       finance_reason_fields: {
         Args: { p_entry_type: string }
         Returns: string[]
@@ -8357,6 +8404,14 @@ export type Database = {
         Returns: Database["public"]["Enums"]["prospect_undo_kind"]
       }
       publish_due_announcements: { Args: never; Returns: number }
+      receivable_define_dates: {
+        Args: {
+          p_installments: Json
+          p_method: Database["public"]["Enums"]["payment_method"] | null
+          p_receivable_id: string
+        }
+        Returns: string[]
+      }
       register_push_subscription: {
         Args: {
           p_auth: string

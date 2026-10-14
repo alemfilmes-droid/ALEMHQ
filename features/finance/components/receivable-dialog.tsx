@@ -52,7 +52,7 @@ function initialValues(props: ReceivableDialogProps): ReceivableValues {
       amount: centsToInput(item.amount),
       installments: "1",
       intervalDays: "30",
-      dueDate: item.dueDate,
+      dueDate: item.dueDate ?? props.today,
       paymentMethod: item.paymentMethod ?? "",
       invoiceNumber: item.invoiceNumber ?? "",
       notes: item.notes ?? "",

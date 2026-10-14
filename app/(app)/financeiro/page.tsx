@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
+import { Alert } from "@/components/ui/alert";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { ByClientTab } from "@/features/finance/components/by-client-tab";
 import { CashFlowTab } from "@/features/finance/components/cash-flow-tab";
@@ -135,6 +136,7 @@ async function ReceivablesTab({ params, period, options, today }: TabProps) {
     method: splitParam(params.metodo),
     search: params.busca,
   });
+  const undated = rows.filter((row) => row.status === "data_a_definir");
 
   return (
     <div className="space-y-4">
@@ -151,6 +153,19 @@ async function ReceivablesTab({ params, period, options, today }: TabProps) {
       </Suspense>
       {status.length === 1 && status[0] === "atrasado" ? (
         <p className="text-[13px] text-muted-foreground">Atrasados aparecem de qualquer período.</p>
+      ) : null}
+      {undated.length > 0 ? (
+        <Alert title={`${undated.length} ${undated.length === 1 ? "recebimento com data a definir" : "recebimentos com data a definir"}`}>
+          Orçamento aprovado com a data delegada ao financeiro. Aparece no topo, de qualquer período, até alguém definir a data em ⋯ › Definir data de pagamento.
+          {status.length === 1 && status[0] === "data_a_definir" ? null : (
+            <>
+              {" "}
+              <Link href={`/financeiro?aba=recebimentos&status=data_a_definir`} className="font-semibold text-foreground underline underline-offset-4">
+                Ver só esses
+              </Link>
+            </>
+          )}
+        </Alert>
       ) : null}
       <ReceivablesTable rows={rows} options={options} today={today} />
     </div>

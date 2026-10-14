@@ -13,8 +13,7 @@ import {
   getCashFlowProjection,
   getCategoryCosts,
   getDashboardKpis,
-  getDealsInNegotiation,
-  summarizeNegotiation,
+  getNegotiationPipeline,
   getLatePayments,
   getMarginBelowTarget,
   getMonthlySummary,
@@ -35,7 +34,7 @@ export async function DashboardTab({ period }: { period: Period }) {
     listProfitability(),
     getAttentionItems(),
     getCashFlowProjection(),
-    getDealsInNegotiation(),
+    getNegotiationPipeline(),
     getCompanySettings(),
     getMarginBelowTarget(),
     getLatePayments(monthStart, monthEnd),
@@ -47,7 +46,7 @@ export async function DashboardTab({ period }: { period: Period }) {
 
   return (
     <div className="space-y-6">
-      <DashboardKpiRow kpis={kpis} period={period} negotiation={summarizeNegotiation(negotiation)} />
+      <DashboardKpiRow kpis={kpis} period={period} negotiation={negotiation} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <IncomeExpenseChart data={trailingTwelve} />

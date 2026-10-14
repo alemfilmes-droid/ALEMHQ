@@ -631,6 +631,17 @@ export function PautaDetailsTab({ detail, options, canEditOperationally, canEdit
           />
         ) : null}
 
+        {pauta.source_ref_type === "receivable_date" ? (
+          <p className="rounded-lg border border-border-strong p-3 text-sm">
+            Orçamento aprovado com a data de pagamento delegada a você. Combine com o cliente e preencha em Recebimentos (uma data ou parcelas); a pauta
+            sai do quadro sozinha.{" "}
+            <Link href="/financeiro?aba=recebimentos&status=data_a_definir" className="inline-flex items-center gap-1 font-semibold underline underline-offset-4">
+              Abrir em Recebimentos
+              <ExternalLink className="size-3.5" aria-hidden />
+            </Link>
+          </p>
+        ) : null}
+
         {members.length > 0 ? (
           <ul className="flex flex-wrap gap-2" aria-label="Responsáveis">
             {members.map((member) => (

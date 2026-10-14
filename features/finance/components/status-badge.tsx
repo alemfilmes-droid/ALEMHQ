@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, CheckCircle2, Clock, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, CalendarClock, CheckCircle2, Clock, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { STATUS_LABELS } from "@/features/finance/labels";
 import type { PayableStatus, ReceivableStatus } from "@/features/finance/types";
@@ -10,15 +10,18 @@ type Status = ReceivableStatus | PayableStatus;
 const ICONS: Record<Status, LucideIcon> = {
   pendente: Clock,
   atrasado: AlertTriangle,
+  data_a_definir: CalendarClock,
   recebido: CheckCircle2,
   pago: CheckCircle2,
   cancelado: Ban,
 };
 
-/** Cor por status: recebido/pago = sucesso, pendente = atenção, atrasado = crítico, cancelado = neutro. */
+/** Cor por status: recebido/pago = sucesso, pendente = atenção, data a definir = alerta, atrasado = crítico, cancelado = neutro. */
 const STATUS_TONE: Record<Status, StatusTone> = {
   pendente: "warning",
   atrasado: "danger",
+  // Precisa de ação do financeiro (definir a data), mas não é atraso.
+  data_a_definir: "alert",
   recebido: "success",
   pago: "success",
   cancelado: "neutral",

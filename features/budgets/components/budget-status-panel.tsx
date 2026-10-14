@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Hourglass, PencilLine, RefreshCcw, Send, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { decideBudgetAction, getClientLinksAction, markBudgetInAnalysisAction, redoBudgetAction, sendBudgetAction } from "@/features/budgets/actions";
+import { ApprovalDialog } from "@/features/budgets/components/approval-dialog";
 import { BudgetStatusPill } from "@/features/budgets/components/budget-status-pill";
 import { brl } from "@/features/budgets/pricing";
 import { awaitingClient, type BudgetRecord } from "@/features/budgets/types";
@@ -31,10 +32,9 @@ const CHANNELS = [
   { value: "ligacao", label: "Ligação" },
 ] as const;
 
-type Decision = "aprovado" | "em_ajuste" | "recusado";
+type Decision = "em_ajuste" | "recusado";
 
 const DECISION_COPY: Record<Decision, { title: string; label: string; hint: string }> = {
-  aprovado: { title: "Orçamento aprovado.", label: "Observação (opcional)", hint: "O CRM marca a proposta como aceita. O negócio é fechado como ganho no card do cliente." },
   em_ajuste: { title: "Cliente pediu ajuste.", label: "O que precisa mudar", hint: "Depois use “Refazer” para criar a nova versão com os ajustes." },
   recusado: { title: "Orçamento não aprovado.", label: "Motivo (opcional)", hint: "O CRM marca a proposta como recusada." },
 };
@@ -54,16 +54,19 @@ export function BudgetStatusPanel({
   budget,
   total,
   companyId,
+  companies,
   beforeSend,
 }: {
   budget: BudgetRecord;
   total: number;
   companyId: string | null;
+  companies: { id: string; name: string }[];
   beforeSend: () => Promise<boolean>;
 }) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [decision, setDecision] = useState<Decision | null>(null);
+  const [approving, setApproving] = useState(false);
   const [deals, setDeals] = useState<{ id: string; title: string; stage: string }[]>([]);
   const [dealId, setDealId] = useState(budget.dealId ?? NO_DEAL);
   const [channel, setChannel] = useState<(typeof CHANNELS)[number]["value"]>("whatsapp_pdf");
@@ -108,6 +111,14 @@ export function BudgetStatusPanel({
       setDecision(null);
       setNote("");
       router.refresh();
+    });
+  }
+
+  /** Aprovar abre o passo a passo (cliente, projeto, pagamento) — salva antes o que estiver pendente na tela. */
+  function startApproval() {
+    startTransition(async () => {
+      if (!(await beforeSend())) return;
+      setApproving(true);
     });
   }
 
@@ -168,7 +179,7 @@ export function BudgetStatusPanel({
         ) : null}
         {awaitingClient(status) ? (
           <>
-            <Button type="button" onClick={() => setDecision("aprovado")} disabled={pending}>
+            <Button type="button" onClick={startApproval} disabled={pending}>
               <CheckCircle2 aria-hidden />
               Aprovado
             </Button>
@@ -243,6 +254,8 @@ export function BudgetStatusPanel({
           </DialogContent>
         </Dialog>
       ) : null}
+
+      <ApprovalDialog budgetId={budget.id} companies={companies} open={approving} onOpenChange={setApproving} />
 
       {decision ? (
         <Dialog open onOpenChange={(next) => !next && setDecision(null)}>

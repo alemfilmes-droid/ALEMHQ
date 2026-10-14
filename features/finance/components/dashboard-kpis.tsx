@@ -1,10 +1,12 @@
+import { Fragment } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowDownLeft, CheckCircle2, Handshake, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowDownLeft, CheckCircle2, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CARD_LINK_CLASS, CardContent, CardHeading } from "@/components/ui/card";
-import { formatCents } from "@/features/finance/money";
 import { periodSearchParams, type Period } from "@/features/finance/period";
-import type { DashboardKpis, NegotiationTotals } from "@/features/finance/types";
+import { NegotiationCard } from "@/features/finance/components/negotiation-sheet";
+import type { DashboardKpis } from "@/features/finance/types";
+import type { NegotiationSummary } from "@/lib/finance/negotiation";
 import { MetricValue, type MetricFormat } from "@/components/ui/metric-value";
 import { MARGIN_STATUS_LABELS, MARGIN_STATUS_TONE, type StatusTone } from "@/lib/status";
 
@@ -26,7 +28,7 @@ function financeHref(period: Period, extra: Record<string, string>) {
 }
 
 /** Cartões compactos e de mesma altura; a cor mora no valor, nunca no fundo do cartão. Cada um é um link (drill-down). */
-export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: DashboardKpis; period: Period; negotiation: NegotiationTotals }) {
+export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: DashboardKpis; period: Period; negotiation: NegotiationSummary }) {
   const items: Kpi[] = [
     { title: "Faturamento no período", icon: Wallet, value: kpis.billed,
       format: "cents", href: financeHref(period, { aba: "recebimentos" }) },
@@ -80,15 +82,6 @@ export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: Dashboard
       href: "#margem-projeto-title",
     },
     {
-      title: "Em negociação",
-      icon: Handshake,
-      value: negotiation.total,
-      format: "cents",
-      note: `${negotiation.count} ${negotiation.count === 1 ? "negócio" : "negócios"} · previsão ponderada ${formatCents(negotiation.weighted)}`,
-      noteSensitive: true,
-      href: financeHref(period, { aba: "em-negociacao" }),
-    },
-    {
       title: "Em atraso",
       icon: AlertTriangle,
       value: kpis.overdue.total,
@@ -102,22 +95,22 @@ export function DashboardKpiRow({ kpis, period, negotiation }: { kpis: Dashboard
   return (
     <section aria-label="Indicadores do período" className="card-grid">
       {items.map(({ title, icon: Icon, value, format, note, noteSensitive, tone, href }) => (
-        <Link
-          key={title}
-          href={href}
-          className={CARD_LINK_CLASS}
-        >
-          <CardHeading icon={Icon} tone="success" title={title} className="pb-2" sensitive={format === "cents" || format === "percent"} />
-          <CardContent>
-            {/* No financeiro, o percentual é margem — também sensível. */}
-            <MetricValue value={value} format={format} tone={tone} sensitive={format === "cents" || format === "percent"} />
-            {note ? (
-              <p className="mt-1 text-xs text-subtle" data-sensitive={noteSensitive || undefined}>
-                {note}
-              </p>
-            ) : null}
-          </CardContent>
-        </Link>
+        <Fragment key={title}>
+          {/* "Em negociação" abre a gaveta de detalhe (não navega): fica antes de "Em atraso", como antes. */}
+          {title === "Em atraso" ? <NegotiationCard summary={negotiation} /> : null}
+          <Link href={href} className={CARD_LINK_CLASS}>
+            <CardHeading icon={Icon} tone="success" title={title} className="pb-2" sensitive={format === "cents" || format === "percent"} />
+            <CardContent>
+              {/* No financeiro, o percentual é margem — também sensível. */}
+              <MetricValue value={value} format={format} tone={tone} sensitive={format === "cents" || format === "percent"} />
+              {note ? (
+                <p className="mt-1 text-xs text-subtle" data-sensitive={noteSensitive || undefined}>
+                  {note}
+                </p>
+              ) : null}
+            </CardContent>
+          </Link>
+        </Fragment>
       ))}
     </section>
   );

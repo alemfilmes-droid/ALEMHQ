@@ -1,8 +1,8 @@
 import type { Cents } from "@/features/finance/money";
 import type { TeamPaymentType } from "@/lib/finance/team-category";
-import type { BankAccountType, DealStage, MarginStatus, PayableCategory, PayableRecurrence, PaymentMethod, PixKeyType, ProposalStatus } from "@/types";
+import type { BankAccountType, MarginStatus, PayableCategory, PayableRecurrence, PaymentMethod, PixKeyType } from "@/types";
 
-export const RECEIVABLE_STATUSES = ["pendente", "atrasado", "recebido", "cancelado"] as const;
+export const RECEIVABLE_STATUSES = ["pendente", "atrasado", "data_a_definir", "recebido", "cancelado"] as const;
 export const PAYABLE_STATUSES = ["pendente", "atrasado", "pago", "cancelado"] as const;
 export type ReceivableStatus = (typeof RECEIVABLE_STATUSES)[number];
 export type PayableStatus = (typeof PAYABLE_STATUSES)[number];
@@ -21,7 +21,12 @@ export interface ReceivableItem {
   installmentNumber: number | null;
   installmentTotal: number | null;
   amount: Cents;
-  dueDate: string;
+  /** null = "Data a definir" (orçamento aprovado com a data delegada ao financeiro). */
+  dueDate: string | null;
+  /** Quem do financeiro precisa definir a data (só quando dueDate é null). */
+  dateOwnerId: string | null;
+  /** Orçamento aprovado que gerou o recebimento. */
+  budgetId: string | null;
   receivedAt: string | null;
   receivedAmount: Cents | null;
   paymentMethod: PaymentMethod | null;
@@ -210,25 +215,3 @@ export interface CategoryCostItem {
 }
 
 /** Projeção comercial: negócio com proposta registrada e ainda não ganho/perdido. Nunca se mistura com recebíveis reais. */
-export interface NegotiationItem {
-  dealId: string;
-  code: string;
-  title: string;
-  companyId: string;
-  companyName: string;
-  companyLogoUrl?: string | null;
-  stage: DealStage;
-  ownerName: string;
-  proposalAmount: Cents;
-  proposalSentAt: string;
-  proposalStatus: ProposalStatus;
-  expectedCloseDate: string | null;
-  probability: number;
-  weightedAmount: Cents;
-}
-
-export interface NegotiationTotals {
-  count: number;
-  total: Cents;
-  weighted: Cents;
-}

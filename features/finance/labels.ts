@@ -115,6 +115,7 @@ export const PAYABLE_COST_TYPE_FILTER_LABELS: Record<PayableCostTypeFilter, stri
 export const STATUS_LABELS = {
   pendente: "Pendente",
   atrasado: "Atrasado",
+  data_a_definir: "Data a definir",
   recebido: "Recebido",
   pago: "Pago",
   cancelado: "Cancelado",

@@ -34,7 +34,7 @@ function initialValues(item: ReceivableItem): SettledReceivableValues {
     serviceDescription: item.serviceDescription ?? "",
     competenceMonth: item.competenceMonth ?? "",
     amount: centsToInput(item.amount),
-    dueDate: item.dueDate,
+    dueDate: item.dueDate ?? "",
     paymentMethod: item.paymentMethod ?? ("" as SettledReceivableValues["paymentMethod"]),
     invoiceNumber: item.invoiceNumber ?? "",
     notes: item.notes ?? "",

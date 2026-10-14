@@ -155,6 +155,33 @@ export async function cancelReceivableAction(id: string): Promise<ActionResult> 
   return { ok: true, message: "Recebimento cancelado." };
 }
 
+const defineDatesSchema = z.object({
+  method: z.enum(["pix", "boleto", "transferencia", "cartao", "dinheiro", "outro"]).nullable(),
+  installments: z.array(z.object({ amountCents: z.number().int().positive(), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })).min(1).max(36),
+});
+
+/**
+ * Recebimento "Data a definir" (orçamento aprovado com a data delegada): define a data — ou divide em parcelas
+ * que somam o valor — numa transação só (receivable_define_dates). A pauta "Definir data de pagamento" sai do
+ * quadro sozinha.
+ */
+export async function defineReceivableDatesAction(id: string, values: z.input<typeof defineDatesSchema>): Promise<ActionResult> {
+  if (!(await requireFinance())) return FORBIDDEN;
+  const parsed = defineDatesSchema.safeParse(values);
+  if (!idSchema.safeParse(id).success || !parsed.success) return INVALID;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("receivable_define_dates", {
+    p_receivable_id: id,
+    p_method: parsed.data.method,
+    p_installments: parsed.data.installments.map((item) => ({ amount: centsToNumber(item.amountCents), due_date: item.dueDate })),
+  });
+  if (error) return { ok: false, error: error.code === "23514" || error.code === "22023" ? error.message : "Não foi possível definir a data. Nada foi alterado." };
+  refresh();
+  revalidatePath("/pautas");
+  const count = data?.length ?? 1;
+  return { ok: true, message: count > 1 ? `Datas definidas: ${count} parcelas.` : "Data de pagamento definida." };
+}
+
 /** Gera parcelas a partir do valor de contrato do projeto (lido do banco, não do cliente). */
 export async function generateProjectInstallmentsAction(
   projectId: string,
